@@ -1,0 +1,728 @@
+Frame 1: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1186
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 2]
+URB setup
+    bmRequestType: 0x01
+        0... .... = Direction: Host-to-device
+        .00. .... = Type: Standard (0x0)
+        ...0 0001 = Recipient: Interface (0x01)
+    bRequest: SET INTERFACE (11)
+    bAlternateSetting: 0
+    wInterface: 2
+    wLength: 0
+
+0000  00 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  86 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  01 0b 00 00 02 00 00 00                           ........
+
+Frame 2: 32 bytes on wire (256 bits), 32 bytes captured (256 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1186
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 1]
+    [Time from request: 0.000022000 seconds]
+
+0000  00 01 20 01 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  86 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+
+Frame 3: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1188
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Response in: 4]
+URB setup
+    bmRequestType: 0xc0
+        1... .... = Direction: Device-to-host
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0002
+    wIndex: 0 (0x0000)
+    wLength: 1
+
+0000  00 01 20 00 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  88 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  c0 03 02 00 00 00 01 00                           ........
+
+Frame 4: 33 bytes on wire (264 bits), 33 bytes captured (264 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1188
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Request in: 3]
+    [Time from request: 0.000160000 seconds]
+CONTROL response data: 01
+
+0000  00 01 20 01 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  88 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  01                                                .
+
+Frame 5: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d118a
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 6]
+URB setup
+    bmRequestType: 0x01
+        0... .... = Direction: Host-to-device
+        .00. .... = Type: Standard (0x0)
+        ...0 0001 = Recipient: Interface (0x01)
+    bRequest: SET INTERFACE (11)
+    bAlternateSetting: 0
+    wInterface: 1
+    wLength: 0
+
+0000  00 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  8a 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  01 0b 00 00 01 00 00 00                           ........
+
+Frame 6: 32 bytes on wire (256 bits), 32 bytes captured (256 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d118a
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 5]
+    [Time from request: 0.000020000 seconds]
+
+0000  00 01 20 01 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  8a 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+
+Frame 7: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d118c
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Response in: 8]
+URB setup
+    bmRequestType: 0xc0
+        1... .... = Direction: Device-to-host
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0002
+    wIndex: 0 (0x0000)
+    wLength: 1
+
+0000  00 01 20 00 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  8c 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  c0 03 02 00 00 00 01 00                           ........
+
+Frame 8: 33 bytes on wire (264 bits), 33 bytes captured (264 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d118c
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Request in: 7]
+    [Time from request: 0.000158000 seconds]
+CONTROL response data: 01
+
+0000  00 01 20 01 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  8c 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  01                                                .
+
+Frame 9: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 4
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1194
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 10]
+URB setup
+    bmRequestType: 0x40
+        0... .... = Direction: Host-to-device
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0008
+    wIndex: 0 (0x0000)
+    wLength: 4
+
+0000  00 01 20 00 04 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  94 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  40 03 08 00 00 00 04 00                           @.......
+
+Frame 10: 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 4
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1194
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 9]
+    [Time from request: 0.000129000 seconds]
+CONTROL response data: 4044ac00
+
+0000  00 01 20 01 04 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  94 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  40 44 ac 00                                       @D..
+
+Frame 11: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 4
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1196
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Response in: 12]
+URB setup
+    bmRequestType: 0xc0
+        1... .... = Direction: Device-to-host
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0001
+    wIndex: 0 (0x0000)
+    wLength: 4
+
+0000  00 01 20 00 04 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  96 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  c0 03 01 00 00 00 04 00                           ........
+
+Frame 12: 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 4
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d1196
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Request in: 11]
+    [Time from request: 0.000194000 seconds]
+CONTROL response data: 44ac0001
+
+0000  00 01 20 01 04 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  96 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  44 ac 00 01                                       D...
+
+Frame 13: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 4
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11a8
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Response in: 14]
+URB setup
+    bmRequestType: 0xc0
+        1... .... = Direction: Device-to-host
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0001
+    wIndex: 0 (0x0000)
+    wLength: 4
+
+0000  00 01 20 00 04 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  a8 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  c0 03 01 00 00 00 04 00                           ........
+
+Frame 14: 36 bytes on wire (288 bits), 36 bytes captured (288 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 4
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11a8
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Request in: 13]
+    [Time from request: 0.000178000 seconds]
+CONTROL response data: 44ac0000
+
+0000  00 01 20 01 04 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  a8 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  44 ac 00 00                                       D...
+
+Frame 15: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11b6
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 16]
+URB setup
+    bmRequestType: 0x01
+        0... .... = Direction: Host-to-device
+        .00. .... = Type: Standard (0x0)
+        ...0 0001 = Recipient: Interface (0x01)
+    bRequest: SET INTERFACE (11)
+    bAlternateSetting: 0
+    wInterface: 2
+    wLength: 0
+
+0000  00 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  b6 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  01 0b 00 00 02 00 00 00                           ........
+
+Frame 16: 32 bytes on wire (256 bits), 32 bytes captured (256 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11b6
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 15]
+    [Time from request: 0.000017000 seconds]
+
+0000  00 01 20 01 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  b6 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+
+Frame 17: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11b8
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 18]
+URB setup
+    bmRequestType: 0x01
+        0... .... = Direction: Host-to-device
+        .00. .... = Type: Standard (0x0)
+        ...0 0001 = Recipient: Interface (0x01)
+    bRequest: SET INTERFACE (11)
+    bAlternateSetting: 1
+    wInterface: 2
+    wLength: 0
+
+0000  00 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  b8 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  01 0b 01 00 02 00 00 00                           ........
+
+Frame 18: 32 bytes on wire (256 bits), 32 bytes captured (256 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11b8
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 17]
+    [Time from request: 0.000022000 seconds]
+
+0000  00 01 20 01 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  b8 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+
+Frame 19: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11ba
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Response in: 20]
+URB setup
+    bmRequestType: 0xc0
+        1... .... = Direction: Device-to-host
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0002
+    wIndex: 0 (0x0000)
+    wLength: 1
+
+0000  00 01 20 00 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  ba 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  c0 03 02 00 00 00 01 00                           ........
+
+Frame 20: 33 bytes on wire (264 bits), 33 bytes captured (264 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11ba
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Request in: 19]
+    [Time from request: 0.000152000 seconds]
+CONTROL response data: 01
+
+0000  00 01 20 01 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  ba 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  01                                                .
+
+Frame 21: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11bc
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 22]
+URB setup
+    bmRequestType: 0x01
+        0... .... = Direction: Host-to-device
+        .00. .... = Type: Standard (0x0)
+        ...0 0001 = Recipient: Interface (0x01)
+    bRequest: SET INTERFACE (11)
+    bAlternateSetting: 0
+    wInterface: 1
+    wLength: 0
+
+0000  00 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  bc 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  01 0b 00 00 01 00 00 00                           ........
+
+Frame 22: 32 bytes on wire (256 bits), 32 bytes captured (256 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11bc
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 21]
+    [Time from request: 0.000016000 seconds]
+
+0000  00 01 20 01 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  bc 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+
+Frame 23: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11be
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Response in: 24]
+URB setup
+    bmRequestType: 0x01
+        0... .... = Direction: Host-to-device
+        .00. .... = Type: Standard (0x0)
+        ...0 0001 = Recipient: Interface (0x01)
+    bRequest: SET INTERFACE (11)
+    bAlternateSetting: 1
+    wInterface: 1
+    wLength: 0
+
+0000  00 01 20 00 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  be 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+0020  01 0b 01 00 01 00 00 00                           ........
+
+Frame 24: 32 bytes on wire (256 bits), 32 bytes captured (256 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 0
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11be
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x00
+    .... 0000 = Endpoint number: 0, Direction: OUT
+    Endpoint transfer type: Control (0)
+    [Request in: 23]
+    [Time from request: 0.000017000 seconds]
+
+0000  00 01 20 01 00 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  be 11 0d 04 00 00 00 00 00 00 10 14 02 07 00 00   ................
+
+Frame 25: 40 bytes on wire (320 bits), 40 bytes captured (320 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: SUBMIT (0)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11c0
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Response in: 26]
+URB setup
+    bmRequestType: 0xc0
+        1... .... = Direction: Device-to-host
+        .10. .... = Type: Vendor (0x2)
+        ...0 0000 = Recipient: Device (0x00)
+    bRequest: 3
+    wValue: 0x0002
+    wIndex: 0 (0x0000)
+    wLength: 1
+
+0000  00 01 20 00 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  c0 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  c0 03 02 00 00 00 01 00                           ........
+
+Frame 26: 33 bytes on wire (264 bits), 33 bytes captured (264 bits) on interface 0
+USB URB
+    [Source: 16.7.0]
+    [Destination: host]
+    Darwin header bcdVersion: 0x0100
+    Darwin header length: 32
+    Request type: COMPLETE (1)
+    I/O length [bytes]: 1
+    Request status: kIOReturnSuccess (0x00000000)
+    Isochronous transfer number of frames: 0
+    I/O ID: 0x00000000040d11c0
+    Device location ID: 0x14100000
+    Device speed: High (2)
+    USB device index: 7
+    Endpoint address: 0x80
+    .... 0000 = Endpoint number: 0, Direction: IN
+    Endpoint transfer type: Control (0)
+    [Request in: 25]
+    [Time from request: 0.000172000 seconds]
+CONTROL response data: 01
+
+0000  00 01 20 01 01 00 00 00 00 00 00 00 00 00 00 00   .. .............
+0010  c0 11 0d 04 00 00 00 00 00 00 10 14 02 07 80 00   ................
+0020  01                                                .

@@ -1,0 +1,6 @@
+wireshark/*.pcapng filter=lfs diff=lfs merge=lfs -text
+wireshark/*.bin filter=lfs diff=lfs merge=lfs -text
+*.pcap* filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
+wireshark/*.txt filter=lfs diff=lfs merge=lfs -text
+wireshark/**/*.txt filter=lfs diff=lfs merge=lfs -text
