@@ -1,0 +1,5 @@
+#!/bin/bash
+
+fn="$1"
+out="${fn%.*}.txt"
+tshark -r "$fn" -Tfields -e usb.capdata > $out
