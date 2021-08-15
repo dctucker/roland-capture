@@ -1,0 +1,7 @@
+#!/bin/bash
+
+endpoint="$1"
+shift
+dir_filter="((usb.urb_type=='C' && usb.endpoint_address.direction==1) || (usb.urb_type=='S' && usb.endpoint_address.direction==0))"
+capdata="-T fields -e usb.capdata"
+tshark -i usbmon3 -Y "usb.endpoint_address.number==$endpoint && $dir_filter" $capdata "$@"
