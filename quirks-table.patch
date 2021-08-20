@@ -1,8 +1,8 @@
 diff --git a/sound/usb/quirks-table.h b/sound/usb/quirks-table.h
-index bdba37d0faab..e3d599643259 100644
+index bdba37d0faab..0ec7874d0971 100644
 --- a/sound/usb/quirks-table.h
 +++ b/sound/usb/quirks-table.h
-@@ -1644,6 +1644,73 @@ YAMAHA_DEVICE(0x7010, "UB99"),
+@@ -1644,6 +1644,83 @@ YAMAHA_DEVICE(0x7010, "UB99"),
  		}
  	}
  },
@@ -17,11 +17,15 @@ index bdba37d0faab..e3d599643259 100644
 +		.data = (const struct snd_usb_audio_quirk[]) {
 +			{
 +				.ifnum = 0,
++				.type = QUIRK_IGNORE_INTERFACE
++			},
++			{
++				.ifnum = 1,
 +				.type = QUIRK_AUDIO_FIXED_ENDPOINT,
 +				.data = & (const struct audioformat) {
 +					.formats = SNDRV_PCM_FMTBIT_S32_LE,
 +					.channels = 10,
-+					.iface = 0,
++					.iface = 1,
 +					.altsetting = 1,
 +					.altset_idx = 1,
 +					.endpoint = 0x0d,
@@ -34,12 +38,12 @@ index bdba37d0faab..e3d599643259 100644
 +				}
 +			},
 +			{
-+				.ifnum = 1,
++				.ifnum = 2,
 +				.type = QUIRK_AUDIO_FIXED_ENDPOINT,
 +				.data = & (const struct audioformat) {
 +					.formats = SNDRV_PCM_FMTBIT_S32_LE,
 +					.channels = 18,
-+					.iface = 1,
++					.iface = 2,
 +					.altsetting = 1,
 +					.altset_idx = 1,
 +					.endpoint = 0x8e,
@@ -52,19 +56,25 @@ index bdba37d0faab..e3d599643259 100644
 +				}
 +			},
 +			{
-+				.ifnum = 2,
++				.ifnum = 3,
 +				.type = QUIRK_MIDI_FIXED_ENDPOINT,
 +				.data = & (const struct snd_usb_midi_endpoint_info) {
++					.out_ep =  0x03,
++					.in_ep  =  0x85,
 +					.out_cables = 0x0001,
 +					.in_cables  = 0x0001
 +				}
 +			},
 +			{
-+				.ifnum = 3,
++				.ifnum = 4,
 +				.type = QUIRK_IGNORE_INTERFACE
 +			},
 +			{
-+				.ifnum = 4,
++				.ifnum = 5,
++				.type = QUIRK_IGNORE_INTERFACE
++			},
++			{
++				.ifnum = 6,
 +				.type = QUIRK_IGNORE_INTERFACE
 +			},
 +			{
