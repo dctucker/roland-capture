@@ -41,22 +41,21 @@ class Mixer(object):
 				print(value, end="\t")
 			print('')
 
-	def set_volume(self, addr, value):
-		pass
-		#ch = (addr & 0x0f00) >> 8
-		#m = (addr & 0xf000) >> 12
-		##self.volume[m][ch] = value
-		#self.print_volumes()
-
-	def print_volumes(self):
-		for m in range(0, 4):
-			mon = ['a','b','c','d'][m]
-			print("Monitor %s" % mon.upper())
-			for ch in range(0, 16):
-				desc = "input monitor.%s channel.%d channel.volume" % (mon, ch+1)
-				volume = self.memory.get_formatted( Capture.get_addr(desc) )
-				print(volume, end="\t")
-			print('')
+	#def set_volume(self, addr, value):
+	#	ch = (addr & 0x0f00) >> 8
+	#	m = (addr & 0xf000) >> 12
+	#	#self.volume[m][ch] = value
+	#	self.print_volumes()
+	#
+	#def print_volumes(self):
+	#	for m in range(0, 4):
+	#		mon = ['a','b','c','d'][m]
+	#		print("Monitor %s" % mon.upper())
+	#		for ch in range(0, 16):
+	#			desc = "input monitor.%s channel.%d channel.volume" % (mon, ch+1)
+	#			volume = self.memory.get_formatted( Capture.get_addr(desc) )
+	#			print(volume, end="\t")
+	#		print('')
 
 class Listener(object):
 	def __init__(self, app):
@@ -70,7 +69,6 @@ class Listener(object):
 		addr, data = Roland.parse_sysex(message)
 		self.app.mixer.memory.set(addr, data)
 		name = self.app.capture_view.lookup_name(addr)
-		#value = capture_view.format_value(name, data)
 		value = self.app.mixer.memory.get_formatted(addr)
 		print(addr, name, value)
 		self.app.mixer.print_controls()
@@ -94,11 +92,12 @@ class App(object):
 		self.listener = Listener(self)
 		self.mixer = Mixer()
 
-	def get_mixer_value(self, desc, handler):
+	def get_mixer_value(self, desc, handler=None):
 		addr = Capture.get_addr(desc)
 		size = Capture.get_size(desc)
 		message = Roland.receive_data(addr, size)
-		self.listener.register_addr(addr, handler)
+		if handler is not None:
+			self.listener.register_addr(addr, handler)
 		return self.send(message)
 
 	def send(self, message):
@@ -127,11 +126,14 @@ class App(object):
 		self.midi_in = midi_in
 		self.midi_out = midi_out
 
-		for m in 'a','b','c','d':
-			for i in range(1, 1+16):
-				desc = "input monitor.%s channel.%d channel.volume" % (m, i)
-				value = self.get_mixer_value(desc, self.mixer.set_volume)
-				#print(desc, value)
+		#for m in 'a','b','c','d':
+		#	for i in range(1, 1+16):
+		#		desc = "input monitor.%s channel.%d channel.volume" % (m, i)
+		#		value = self.get_mixer_value(desc, self.mixer.set_volume)
+		#		#print(desc, value)
+		for row in self.mixer.controls:
+			for control in row:
+				self.get_mixer_value(control)#, self.mixer.set_volume)
 
 		if not hasattr(sys, 'ps1'): # non-interactive mode only
 			try:

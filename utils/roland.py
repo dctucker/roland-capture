@@ -150,7 +150,13 @@ class CaptureView():
 		return "%+d" % round(value)
 
 	def format_pan(self, value):
-		return "%+d" % value
+		if value < 0:
+			return 'L%d' % -value
+		elif value > 0:
+			return "R%d" % value
+		else:
+			return "C"
+
 
 	def format_reverb_type(self, value):
 		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
@@ -166,8 +172,7 @@ class CaptureView():
 			for part in parts:
 				if part in desc:
 					return formatter(value)
-		return hex(bytes_to_long(value))
-		
+		return bytes_to_long(value)
 
 	def format_value(self, desc, value):
 		if value is None: return "?"
@@ -176,12 +181,14 @@ class CaptureView():
 			(".volume",".reverb"): self.format_volume,
 			(".pan",): self.format_pan,
 			("reverb.type",): self.format_reverb_type,
+			(".mute", ): lambda x: ["m", "MUTE"][x],
+			(".solo", ): lambda x: ["s", "SOLO"][x],
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
 				if part in desc:
 					return formatter(value)
-		return hex(bytes_to_long(value))
+		return hex(value)
 
 class Capture():
 	value_map = {
@@ -340,7 +347,7 @@ class Capture():
 	def get_size(desc):
 		sizes = {
 			2: [ ".pan", ],
-			3: [ ".volume", ],
+			3: [ ".volume", ".reverb" ],
 		}
 		for size, strings in sizes.items():
 			for part in strings:
