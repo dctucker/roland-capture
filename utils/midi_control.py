@@ -20,28 +20,41 @@ def get_mixer_port(api):
 
 class Mixer(object):
 	def __init__(self):
-		self.volume = [ [ None for i in range(0, 16) ] for m in range(0, 4) ]
-		self.memory = {}
+		#self.volume = [ [ None for i in range(0, 16) ] for m in range(0, 4) ]
+		self.memory = Memory()
+		self.capture_view = CaptureView.instance()
+		self.setup_controls("monitor.a")
 
-	def set_memory(self, addr, value):
-		self.memory[addr] = value
+	def setup_controls(self, mode):
+		self.controls = []
+		for control in "mute", "solo", "reverb", "pan", "volume":
+			row = []
+			for ch in range(0, 16):
+				desc = "input %s channel.%d channel.%s" % (mode, ch+1, control)
+				row += [desc]
+			self.controls += [row]
 
-	def get_memory(self, addr):
-		if addr not in self.memory:
-			return None
-		return self.memory[addr]
+	def print_controls(self):
+		for row in self.controls:
+			for control in row:
+				value = self.memory.get_formatted( Capture.get_addr(control) )
+				print(value, end="\t")
+			print('')
 
 	def set_volume(self, addr, value):
-		ch = (addr & 0x0f00) >> 8
-		m = (addr & 0xf000) >> 12
-		self.volume[m][ch] = value
-		#print("set volume %s %s" % (capture_view.lookup_name(addr), value))
-		self.print_volumes()
+		pass
+		#ch = (addr & 0x0f00) >> 8
+		#m = (addr & 0xf000) >> 12
+		##self.volume[m][ch] = value
+		#self.print_volumes()
 
 	def print_volumes(self):
-		for m, monitor in enumerate(self.volume):
-			print("Monitor %s" % ['A','B','C','D'][m])
-			for volume in monitor:
+		for m in range(0, 4):
+			mon = ['a','b','c','d'][m]
+			print("Monitor %s" % mon.upper())
+			for ch in range(0, 16):
+				desc = "input monitor.%s channel.%d channel.volume" % (mon, ch+1)
+				volume = self.memory.get_formatted( Capture.get_addr(desc) )
 				print(volume, end="\t")
 			print('')
 
@@ -55,14 +68,16 @@ class Listener(object):
 		print("<", end=" ")
 		print_bytes(message)
 		addr, data = Roland.parse_sysex(message)
-		self.app.memory.set(addr, data)
+		self.app.mixer.memory.set(addr, data)
 		name = self.app.capture_view.lookup_name(addr)
 		#value = capture_view.format_value(name, data)
-		value = self.app.memory.get_formatted(addr)
+		value = self.app.mixer.memory.get_formatted(addr)
 		print(addr, name, value)
+		self.app.mixer.print_controls()
 
-		self.app.mixer.set_memory(addr, data)
+		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
+		print("")
 
 	def register_addr(self, addr, handler):
 		self.addr_listeners[addr] = handler
@@ -78,7 +93,6 @@ class App(object):
 	def __init__(self):
 		self.listener = Listener(self)
 		self.mixer = Mixer()
-		self.memory = Memory()
 
 	def get_mixer_value(self, desc, handler):
 		addr = Capture.get_addr(desc)
@@ -134,10 +148,6 @@ class App(object):
 	#def demo(self):
 	#	self.send(Capture.get_volume(0))           #message = Roland.receive_data(0x00060008, 3)
 	#	self.send(Capture.set_volume(0, 0x200000)) #Roland.send_data(0x00060008, [2,0,0,0,0,0])
-
-
-
-
 
 if __name__ == '__main__':
 	App().main()
