@@ -4,6 +4,7 @@ def print_bytes(message):
 	print(', '.join("0x%02x" % d for d in message))
 
 def to_bytes(long, n):
+	""" convert 0xffff to [ 0xff, 0xff ] """
 	buf = [long]
 	while buf[0] > 0xff:
 		a0 = buf[0]
@@ -14,7 +15,16 @@ def to_bytes(long, n):
 		buf.insert(0,0)
 	return buf
 
+def bytes_to_long(buf):
+	""" convert [ 0x7e, 0x7f ] to 0x7e7f """
+	acc = 0x00000000
+	for b in buf:
+		acc <<= 8
+		acc += b
+	return acc
+
 def to_nibbles(val, n):
+	""" convert 0x0123 to [ 0x00, 0x01, 0x02, 0x03 ] """
 	buf = []
 	acc = val
 	while acc > 0 and len(buf) < n:
@@ -24,12 +34,27 @@ def to_nibbles(val, n):
 		buf.insert(0,0)
 	return buf
 
+def nibbles_to_long(buf):
+	""" convert [ 0x00, 0x01, 0x02, 0x03 ] to 0x0123 """
+	acc = 0
+	for b in buf:
+		acc <<= 4
+		acc += b
+	return acc
+
 def db_to_long(db):
+	""" convert -6.02 to 0x100000 """
 	return int(math.pow(10, db/20) * 0x200000)
 
 def long_to_db(long):
+	""" convert 0x200000 to 0 """
 	ratio = long / 0x200000
+	if ratio == 0:
+		return -math.inf
 	return 20*math.log10(ratio)
+
+def long_to_pan(long):
+	return round(100 * (long - 0x4000) / 0x4000)
 
 
 class Roland():
@@ -47,6 +72,86 @@ class Roland():
 
 	def send_data(addr, data):
 		return Roland.sysex(0x12, to_bytes(addr, 4) + data)
+
+	def parse_sysex(message):
+		if message[0:6] != Roland.capture_sysex:
+			return None, None
+		if message[6] == 0x12:
+			addr = bytes_to_long(message[7:11])
+			data = message[11:-2]
+		return addr, data
+
+class CaptureView():
+	def __init__(self):
+		self.setup_mixer()
+		self.setup_name_table()
+	
+	def setup_mixer(self):
+		mixer = []
+		for monitor in 'a','b','c','d':
+			for ch in range(1, 1+16):
+				s = "input monitor.%s channel.%d channel." % (monitor, ch)
+				segment = []
+				if ch % 2 == 1: segment += [ s + "stereo" ]
+				segment += [
+					s + "mute",
+					s + "solo",
+					s + "reverb",
+					s + "pan",
+					s + "volume",
+				]
+				mixer += segment
+			for ch in range(1, 1+12):
+				s = "daw_monitor monitor.%s channel.%d channel." % (monitor, ch)
+				segment = []
+				if ch % 2 == 1: segment += [ s + "stereo" ]
+				segment += [
+					s + "stereo",
+					s + "mute",
+					s + "solo",
+					s + "pan",
+					s + "volume",
+				]
+				mixer += segment
+		mixer += [ "master.reverb_return", "reverb reverb.type" ]
+		for type in "echo", "room", "small_hall", "large_hall", "plate":
+			for param in "pre_delay", "time":
+				mixer += [ "reverb reverb.%s reverb.%s" % (type, param) ]
+		self.mixer = mixer
+
+	def print_addrs(self):
+		for desc in self.mixer:
+			address = Capture.get_addr(desc)
+			print(hex(address))
+
+	def add_name_to_table(self, desc):
+		address = Capture.get_addr(desc)
+		self.name_table[address] = desc
+
+	def setup_name_table(self):
+		self.name_table = {}
+		for s in self.mixer:
+			self.add_name_to_table(s)
+	
+	def lookup_name(self, addr):
+		if addr in self.name_table:
+			return self.name_table[addr]
+		return hex(addr)
+
+	def format_value(self, desc, value):
+		#size = self.get_size(desc)
+		formatters = {
+			(".volume",".reverb"): lambda x: "%+d" % long_to_db(nibbles_to_long(x)),
+			(".pan",): lambda x: "%+d" % long_to_pan(nibbles_to_long(x)),
+			("reverb.type",): lambda x: { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[nibbles_to_long(x)],
+		}
+		for parts, formatter in formatters.items():
+			for part in parts:
+				if part in desc:
+					return formatter(value)
+		return hex(bytes_to_long(value))
+		
+		
 
 class Capture():
 	value_map = {
@@ -88,22 +193,28 @@ class Capture():
 			},
 		},
 	}
+	# received on USB connect to Windows machine: f0 41 10 00 00 6b 11  01 00 00 00  00 00 0b 60  14 f7
 	memory_map = {
 		'initial_setting':    0x00000002,
 		'reverb': {
 			0:                0x00040000,
-			'type':      0x0000,
-			'pre_delay': 0x0101,
-			'time':      0x0102,
+			'echo':       0x0100,
+			'room':       0x0200,
+			'small_hall': 0x0300,
+			'large_hall': 0x0400,
+			'plate':      0x0500,
+			'type':      0x00,
+			'pre_delay': 0x01,
+			'time':      0x02,
 		},
 		'patchbay': {
 			0:                0x00030000,
 			'output': {
-				'1-2': 0x00,
-				'3-4': 0x01,
-				'5-6': 0x02,
-				'7-8': 0x03,
-				'9-10':0x04,
+				'1-2':  0x00,
+				'3-4':  0x01,
+				'5-6':  0x02,
+				'7-8':  0x03,
+				'9-10': 0x04,
 			},
 		},
 
@@ -134,6 +245,8 @@ class Capture():
 
 		'preamp': {
 			0:                0x00050000,     # max channel 0x0b00
+			1: 0x000,  2: 0x100,  3: 0x200,  4: 0x300,  5: 0x400,  6: 0x500,
+			7: 0x600,  8: 0x700,  9: 0x800, 10: 0x900, 11: 0xa00, 12: 0xb00,
 			'line': {
 				13: 0x1000,
 				14: 0x1100,
@@ -178,17 +291,42 @@ class Capture():
 			addr += value
 		return addr
 
+	def addr_to_desc(addr):
+		a = addr
+		min_diff = 0xffffffff
+		found_word = None
+		for k,v in Capture.memory_map.items():
+			if v - a < min_diff:
+				min_diff = v - a
+				found_word = k
+		return found_word
+
 	def get_value(desc):
 		return Capture.map_lookup(Capture.value_map, desc)
 	def get_addr(desc):
 		return Capture.map_lookup(Capture.memory_map, desc)
 
+	# request size is half of sent size in some cases
+	def get_size(desc):
+		sizes = {
+			2: [ ".pan", ],
+			3: [ ".volume", ],
+		}
+		for size, strings in sizes.items():
+			for part in strings:
+				if part in desc:
+					return size
+		return 1
+
 	def vol_addr(mon, ch):
-		return Capture.get_addr("input monitor.%s channel.%d channel.volume" % (mon, ch))
+		desc = "input monitor.%s channel.%d channel.volume" % (mon, ch)
+		return Capture.get_addr(desc), Capture.get_size(desc)
 
 	def get_volume(mon, ch):
-		return Roland.receive_data(Capture.vol_addr(mon, ch), 3)
+		addr, size = Capture.vol_addr(mon, ch)
+		return Roland.receive_data(addr, size)
 
 	def set_volume(mon, ch, vol):
-		return Roland.send_data(Capture.vol_addr(mon, ch), to_nibbles(vol,6))
+		addr, size = Capture.vol_addr(mon, ch)
+		return Roland.send_data(addr, to_nibbles(vol, 2*size))
 
