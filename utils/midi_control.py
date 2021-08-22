@@ -18,11 +18,31 @@ def get_mixer_port(api):
 			break
 	return found
 
+capture_view = CaptureView()
+
+class Mixer(object):
+	def __init__(self):
+		self.volume = [ [ None for i in range(0, 16) ] for m in range(0, 4) ]
+	def set_volume(self, addr, value):
+		ch = (addr & 0x0f00) >> 8
+		m = (addr & 0xf000) >> 12
+		self.volume[m][ch] = value
+		#print("set volume %s %s" % (capture_view.lookup_name(addr), value))
+		self.print_volumes()
+	def print_volumes(self):
+		for m, monitor in enumerate(self.volume):
+			print("Monitor %s" % ['A','B','C','D'][m])
+			for volume in monitor:
+				print(volume, end="\t")
+			print('')
+
+
 class App(object):
-	def get_mixer_value(self, desc):
+	def get_mixer_value(self, desc, handler):
 		addr = Capture.get_addr(desc)
 		size = Capture.get_size(desc)
 		message = Roland.receive_data(addr, size)
+		self.listener.register_addr(addr, handler)
 		return self.send(message)
 
 	def send(self, message):
@@ -33,6 +53,8 @@ class App(object):
 		return message
 
 	def main(self):
+		self.listener = Listener()
+		self.mixer = Mixer()
 		apis = get_compiled_api()
 
 		api_out = MidiOut(API_LINUX_ALSA)
@@ -46,14 +68,16 @@ class App(object):
 		midi_in, port_name = open_midiinput(port_in)
 		print("Opened %s for input" % port_name)
 		midi_in.ignore_types(sysex=False)
-		midi_in.set_callback(Listener())
+		midi_in.set_callback(self.listener)
 
 		self.midi_in = midi_in
 		self.midi_out = midi_out
 
-		desc = "input monitor.a channel.1 channel.volume"
-		value = self.get_mixer_value(desc)
-		print(desc, value)
+		for m in 'a','b','c','d':
+			for i in range(1, 1+16):
+				desc = "input monitor.%s channel.%d channel.volume" % (m, i)
+				value = self.get_mixer_value(desc, self.mixer.set_volume)
+				#print(desc, value)
 
 		if not hasattr(sys, 'ps1'): # non-interactive mode only
 			try:
@@ -71,8 +95,10 @@ class App(object):
 	#	self.send(Capture.get_volume(0))           #message = Roland.receive_data(0x00060008, 3)
 	#	self.send(Capture.set_volume(0, 0x200000)) #Roland.send_data(0x00060008, [2,0,0,0,0,0])
 
-capture_view = CaptureView()
 class Listener(object):
+	def __init__(self):
+		self.addr_listeners = {}
+
 	def __call__(self, event, data=None):
 		message, deltatime = event
 		print("<", end=" ")
@@ -81,6 +107,17 @@ class Listener(object):
 		name = capture_view.lookup_name(addr)
 		value = capture_view.format_value(name, data)
 		print(addr, name, value)
+
+		self.dispatch(addr, value)
+
+	def register_addr(self, addr, handler):
+		self.addr_listeners[addr] = handler
+
+	def dispatch(self, addr, value):
+		if addr in self.addr_listeners:
+			self.addr_listeners[addr](addr, value)
+			del self.addr_listeners[addr]
+
 
 
 

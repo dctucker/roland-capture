@@ -138,10 +138,16 @@ class CaptureView():
 			return self.name_table[addr]
 		return hex(addr)
 
+	def format_volume(self, value):
+		v = long_to_db(nibbles_to_long(value))
+		if v == -math.inf:
+			return "-inf"
+		return "%+d" % v
+
 	def format_value(self, desc, value):
 		#size = self.get_size(desc)
 		formatters = {
-			(".volume",".reverb"): lambda x: "%+d" % long_to_db(nibbles_to_long(x)),
+			(".volume",".reverb"): self.format_volume,
 			(".pan",): lambda x: "%+d" % long_to_pan(nibbles_to_long(x)),
 			("reverb.type",): lambda x: { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[nibbles_to_long(x)],
 		}
