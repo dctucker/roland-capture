@@ -85,6 +85,11 @@ class CaptureView():
 	def __init__(self):
 		self.setup_mixer()
 		self.setup_name_table()
+	def instance():
+		global capture_view
+		if 'capture_view' not in globals():
+			capture_view = CaptureView()
+		return capture_view
 	
 	def setup_mixer(self):
 		mixer = []
@@ -139,17 +144,21 @@ class CaptureView():
 		return hex(addr)
 
 	def format_volume(self, value):
-		v = long_to_db(nibbles_to_long(value))
-		if v == -math.inf:
+		if value == -math.inf:
 			return "-inf"
-		return "%+d" % v
+		return "%+d" % value
 
-	def format_value(self, desc, value):
-		#size = self.get_size(desc)
+	def format_pan(self, value):
+		return "%+d" % value
+
+	def format_reverb_type(self, value):
+		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
+
+	def unpack_value(self, desc, value):
 		formatters = {
-			(".volume",".reverb"): self.format_volume,
-			(".pan",): lambda x: "%+d" % long_to_pan(nibbles_to_long(x)),
-			("reverb.type",): lambda x: { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[nibbles_to_long(x)],
+			(".volume",".reverb"): lambda x: long_to_db(nibbles_to_long(x)),
+			(".pan",): lambda x: long_to_pan(nibbles_to_long(x)),
+			("reverb.type",): lambda x: nibbles_to_long(x),
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
@@ -157,7 +166,19 @@ class CaptureView():
 					return formatter(value)
 		return hex(bytes_to_long(value))
 		
-		
+
+	def format_value(self, desc, value):
+		#size = self.get_size(desc)
+		formatters = {
+			(".volume",".reverb"): self.format_volume,
+			(".pan",): self.format_pan,
+			("reverb.type",): self.format_reverb_type,
+		}
+		for parts, formatter in formatters.items():
+			for part in parts:
+				if part in desc:
+					return formatter(value)
+		return hex(bytes_to_long(value))
 
 class Capture():
 	value_map = {
@@ -335,4 +356,27 @@ class Capture():
 	def set_volume(mon, ch, vol):
 		addr, size = Capture.vol_addr(mon, ch)
 		return Roland.send_data(addr, to_nibbles(vol, 2*size))
+
+class Memory(object):
+	def __init__(self):
+		self.memory = {}
+		self.capture_view = CaptureView.instance()
+
+	def get(self, addr):
+		if addr not in self.memory: return None
+		return self.memory[addr]
+
+	def set(self, addr, value):
+		self.memory[addr] = value
+
+	def get_long(self, addr):
+		name = capture_view.lookup_name(addr)
+		value = self.get(addr)
+		return capture_view.unpack_value(name, value)
+
+	def get_formatted(self, addr):
+		data = self.get(addr)
+		name = capture_view.lookup_name(addr)
+		value = capture_view.unpack_value(name, data)
+		return capture_view.format_value(name, value)
 

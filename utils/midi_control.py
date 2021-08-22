@@ -6,7 +6,7 @@ from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
 		get_compiled_api)
 from rtmidi.midiutil import open_midiinput, open_midioutput
-from roland import print_bytes, Roland, Capture, CaptureView
+from roland import print_bytes, Roland, Capture, CaptureView, Memory
 
 mixer_port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
 
@@ -18,17 +18,26 @@ def get_mixer_port(api):
 			break
 	return found
 
-capture_view = CaptureView()
-
 class Mixer(object):
 	def __init__(self):
 		self.volume = [ [ None for i in range(0, 16) ] for m in range(0, 4) ]
+		self.memory = {}
+
+	def set_memory(self, addr, value):
+		self.memory[addr] = value
+
+	def get_memory(self, addr):
+		if addr not in self.memory:
+			return None
+		return self.memory[addr]
+
 	def set_volume(self, addr, value):
 		ch = (addr & 0x0f00) >> 8
 		m = (addr & 0xf000) >> 12
 		self.volume[m][ch] = value
 		#print("set volume %s %s" % (capture_view.lookup_name(addr), value))
 		self.print_volumes()
+
 	def print_volumes(self):
 		for m, monitor in enumerate(self.volume):
 			print("Monitor %s" % ['A','B','C','D'][m])
@@ -36,8 +45,41 @@ class Mixer(object):
 				print(volume, end="\t")
 			print('')
 
+class Listener(object):
+	def __init__(self, app):
+		self.app = app
+		self.addr_listeners = {}
+
+	def __call__(self, event, data=None):
+		message, deltatime = event
+		print("<", end=" ")
+		print_bytes(message)
+		addr, data = Roland.parse_sysex(message)
+		self.app.memory.set(addr, data)
+		name = self.app.capture_view.lookup_name(addr)
+		#value = capture_view.format_value(name, data)
+		value = self.app.memory.get_formatted(addr)
+		print(addr, name, value)
+
+		self.app.mixer.set_memory(addr, data)
+		self.dispatch(addr, value)
+
+	def register_addr(self, addr, handler):
+		self.addr_listeners[addr] = handler
+
+	def dispatch(self, addr, value):
+		if addr in self.addr_listeners:
+			self.addr_listeners[addr](addr, value)
+			del self.addr_listeners[addr]
 
 class App(object):
+	capture_view = CaptureView.instance()
+
+	def __init__(self):
+		self.listener = Listener(self)
+		self.mixer = Mixer()
+		self.memory = Memory()
+
 	def get_mixer_value(self, desc, handler):
 		addr = Capture.get_addr(desc)
 		size = Capture.get_size(desc)
@@ -53,8 +95,6 @@ class App(object):
 		return message
 
 	def main(self):
-		self.listener = Listener()
-		self.mixer = Mixer()
 		apis = get_compiled_api()
 
 		api_out = MidiOut(API_LINUX_ALSA)
@@ -94,29 +134,6 @@ class App(object):
 	#def demo(self):
 	#	self.send(Capture.get_volume(0))           #message = Roland.receive_data(0x00060008, 3)
 	#	self.send(Capture.set_volume(0, 0x200000)) #Roland.send_data(0x00060008, [2,0,0,0,0,0])
-
-class Listener(object):
-	def __init__(self):
-		self.addr_listeners = {}
-
-	def __call__(self, event, data=None):
-		message, deltatime = event
-		print("<", end=" ")
-		print_bytes(message)
-		addr, data = Roland.parse_sysex(message)
-		name = capture_view.lookup_name(addr)
-		value = capture_view.format_value(name, data)
-		print(addr, name, value)
-
-		self.dispatch(addr, value)
-
-	def register_addr(self, addr, handler):
-		self.addr_listeners[addr] = handler
-
-	def dispatch(self, addr, value):
-		if addr in self.addr_listeners:
-			self.addr_listeners[addr](addr, value)
-			del self.addr_listeners[addr]
 
 
 
