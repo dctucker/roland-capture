@@ -139,6 +139,7 @@ class CaptureView():
 			self.add_name_to_table(s)
 	
 	def lookup_name(self, addr):
+		""" convert 0x00060008 into "input monitor.a channel.1 channel.volume" """
 		if addr in self.name_table:
 			return self.name_table[addr]
 		return hex(addr)
@@ -146,7 +147,7 @@ class CaptureView():
 	def format_volume(self, value):
 		if value == -math.inf:
 			return "-inf"
-		return "%+d" % value
+		return "%+d" % round(value)
 
 	def format_pan(self, value):
 		return "%+d" % value
@@ -155,6 +156,7 @@ class CaptureView():
 		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
 
 	def unpack_value(self, desc, value):
+		if value is None: return None
 		formatters = {
 			(".volume",".reverb"): lambda x: long_to_db(nibbles_to_long(x)),
 			(".pan",): lambda x: long_to_pan(nibbles_to_long(x)),
@@ -168,6 +170,7 @@ class CaptureView():
 		
 
 	def format_value(self, desc, value):
+		if value is None: return "?"
 		#size = self.get_size(desc)
 		formatters = {
 			(".volume",".reverb"): self.format_volume,
