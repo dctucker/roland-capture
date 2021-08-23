@@ -1,7 +1,7 @@
 import math
 
-def print_bytes(message):
-	print(', '.join("0x%02x" % d for d in message))
+def render_bytes(message):
+	return ', '.join("0x%02x" % d for d in message)
 
 def to_bytes(long, n):
 	""" convert 0xffff to [ 0xff, 0xff ] """
@@ -56,6 +56,8 @@ def long_to_db(long):
 def long_to_pan(long):
 	return round(100 * (long - 0x4000) / 0x4000)
 
+def pan_to_long(pan):
+	return int(0x4000 + (0x4000 * (pan / 100))) & 0x7fff
 
 class Roland():
 	capture_sysex = [ 0xf0,0x41,0x10,0x00,0x00,0x6b ]
@@ -124,10 +126,10 @@ class CaptureView():
 				mixer += [ "reverb reverb.%s reverb.%s" % (type, param) ]
 		self.mixer = mixer
 
-	def print_addrs(self):
+	def render_addrs(self):
 		for desc in self.mixer:
 			address = Capture.get_addr(desc)
-			print(hex(address))
+			return hex(address)
 
 	def add_name_to_table(self, desc):
 		address = Capture.get_addr(desc)
@@ -146,7 +148,7 @@ class CaptureView():
 
 	def format_volume(self, value):
 		if value == -math.inf:
-			return "-inf"
+			return "-∞"
 		return "%+d" % round(value)
 
 	def format_pan(self, value):
@@ -181,14 +183,31 @@ class CaptureView():
 			(".volume",".reverb"): self.format_volume,
 			(".pan",): self.format_pan,
 			("reverb.type",): self.format_reverb_type,
-			(".mute", ): lambda x: ["m", "MUTE"][x],
+			(".mute", ): lambda x: "m" if x else "MUTE",
 			(".solo", ): lambda x: ["s", "SOLO"][x],
+			(".stereo", ): lambda x: [" -- --", "STEREO"][x],
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
 				if part in desc:
 					return formatter(value)
 		return hex(value)
+
+	def pack_value(self, desc, value):
+		def pack_volume(value):
+			return to_nibbles(db_to_long(value), 6)
+		def pack_pan(value):
+			return to_nibbles(pan_to_long(value), 4)
+		formatters = {
+			(".volume",".reverb"): pack_volume,
+			(".pan",): pack_pan,
+		}
+		for parts, formatter in formatters.items():
+			for part in parts:
+				if part in desc:
+					return formatter(value)
+		return [value]
+
 
 class Capture():
 	value_map = {
@@ -340,6 +359,7 @@ class Capture():
 
 	def get_value(desc):
 		return Capture.map_lookup(Capture.value_map, desc)
+
 	def get_addr(desc):
 		return Capture.map_lookup(Capture.memory_map, desc)
 
@@ -355,17 +375,17 @@ class Capture():
 					return size
 		return 1
 
-	def vol_addr(mon, ch):
-		desc = "input monitor.%s channel.%d channel.volume" % (mon, ch)
-		return Capture.get_addr(desc), Capture.get_size(desc)
+	#def vol_addr(mon, ch):
+	#	desc = "input monitor.%s channel.%d channel.volume" % (mon, ch)
+	#	return Capture.get_addr(desc), Capture.get_size(desc)
 
-	def get_volume(mon, ch):
-		addr, size = Capture.vol_addr(mon, ch)
-		return Roland.receive_data(addr, size)
+	#def get_volume(mon, ch):
+	#	addr, size = Capture.vol_addr(mon, ch)
+	#	return Roland.receive_data(addr, size)
 
-	def set_volume(mon, ch, vol):
-		addr, size = Capture.vol_addr(mon, ch)
-		return Roland.send_data(addr, to_nibbles(vol, 2*size))
+	#def set_volume(mon, ch, vol):
+	#	addr, size = Capture.vol_addr(mon, ch)
+	#	return Roland.send_data(addr, to_nibbles(vol, 2*size))
 
 class Memory(object):
 	def __init__(self):
@@ -380,13 +400,30 @@ class Memory(object):
 		self.memory[addr] = value
 
 	def get_long(self, addr):
-		name = capture_view.lookup_name(addr)
+		name = self.capture_view.lookup_name(addr)
 		value = self.get(addr)
-		return capture_view.unpack_value(name, value)
+		return self.capture_view.unpack_value(name, value)
 
 	def get_formatted(self, addr):
 		data = self.get(addr)
-		name = capture_view.lookup_name(addr)
-		value = capture_view.unpack_value(name, data)
-		return capture_view.format_value(name, value)
+		name = self.capture_view.lookup_name(addr)
+		value = self.capture_view.unpack_value(name, data)
+		return self.capture_view.format_value(name, value)
 
+	def increment(self, addr):
+		data = self.get(addr)
+		name = self.capture_view.lookup_name(addr)
+		value = self.capture_view.unpack_value(name, data)
+		value += 1
+		data = self.capture_view.pack_value(name, value)
+		self.set(addr, data)
+		return data
+
+	def decrement(self, addr):
+		data = self.get(addr)
+		name = self.capture_view.lookup_name(addr)
+		value = self.capture_view.unpack_value(name, data)
+		value -= 1
+		data = self.capture_view.pack_value(name, value)
+		self.set(addr, data)
+		return data
