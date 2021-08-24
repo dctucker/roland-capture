@@ -49,8 +49,15 @@ class Mixer(object):
 				row += [desc]
 			self.controls += [row]
 
+	def height(self):
+		return len(self.controls)
+
+	def width(self):
+		return len(self.controls[self.cursor.y])
+
 	def render(self):
 		ret = ""
+		selected_control = ""
 		spacing = 5
 		for ch in range(0, 16):
 			ret += ("%d" % (ch+1)).center(spacing)
@@ -61,10 +68,13 @@ class Mixer(object):
 				value = self.memory.get_formatted( Capture.get_addr(control) )
 				if self.cursor.x == c and self.cursor.y == r:
 					ret += "\033[7m"
+					selected_control = control
 				else:
 					ret += "\033[0m"
 				ret += value.center(w)
-			ret += "\n"
+			ret += "\033[0m\n"
+
+		ret += "\033[2K%s\n" % selected_control
 		return ret
 
 	def decrement_selected(self):
@@ -146,13 +156,13 @@ class App(object):
 
 		api_out = MidiOut(API_LINUX_ALSA)
 		port_out = get_mixer_port(api_out)
-		midi_out, port_name = open_midioutput(port_out)
+		midi_out, port_name = open_midioutput(port_out, interactive=False)
 		self.debug("Opened %s for output" % port_name)
 
 		api_in = MidiIn(API_LINUX_ALSA)
 		api_in.ignore_types(sysex=False)
 		port_in  = get_mixer_port(api_in)
-		midi_in, port_name = open_midiinput(port_in)
+		midi_in, port_name = open_midiinput(port_in, interactive=False)
 		self.debug("Opened %s for input" % port_name)
 		midi_in.ignore_types(sysex=False)
 		midi_in.set_callback(self.listener)
@@ -169,16 +179,20 @@ class App(object):
 				while True:
 					key = self.term.getch()
 					if key in Term.KEY_DOWN:
-						self.mixer.cursor.y += 1
+						if self.mixer.cursor.y + 1 < self.mixer.height():
+							self.mixer.cursor.y += 1
 						self.display()
 					elif key in Term.KEY_UP:
-						self.mixer.cursor.y -= 1
+						if self.mixer.cursor.y > 0:
+							self.mixer.cursor.y -= 1
 						self.display()
 					elif key in Term.KEY_LEFT:
-						self.mixer.cursor.x -= 1
+						if self.mixer.cursor.x > 0:
+							self.mixer.cursor.x -= 1
 						self.display()
 					elif key in Term.KEY_RIGHT:
-						self.mixer.cursor.x += 1
+						if self.mixer.cursor.x + 1 < self.mixer.width():
+							self.mixer.cursor.x += 1
 						self.display()
 					elif key in ('-','_'):
 						addr, data = self.mixer.decrement_selected()
@@ -188,6 +202,8 @@ class App(object):
 						addr, data = self.mixer.increment_selected()
 						self.set_mixer_value(addr, data)
 						self.display()
+					elif key in ('q',"\033"):
+						break
 			except KeyboardInterrupt:
 				print('')
 			finally:

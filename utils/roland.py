@@ -57,7 +57,7 @@ def long_to_pan(long):
 	return round(100 * (long - 0x4000) / 0x4000)
 
 def pan_to_long(pan):
-	return int(0x4000 + (0x4000 * (pan / 100))) & 0x7fff
+	return int(0x4000 + (0x3fff * (pan / 100))) & 0x7fff
 
 class Roland():
 	capture_sysex = [ 0xf0,0x41,0x10,0x00,0x00,0x6b ]
@@ -159,7 +159,6 @@ class CaptureView():
 		else:
 			return "C"
 
-
 	def format_reverb_type(self, value):
 		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
 
@@ -183,31 +182,15 @@ class CaptureView():
 			(".volume",".reverb"): self.format_volume,
 			(".pan",): self.format_pan,
 			("reverb.type",): self.format_reverb_type,
-			(".mute", ): lambda x: "m" if x else "MUTE",
-			(".solo", ): lambda x: ["s", "SOLO"][x],
-			(".stereo", ): lambda x: [" -- --", "STEREO"][x],
+			(".mute", ): lambda x: "MUTE" if x else "m",
+			(".solo", ): lambda x: "SOLO" if x else "s",
+			(".stereo", ): lambda x: "STEREO" if x else " -- --",
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
 				if part in desc:
 					return formatter(value)
 		return hex(value)
-
-	def pack_value(self, desc, value):
-		def pack_volume(value):
-			return to_nibbles(db_to_long(value), 6)
-		def pack_pan(value):
-			return to_nibbles(pan_to_long(value), 4)
-		formatters = {
-			(".volume",".reverb"): pack_volume,
-			(".pan",): pack_pan,
-		}
-		for parts, formatter in formatters.items():
-			for part in parts:
-				if part in desc:
-					return formatter(value)
-		return [value]
-
 
 class Capture():
 	value_map = {
@@ -387,6 +370,92 @@ class Capture():
 	#	addr, size = Capture.vol_addr(mon, ch)
 	#	return Roland.send_data(addr, to_nibbles(vol, 2*size))
 
+class Value(object):
+	def __init__(self, value=None):
+		self.value = value
+	def set_packed(self, data):
+		self.value = self.unpack(data)
+
+	@classmethod
+	def from_packed(cls, data):
+		ret = cls()
+		ret.set_packed(data)
+		return ret
+
+class Byte(Value):
+	def __init__(self, value=0, maxval=0x7f):
+		self.value = value
+		self.max = maxval
+	def increment(self):
+		if self.value < self.max:
+			self.value += 1
+	def decrement(self):
+		if self.value > 0:
+			self.value -= 1
+
+	def unpack(self, data):
+		return data[0]
+	def pack(self):
+		return [self.value & 0x7f]
+
+class Bool(Value):
+	def increment(self):
+		self.value = 1
+	def decrement(self):
+		self.value = 0
+
+	def unpack(self, data):
+		return data[0] != 0
+	def pack(self):
+		return [0x1 if self.value else 0x0]
+
+class Volume(Value):
+	def increment(self):
+		if self.value == -math.inf:
+			self.value = -71
+		self.value += 1
+	def decrement(self):
+		self.value -= 1
+		if self.value < -71:
+			self.value = -math.inf
+
+	def unpack(self, data):
+		return long_to_db(nibbles_to_long(data))
+	def pack(self):
+		return to_nibbles(db_to_long(self.value), 6)
+
+class Pan(Value):
+	def increment(self):
+		if self.value < 100:
+			self.value += 1
+	def decrement(self):
+		if self.value > -100:
+			self.value -= 1
+
+	def unpack(self, data):
+		return long_to_pan(nibbles_to_long(data))
+	def pack(self):
+		return to_nibbles(pan_to_long(self.value), 4)
+
+class ReverbType(Byte):
+	def __init__(self, value):
+		Byte.__init__(self, value, 0x5)
+
+class ValueFactory:
+	def from_packed(desc, data):
+		if data is None or data == []: return Value()
+		formatters = {
+			(".volume",".reverb"): Volume,
+			(".pan",): Pan,
+			("reverb.type",): ReverbType,
+			(".solo",".mute",".stereo"): Bool,
+		}
+		for parts, formatter in formatters.items():
+			for part in parts:
+				if part in desc:
+					return formatter.from_packed(data)
+		return Value.from_packed(data)
+
 class Memory(object):
 	def __init__(self):
 		self.memory = {}
@@ -398,32 +467,34 @@ class Memory(object):
 
 	def set(self, addr, value):
 		self.memory[addr] = value
-
-	def get_long(self, addr):
+	
+	def get_value(self, addr):
 		name = self.capture_view.lookup_name(addr)
 		value = self.get(addr)
-		return self.capture_view.unpack_value(name, value)
+		return ValueFactory.from_packed(name, value)
+
+	def get_long(self, addr):
+		return self.get_value(addr).unpack()
 
 	def get_formatted(self, addr):
-		data = self.get(addr)
 		name = self.capture_view.lookup_name(addr)
-		value = self.capture_view.unpack_value(name, data)
+		value = self.get_value(addr).value
 		return self.capture_view.format_value(name, value)
 
 	def increment(self, addr):
 		data = self.get(addr)
 		name = self.capture_view.lookup_name(addr)
-		value = self.capture_view.unpack_value(name, data)
-		value += 1
-		data = self.capture_view.pack_value(name, value)
+		value = ValueFactory.from_packed(name, data)
+		value.increment()
+		data = value.pack()
 		self.set(addr, data)
 		return data
 
 	def decrement(self, addr):
 		data = self.get(addr)
 		name = self.capture_view.lookup_name(addr)
-		value = self.capture_view.unpack_value(name, data)
-		value -= 1
-		data = self.capture_view.pack_value(name, value)
+		value = ValueFactory.from_packed(name, data)
+		value.decrement()
+		data = value.pack()
 		self.set(addr, data)
 		return data
