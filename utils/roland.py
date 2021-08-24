@@ -348,6 +348,14 @@ class Value(object):
 	def unpack(self, data):
 		return data
 
+	def increment(self):
+		pass
+	def decrement(self):
+		pass
+	def pack(self):
+		if self.value is None: return None
+		return [self.value]
+
 class Byte(Value):
 	def __init__(self, value=0, maxval=0x7f):
 		self.value = value
