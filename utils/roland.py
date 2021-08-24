@@ -139,58 +139,28 @@ class CaptureView():
 		self.name_table = {}
 		for s in self.mixer:
 			self.add_name_to_table(s)
-	
+
 	def lookup_name(self, addr):
 		""" convert 0x00060008 into "input monitor.a channel.1 channel.volume" """
 		if addr in self.name_table:
 			return self.name_table[addr]
 		return hex(addr)
 
-	def format_volume(self, value):
-		if value == -math.inf:
-			return "-∞"
-		return "%+d" % round(value)
-
-	def format_pan(self, value):
-		if value < 0:
-			return 'L%d' % -value
-		elif value > 0:
-			return "R%d" % value
-		else:
-			return "C"
-
-	def format_reverb_type(self, value):
-		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
-
-	def unpack_value(self, desc, value):
-		if value is None: return None
-		formatters = {
-			(".volume",".reverb"): lambda x: long_to_db(nibbles_to_long(x)),
-			(".pan",): lambda x: long_to_pan(nibbles_to_long(x)),
-			("reverb.type",): lambda x: nibbles_to_long(x),
-		}
-		for parts, formatter in formatters.items():
-			for part in parts:
-				if part in desc:
-					return formatter(value)
-		return bytes_to_long(value)
-
-	def format_value(self, desc, value):
+	def format_value(self, value, desc):
 		if value is None: return "?"
-		#size = self.get_size(desc)
 		formatters = {
-			(".volume",".reverb"): self.format_volume,
-			(".pan",): self.format_pan,
-			("reverb.type",): self.format_reverb_type,
 			(".mute", ): lambda x: "MUTE" if x else "m",
 			(".solo", ): lambda x: "SOLO" if x else "s",
 			(".stereo", ): lambda x: "STEREO" if x else " -- --",
+			('.+48',): lambda x: "+48V" if x else "0v",
+			('.lo-cut',): lambda x: "CUT" if x else "lo",
+			('.phase',): lambda x: "PHASE" if x else "0",
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
 				if part in desc:
-					return formatter(value)
-		return hex(value)
+					return formatter(value.value)
+		return value.format()
 
 class Capture():
 	value_map = {
@@ -358,18 +328,6 @@ class Capture():
 					return size
 		return 1
 
-	#def vol_addr(mon, ch):
-	#	desc = "input monitor.%s channel.%d channel.volume" % (mon, ch)
-	#	return Capture.get_addr(desc), Capture.get_size(desc)
-
-	#def get_volume(mon, ch):
-	#	addr, size = Capture.vol_addr(mon, ch)
-	#	return Roland.receive_data(addr, size)
-
-	#def set_volume(mon, ch, vol):
-	#	addr, size = Capture.vol_addr(mon, ch)
-	#	return Roland.send_data(addr, to_nibbles(vol, 2*size))
-
 class Value(object):
 	def __init__(self, value=None):
 		self.value = value
@@ -381,6 +339,14 @@ class Value(object):
 		ret = cls()
 		ret.set_packed(data)
 		return ret
+
+	def format(self):
+		if self.value is None:
+			return '?'
+		return str(self.value)
+
+	def unpack(self, data):
+		return data
 
 class Byte(Value):
 	def __init__(self, value=0, maxval=0x7f):
@@ -409,11 +375,17 @@ class Bool(Value):
 	def pack(self):
 		return [0x1 if self.value else 0x0]
 
+	def format(self):
+		if self.value:
+			return "ON"
+		return "off"
+
 class Volume(Value):
 	def increment(self):
 		if self.value == -math.inf:
 			self.value = -71
-		self.value += 1
+		if self.value < 12:
+			self.value += 1
 	def decrement(self):
 		self.value -= 1
 		if self.value < -71:
@@ -422,7 +394,16 @@ class Volume(Value):
 	def unpack(self, data):
 		return long_to_db(nibbles_to_long(data))
 	def pack(self):
-		return to_nibbles(db_to_long(self.value), 6)
+		long = db_to_long(self.value)
+		long = min(0x7fffff, long)
+		if self.value != -math.inf and round(self.value) == 0:
+			long = 0x200000
+		return to_nibbles(long, 6)
+
+	def format(self):
+		if self.value == -math.inf:
+			return "-∞"
+		return "%+d" % round(self.value)
 
 class Pan(Value):
 	def increment(self):
@@ -437,9 +418,32 @@ class Pan(Value):
 	def pack(self):
 		return to_nibbles(pan_to_long(self.value), 4)
 
+	def format(self):
+		if self.value < 0:
+			return 'L%d' % -self.value
+		elif self.value > 0:
+			return "R%d" % self.value
+		else:
+			return "C"
+
+class Sens(Value):
+	def increment(self):
+		if self.value < 58.0:
+			self.value += 0.5
+	def decrement(self):
+		if self.value > 0:
+			self.value -= 0.5
+	def unpack(self, data):
+		return data[0] * 0.5
+	def pack(self):
+		return [int(self.value * 2)]
+
 class ReverbType(Byte):
 	def __init__(self, value):
 		Byte.__init__(self, value, 0x5)
+
+	def format_reverb_type(self, value):
+		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
 
 class ValueFactory:
 	def from_packed(desc, data):
@@ -448,7 +452,8 @@ class ValueFactory:
 			(".volume",".reverb"): Volume,
 			(".pan",): Pan,
 			("reverb.type",): ReverbType,
-			(".solo",".mute",".stereo"): Bool,
+			('.sens',): Sens,
+			(".solo",".mute",".stereo",'.+48','.lo-cut','.phase'): Bool,
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
@@ -478,8 +483,8 @@ class Memory(object):
 
 	def get_formatted(self, addr):
 		name = self.capture_view.lookup_name(addr)
-		value = self.get_value(addr).value
-		return self.capture_view.format_value(name, value)
+		value = self.get_value(addr)
+		return self.capture_view.format_value(value, name)
 
 	def increment(self, addr):
 		data = self.get(addr)

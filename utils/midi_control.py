@@ -27,27 +27,83 @@ class Cursor(object):
 		return self.y, self.x
 
 class Mixer(object):
+	pages = [
+		"input monitor.a",
+		"input monitor.b",
+		"input monitor.c",
+		"input monitor.d",
+		"daw_monitor monitor.a",
+		"daw_monitor monitor.b",
+		"daw_monitor monitor.c",
+		"daw_monitor monitor.d",
+		"preamp",
+	]
+
 	def __init__(self):
 		#self.volume = [ [ None for i in range(0, 16) ] for m in range(0, 4) ]
 		self.memory = Memory()
 		self.capture_view = CaptureView.instance()
-		self.setup_controls("monitor.a")
+		self.monitor = 'a'
+		self.page = 'input monitor.' + self.monitor
+		self.setup_controls()
 		self.cursor = Cursor()
 
-	def setup_controls(self, mode):
+	def setup_controls(self):
+		mode = self.page
 		self.controls = []
-		row = []
-		for ch in range(0,16,2):
-			row += [
-				"input %s channel.%d channel.stereo" % (mode, ch+1)
-			]
-		self.controls += [row]
-		for control in "mute", "solo", "reverb", "pan", "volume":
+		if mode in ('input monitor.a','input monitor.b','input monitor.c','input monitor.d'):
 			row = []
-			for ch in range(0, 16):
-				desc = "input %s channel.%d channel.%s" % (mode, ch+1, control)
-				row += [desc]
+			for ch in range(0,16,2):
+				row += [
+					"%s channel.%d channel.stereo" % (mode, ch+1)
+				]
 			self.controls += [row]
+			for control in "mute","solo","reverb","pan","volume":
+				row = []
+				for ch in range(0, 16):
+					desc = "%s channel.%d channel.%s" % (mode, ch+1, control)
+					row += [desc]
+				self.controls += [row]
+		elif mode in ('daw_monitor monitor.a','daw_monitor monitor.b','daw_monitor monitor.c','daw_monitor monitor.d'):
+			row = []
+			for ch in range(0,10,2):
+				row += [
+					#"%s channel.%d channel.stereo" % (mode, ch+1)
+				]
+			row += ["master.direct_monitor channel.stereo", "master.daw_monitor channel.stereo"]
+			self.controls += [row]
+			for control in "mute", "solo", "pan", "volume":
+				row = []
+				for ch in range(0, 10):
+					desc = "%s channel.%d channel.%s" % (mode, ch+1, control)
+					row += [desc]
+				if control == 'volume':
+					row += [
+						"master.direct_monitor channel.1 channel.volume",
+						#"master.direct_monitor channel.2 channel.volume",
+						"master.daw_monitor channel.1 channel.volume",
+						#"master.daw_monitor channel.2 channel.volume",
+					]
+				self.controls += [row]
+		elif mode in ('preamp',):
+			row = []
+			for ch in range(0,12,2):
+				row += [
+					"%s preamp.%d preamp.stereo" % (mode, ch+1)
+				]
+			self.controls += [row]
+			for control in "+48","lo-cut","phase","sens":
+				row = []
+				for ch in range(0, 12):
+					desc = "%s preamp.%d preamp.%s" % (mode, ch+1, control)
+					row += [desc]
+				self.controls += [row]
+		self.setup_name_table()
+
+	def setup_name_table(self):
+		for row in self.controls:
+			for s in row:
+				self.capture_view.add_name_to_table(s)
 
 	def height(self):
 		return len(self.controls)
@@ -59,11 +115,12 @@ class Mixer(object):
 		ret = ""
 		selected_control = ""
 		spacing = 5
-		for ch in range(0, 16):
+		channels = len(self.controls[-1])
+		for ch in range(0, channels):
 			ret += ("%d" % (ch+1)).center(spacing)
-		ret += "\n"
+		ret += "\n\033[2K"
 		for r, row in enumerate(self.controls):
-			w = spacing*int(16/len(row))
+			w = spacing*int(channels/len(row))
 			for c, control in enumerate(row):
 				value = self.memory.get_formatted( Capture.get_addr(control) )
 				if self.cursor.x == c and self.cursor.y == r:
@@ -72,10 +129,32 @@ class Mixer(object):
 				else:
 					ret += "\033[0m"
 				ret += value.center(w)
-			ret += "\033[0m\n"
+			ret += "\033[0m\n\033[2K"
 
-		ret += "\033[2K%s\n" % selected_control
+		ret += "\n\033[2K%s\n" % selected_control
 		return ret
+
+	def cursor_down(self):
+		w = self.width()
+		if self.cursor.y + 1 < self.height():
+			self.cursor.y += 1
+		if self.width() > w:
+			self.cursor.x *= 2
+
+	def cursor_up(self):
+		w = self.width()
+		if self.cursor.y > 0:
+			self.cursor.y -= 1
+		if self.width() < w:
+			self.cursor.x //= 2
+	
+	def cursor_left(self):
+		if self.cursor.x > 0:
+			self.cursor.x -= 1
+
+	def cursor_right(self):
+		if self.cursor.x + 1 < self.width():
+			self.cursor.x += 1
 
 	def decrement_selected(self):
 		row = self.cursor.y
@@ -151,6 +230,11 @@ class App(object):
 		self.debug("> " + render_bytes(message))
 		return message
 
+	def load_mixer_values(self):
+		for row in self.mixer.controls:
+			for control in row:
+				self.get_mixer_value(control)
+
 	def main(self):
 		apis = get_compiled_api()
 
@@ -170,37 +254,13 @@ class App(object):
 		self.midi_in = midi_in
 		self.midi_out = midi_out
 
-		for row in self.mixer.controls:
-			for control in row:
-				self.get_mixer_value(control)#, self.mixer.set_volume)
+		self.load_mixer_values()
 
 		if not hasattr(sys, 'ps1'): # non-interactive mode only
 			try:
 				while True:
 					key = self.term.getch()
-					if key in Term.KEY_DOWN:
-						if self.mixer.cursor.y + 1 < self.mixer.height():
-							self.mixer.cursor.y += 1
-						self.display()
-					elif key in Term.KEY_UP:
-						if self.mixer.cursor.y > 0:
-							self.mixer.cursor.y -= 1
-						self.display()
-					elif key in Term.KEY_LEFT:
-						if self.mixer.cursor.x > 0:
-							self.mixer.cursor.x -= 1
-						self.display()
-					elif key in Term.KEY_RIGHT:
-						if self.mixer.cursor.x + 1 < self.mixer.width():
-							self.mixer.cursor.x += 1
-						self.display()
-					elif key in ('-','_'):
-						addr, data = self.mixer.decrement_selected()
-						self.set_mixer_value(addr, data)
-						self.display()
-					elif key in ('=','+'):
-						addr, data = self.mixer.increment_selected()
-						self.set_mixer_value(addr, data)
+					if self.on_keyboard(key):
 						self.display()
 					elif key in ('q',"\033"):
 						break
@@ -211,6 +271,48 @@ class App(object):
 				midi_in.close_port()
 				midi_out.close_port()
 				del midi_in, api_in, midi_out, api_out
+
+	def on_keyboard(self, key):
+		if key in Term.KEY_DOWN:
+			self.mixer.cursor_down()
+		elif key in Term.KEY_UP:
+			self.mixer.cursor_up()
+		elif key in Term.KEY_LEFT:
+			self.mixer.cursor_left()
+		elif key in Term.KEY_RIGHT:
+			self.mixer.cursor_right()
+		elif key in ('-','_'):
+			addr, data = self.mixer.decrement_selected()
+			self.set_mixer_value(addr, data)
+		elif key in ('=','+'):
+			addr, data = self.mixer.increment_selected()
+			self.set_mixer_value(addr, data)
+		elif key in ('p','\033[Z'):
+			self.mixer.page = "preamp"
+			self.mixer.setup_controls()
+			self.load_mixer_values()
+		elif key in ('\t',):
+			if 'input' in self.mixer.page:
+				self.mixer.page = "daw_monitor monitor." + self.mixer.monitor
+			else:
+				self.mixer.page = "input monitor." + self.mixer.monitor
+			self.mixer.setup_controls()
+			self.load_mixer_values()
+		elif key in ('[',):
+			if self.mixer.monitor > 'a':
+				self.mixer.monitor = chr(ord(self.mixer.monitor)-1)
+				self.mixer.page = self.mixer.page[:-1] + self.mixer.monitor
+				self.mixer.setup_controls()
+				self.load_mixer_values()
+		elif key in (']',):
+			if self.mixer.monitor < 'd':
+				self.mixer.monitor = chr(ord(self.mixer.monitor)+1)
+				self.mixer.page = self.mixer.page[:-1] + self.mixer.monitor
+				self.mixer.setup_controls()
+				self.load_mixer_values()
+		else:
+			return False
+		return True
 
 	def display(self):
 		#self.height = 12
