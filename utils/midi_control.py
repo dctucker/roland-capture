@@ -180,6 +180,9 @@ class App(object):
 			if self.mixer.monitor < 'd':
 				self.mixer.set_monitor(chr(ord(self.mixer.monitor)+1))
 				self.load_mixer_values()
+		elif key in ('r','v',):
+			self.mixer.set_page('reverb')
+			self.load_mixer_values()
 		else:
 			self.debug_string = debug_string
 			return False
