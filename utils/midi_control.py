@@ -163,8 +163,10 @@ class App(object):
 			addr, data = self.mixer.zero_selected()
 			self.set_mixer_value(addr, data)
 		elif key in ('p','\033[Z'):
-			self.mixer.page = "preamp"
-			self.mixer.setup_controls()
+			self.mixer.set_page("preamp")
+			self.load_mixer_values()
+		elif key in ('l',):
+			self.mixer.set_page("line")
 			self.load_mixer_values()
 		elif key in ('\t',):
 			if 'input' in self.mixer.page:

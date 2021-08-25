@@ -28,6 +28,7 @@ class Mixer(object):
 			"daw_monitor monitor.c": [],
 			"daw_monitor monitor.d": [],
 			"preamp": [],
+			"line": [],
 			"reverb": [],
 		}
 		for monitor in 'a','b','c','d':
@@ -76,19 +77,20 @@ class Mixer(object):
 		row = []
 		for ch in range(0,12,2):
 			row += ["%s preamp.%d preamp.stereo" % (page, ch+1)]
-		row += ["preamp preamp.line.13 preamp.line.stereo", "preamp preamp.line.15 preamp.line.stereo"]
 		controls += [row]
-		for control in "+48","lo-cut","phase","sens","gate","threshold","ratio","attack","release","gain","knee":
+		for control in "+48","lo-cut","phase","sens","bypass","gate","threshold","ratio","attack","release","gain","knee":
 			row = []
 			for ch in range(0, 12):
 				desc = "%s preamp.%d preamp.%s" % (page, ch+1, control)
 				row += [desc]
-			if control == "sens":
-				for ch in range(12,16):
-					row += ["%s preamp.line.%d preamp.line.attenuation" % (page, ch+1)]
-			else:
-				row += [None, None, None, None]
 			controls += [row]
+		self.pages[page] = controls
+
+		page = "line"
+		controls = [
+			["preamp preamp.line.13 preamp.line.stereo", "preamp preamp.line.15 preamp.line.stereo"],
+			["preamp preamp.line.%d preamp.line.attenuation" % (ch+1) for ch in range(12,16)]
+		]
 		self.pages[page] = controls
 
 		page = "reverb"
@@ -114,7 +116,11 @@ class Mixer(object):
 		elif 'daw_monitor' in page:
 			self.header = [str(ch+1) for ch in range(0,10)] + ["DIRL","DIRR","DAWL","DAWR"]
 		elif 'preamp' in page:
-			self.header = [str(ch+1) for ch in range(0,16)]
+			self.spacing = 7
+			self.header = [str(ch+1) for ch in range(0,12)]
+		elif 'line' in page:
+			self.spacing = 7
+			self.header = [str(ch+1) for ch in range(12,16)]
 		elif 'reverb' in page:
 			self.spacing = 10
 			self.header = ['Type','Echo','Room','Sm. Hall','Lg. Hall','Plate','Return']
