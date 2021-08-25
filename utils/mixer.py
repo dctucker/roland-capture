@@ -75,7 +75,7 @@ class Mixer(object):
 				row += ["%s preamp.%d preamp.stereo" % (mode, ch+1)]
 			row += ["preamp preamp.line.13 preamp.line.stereo", "preamp preamp.line.15 preamp.line.stereo"]
 			self.controls += [row]
-			for control in "+48","lo-cut","phase","sens","gate","threshold","ratio":
+			for control in "+48","lo-cut","phase","sens","gate","threshold","ratio","attack","release","gain","knee":
 				row = []
 				for ch in range(0, 12):
 					desc = "%s preamp.%d preamp.%s" % (mode, ch+1, control)
@@ -162,23 +162,29 @@ class Mixer(object):
 		if self.cursor.x + 1 < self.width():
 			self.cursor.x += 1
 
-	def decrement_selected(self):
+	def get_selected_control(self):
 		row = self.cursor.y
 		col = self.cursor.x
-		control = self.controls[row][col]
+		return self.controls[row][col]
+
+	def get_selected_addr(self):
+		control = self.get_selected_control()
 		if control is None:
-			return None, None
-		addr = Capture.get_addr(control)
-		data = self.memory.decrement(addr)
+			return None
+		return Capture.get_addr(control)
+
+	def decrement_selected(self):
+		addr = self.get_selected_addr()
+		data = self.memory.decrement(addr) if addr else None
 		return addr, data
 
 	def increment_selected(self):
-		row = self.cursor.y
-		col = self.cursor.x
-		control = self.controls[row][col]
-		if control is None:
-			return None, None
-		addr = Capture.get_addr(control)
-		data = self.memory.increment(addr)
+		addr = self.get_selected_addr()
+		data = self.memory.increment(addr) if addr else None
+		return addr, data
+
+	def zero_selected(self):
+		addr = self.get_selected_addr()
+		data = self.memory.zero(addr) if addr else None
 		return addr, data
 

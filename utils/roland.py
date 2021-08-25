@@ -360,6 +360,10 @@ class Value(object):
 		if self.value is None: return None
 		return [self.value]
 
+	@classmethod
+	def default(cls):
+		return 0
+
 class Byte(Value):
 	def __init__(self, value=0, maxval=0x7f):
 		self.value = value
@@ -424,7 +428,6 @@ class Pan(Value):
 	def decrement(self):
 		if self.value > -100:
 			self.value -= 1
-
 	def unpack(self, data):
 		return long_to_pan(nibbles_to_long(data))
 	def pack(self):
@@ -450,47 +453,96 @@ class Sens(Value):
 	def pack(self):
 		return [int(self.value * 2)]
 
-class Threshold(Byte):
-	def __init__(self, value=-12):
-		return Byte.__init__(self, value, 40)
+class Scaled(Byte):
+	def __init__(self, value=0, maxval=0x7f):
+		return Byte.__init__(self, value, maxval)
+	def offset(self):
+		pass
 	def unpack(self, data):
-		return data[0] - 40
+		return data[0] - self.offset()
 	def pack(self):
-		return [self.value + 40]
+		return [self.value + self.offset()]
 
-class Gate(Byte):
+class Threshold(Scaled):
+	def __init__(self, value=-12):
+		return Scaled.__init__(self, value, 40)
+	def offset(self):
+		return 40
+
+class Gain(Scaled):
+	def __init__(self, value=-12):
+		return Scaled.__init__(self, value, 80)
+	def offset(self):
+		return 40
+
+class Gate(Scaled):
 	def __init__(self, value=-70):
 		return Byte.__init__(self, value, 50)
-	def unpack(self, data):
-		return data[0] - 70
-	def pack(self):
-		return [self.value + 70]
-
-class Ratio(Byte):
-	def __init__(self, value=0):
-		self.max = 13
+	def offset(self):
+		return 70
 	def format(self):
-		ratios = [1, 1.12, 1.25, 1.4, 1.6, 1.8, 2, 2.5, 3.2, 4, 5.6, 8, 16, math.inf]
-		return ":"+str(ratios[self.value]) if self.value < len(ratios) else "%d?" % self.value
+		if self.value <= -self.offset():
+			return '-inf'
+		return Scaled.format(self)
 
-class Attenuation(Byte):
+class Enum(Byte):
 	def __init__(self, value=0):
-		Byte.__init__(self, value, 0x2)
+		Byte.__init__(self, value, len(self.values())-1)
+	def lookup(self):
+		values = self.values()
+		return values[self.value] if self.value < len(values) else None
 	def format(self):
-		values = [-20, -10, +4]
-		return str(values[self.value]) if self.value < len(values) else "%d?" % self.value
-	
+		lookup = self.lookup()
+		return str(lookup) if lookup is not None else "?"
+	def values(self):
+		raise Exception("Not implemented: Enum.values")
 
-class ReverbType(Byte):
-	def __init__(self, value=0):
-		Byte.__init__(self, value, 0x5)
+class Ratio(Enum):
+	ratios = [1, 1.12, 1.25, 1.4, 1.6, 1.8, 2, 2.5, 3.2, 4, 5.6, 8, 16, math.inf]
+	def values(self):
+		return self.ratios
 
-	def format(self, value):
-		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
+class Attack(Enum):
+	attacks = [
+		 0.0,  0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,
+		 1.0,  1.1,  1.2,  1.3,  1.4,  1.5,  1.6,  1.7,  1.8,  1.9,
+		 2.0,  2.1,  2.2,  2.4,  2.5,  2.7,  2.8,  3.0,  3.2,  3.3,  3.6,  3.8,
+		 4.0,  4.2,  4.5,  4.7,  5.0,  5.3,  5.6,  6.0,  6.3,  6.7,  7.1,  7.5,
+		 8.0,  8.4,  9.0,  9.4, 10.0, 10.6, 11.2, 12.0, 12.5, 13.3, 14.0,
+		15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.4, 23.7, 25.0, 26.6, 28.0,
+		30.0, 31.5, 33.5, 35.5, 37.6, 40.0, 42.2, 45.0, 47.3, 50.0, 53.0, 56.0,
+		60.0, 63.0, 67.0, 71.0, 75.0, 80.0, 84.0, 90.0, 94.4, 100,  106,  112,
+		120,  125,  133,  140,  150,  160,  170,  180,  190,  200,  210,  224,
+		237,  250,  266,  280,  300,  315,  335,  355,  376,  400,  422,  450,
+		473,  500,  530,  560,  600,  630,  670,  710,  750,  800
+	]
+	def values(self):
+		return self.attacks
+
+class Release(Enum):
+	releases = [int(attack * 10) for attack in Attack.attacks]
+	def values(self):
+		return self.releases
+
+class Knee(Enum):
+	knees = ['HARD'] + [('SOF%d' % k) for k in range(1,10)]
+	def values(self):
+		return self.knees
+
+class Attenuation(Enum):
+	attenuations = [-20, -10, 4]
+	def values(self):
+		return self.attenuations
+	def format(self):
+		lookup = self.lookup()
+		return "%+d" % lookup if lookup else "?"
+
+class ReverbType(Enum):
+	def values(self):
+		Capture.value_map['reverb']['type'].values()
 
 class ValueFactory:
-	def from_packed(desc, data):
-		if data is None or data == []: return Value()
+	def get_class(desc):
 		formatters = {
 			(".volume",".reverb"): Volume,
 			(".pan",): Pan,
@@ -499,15 +551,27 @@ class ValueFactory:
 			(".solo",".mute",".stereo",'.+48','.lo-cut','.phase'): Bool,
 			('.gate',): Byte,
 			('.threshold',): Threshold,
+			('.gain',): Gain,
 			('.ratio',): Ratio,
 			('.gate',): Gate,
 			('.attenuation',): Attenuation,
+			('.attack',): Attack,
+			('.release',): Release,
+			('.knee',): Knee,
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
 				if part in desc:
-					return formatter.from_packed(data)
-		return Value.from_packed(data)
+					return formatter
+		return Value
+	def from_packed(desc, data):
+		if data is None or data == []: return Value()
+		cls = ValueFactory.get_class(desc)
+		return cls.from_packed(data)
+
+	def default_for(desc):
+		cls = ValueFactory.get_class(desc)
+		return cls(cls.default())
 
 class Memory(object):
 	def __init__(self):
@@ -551,3 +615,11 @@ class Memory(object):
 		data = value.pack()
 		self.set(addr, data)
 		return data
+
+	def zero(self, addr):
+		name = self.capture_view.lookup_name(addr)
+		value = ValueFactory.default_for(name)
+		data = value.pack()
+		self.set(addr, data)
+		return data
+

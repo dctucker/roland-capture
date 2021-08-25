@@ -28,13 +28,13 @@ class Listener(object):
 
 	def __call__(self, event, data=None):
 		message, deltatime = event
-		self.app.debug("< " + render_bytes(message))
+		#self.app.debug("< " + render_bytes(message))
 		addr, data = Roland.parse_sysex(message)
 		self.app.mixer.memory.set(addr, data)
 		name = self.app.capture_view.lookup_name(addr)
 		value = self.app.mixer.memory.get_formatted(addr)
 
-		#self.app.debug("%s %s %s\n" % (addr, name, value))
+		self.app.debug("0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
 
 		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
@@ -81,10 +81,16 @@ class App(object):
 			return message
 
 	def load_mixer_values(self):
+		self.term.blocked = True
+		i = 0
 		for row in self.mixer.controls:
 			for control in row:
 				if control is None: continue
+				if i % 8 == 0:
+					time.sleep(0.02)
 				self.get_mixer_value(control)
+				i += 1
+		self.term.blocked = False
 
 	def main(self):
 		apis = get_compiled_api()
@@ -117,6 +123,9 @@ class App(object):
 			try:
 				while True:
 					key = self.term.getch()
+					if key == "":
+						time.sleep(0.01)
+						continue
 					if self.on_keyboard(key):
 						self.display(False)
 					elif key in ('q',"\033"):
@@ -141,11 +150,17 @@ class App(object):
 			self.mixer.cursor_left()
 		elif key in Term.KEY_RIGHT:
 			self.mixer.cursor_right()
+		elif key in ('a','b','c','d'):
+			self.mixer.set_monitor(key)
+			self.load_mixer_values()
 		elif key in ('-','_'):
 			addr, data = self.mixer.decrement_selected()
 			self.set_mixer_value(addr, data)
 		elif key in ('=','+'):
 			addr, data = self.mixer.increment_selected()
+			self.set_mixer_value(addr, data)
+		elif key in ('0',):
+			addr, data = self.mixer.zero_selected()
 			self.set_mixer_value(addr, data)
 		elif key in ('p','\033[Z'):
 			self.mixer.page = "preamp"
@@ -171,7 +186,7 @@ class App(object):
 		return True
 
 	def display(self, clear_debug=True):
-		#while self.term.blocked: pass
+		if self.term.blocked: return
 		self.term.blocked = True
 		#self.height = 12
 		rendered = self.mixer.render()
@@ -184,8 +199,8 @@ class App(object):
 			self.debug_string = ""
 		self.term.blocked = False
 	
-	def debug(self, message):
-		self.debug_string += "\033[2K" + message + "\n"
+	def debug(self, message, end="\n"):
+		self.debug_string += "\033[2K" + message + end
 		#self.height += message.count("\n") + 1
 
 
