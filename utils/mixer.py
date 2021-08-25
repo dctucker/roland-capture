@@ -8,55 +8,55 @@ class Cursor(object):
 		return self.y, self.x
 
 class Mixer(object):
-	pages = [
-		"input monitor.a",
-		"input monitor.b",
-		"input monitor.c",
-		"input monitor.d",
-		"daw_monitor monitor.a",
-		"daw_monitor monitor.b",
-		"daw_monitor monitor.c",
-		"daw_monitor monitor.d",
-		"preamp",
-	]
-
 	def __init__(self):
-		#self.volume = [ [ None for i in range(0, 16) ] for m in range(0, 4) ]
-		self.memory = Memory()
 		self.capture_view = CaptureView.instance()
-		self.monitor = 'a'
-		self.page = 'input monitor.' + self.monitor
-		self.setup_controls()
+		self.memory = Memory()
 		self.cursor = Cursor()
+		self.setup_pages()
+		self.setup_name_table()
+		self.monitor = 'a'
+		self.set_page('input monitor.' + self.monitor)
 
-	def setup_controls(self):
-		mode = self.page
-		self.controls = []
-		if 'input' in mode:
-			self.header = [str(ch+1) for ch in range(0,16)]
+	def setup_pages(self):
+		self.pages = {
+			"input monitor.a": [],
+			"input monitor.b": [],
+			"input monitor.c": [],
+			"input monitor.d": [],
+			"daw_monitor monitor.a": [],
+			"daw_monitor monitor.b": [],
+			"daw_monitor monitor.c": [],
+			"daw_monitor monitor.d": [],
+			"preamp": [],
+		}
+		for monitor in 'a','b','c','d':
+			page = 'input monitor.' + monitor
+			controls = []
 			row = []
 			for ch in range(0,16,2):
 				row += [
-					"%s channel.%d channel.stereo" % (mode, ch+1)
+					"%s channel.%d channel.stereo" % (page, ch+1)
 				]
-			self.controls += [row]
+			controls += [row]
 			for control in "mute","solo","reverb","pan","volume":
 				row = []
 				for ch in range(0, 16):
-					desc = "%s channel.%d channel.%s" % (mode, ch+1, control)
+					desc = "%s channel.%d channel.%s" % (page, ch+1, control)
 					row += [desc]
-				self.controls += [row]
-		elif 'daw_monitor' in mode:
-			self.header = [str(ch+1) for ch in range(0,10)] + ["DIRL","DIRR","DAWL","DAWR"]
+				controls += [row]
+			self.pages[page] = controls
+
+			page = "daw_monitor monitor." + monitor
+			controls = []
 			row = []
 			for ch in range(0,10,2):
-				row += ["%s channel.%d channel.stereo" % (mode, ch+1)]
+				row += ["%s channel.%d channel.stereo" % (page, ch+1)]
 			row += ["master.direct_monitor channel.stereo", "master.daw_monitor channel.stereo"]
-			self.controls += [row]
+			controls += [row]
 			for control in "mute", "solo", "pan", "volume":
 				row = []
 				for ch in range(0, 10):
-					desc = "%s channel.%d channel.%s" % (mode, ch+1, control)
+					desc = "%s channel.%d channel.%s" % (page, ch+1, control)
 					row += [desc]
 				if control == 'volume':
 					row += [
@@ -67,33 +67,47 @@ class Mixer(object):
 					]
 				else:
 					row += [None, None, None, None]
-				self.controls += [row]
-		elif 'preamp' in mode:
-			self.header = [str(ch+1) for ch in range(0,16)]
+				controls += [row]
+			self.pages[page] = controls
+
+		page = "preamp"
+		controls = []
+		row = []
+		for ch in range(0,12,2):
+			row += ["%s preamp.%d preamp.stereo" % (page, ch+1)]
+		row += ["preamp preamp.line.13 preamp.line.stereo", "preamp preamp.line.15 preamp.line.stereo"]
+		controls += [row]
+		for control in "+48","lo-cut","phase","sens","gate","threshold","ratio","attack","release","gain","knee":
 			row = []
-			for ch in range(0,12,2):
-				row += ["%s preamp.%d preamp.stereo" % (mode, ch+1)]
-			row += ["preamp preamp.line.13 preamp.line.stereo", "preamp preamp.line.15 preamp.line.stereo"]
-			self.controls += [row]
-			for control in "+48","lo-cut","phase","sens","gate","threshold","ratio","attack","release","gain","knee":
-				row = []
-				for ch in range(0, 12):
-					desc = "%s preamp.%d preamp.%s" % (mode, ch+1, control)
-					row += [desc]
-				if control == "sens":
-					for ch in range(12,16):
-						row += ["%s preamp.line.%d preamp.line.attenuation" % (mode, ch+1)]
-				else:
-					row += [None, None, None, None]
-				self.controls += [row]
-		self.setup_name_table()
+			for ch in range(0, 12):
+				desc = "%s preamp.%d preamp.%s" % (page, ch+1, control)
+				row += [desc]
+			if control == "sens":
+				for ch in range(12,16):
+					row += ["%s preamp.line.%d preamp.line.attenuation" % (page, ch+1)]
+			else:
+				row += [None, None, None, None]
+			controls += [row]
+		self.pages[page] = controls
+
+	def setup_controls(self):
+		page = self.page
+		controls = []
+		if 'input' in page:
+			self.header = [str(ch+1) for ch in range(0,16)]
+		elif 'daw_monitor' in page:
+			self.header = [str(ch+1) for ch in range(0,10)] + ["DIRL","DIRR","DAWL","DAWR"]
+		elif 'preamp' in page:
+			self.header = [str(ch+1) for ch in range(0,16)]
+		self.controls = self.pages[page]
 
 	def setup_name_table(self):
-		for row in self.controls:
-			for control in row:
-				if control is None:
-					continue
-				self.capture_view.add_name_to_table(control)
+		for page, rows in self.pages.items():
+			for row in rows:
+				for control in row:
+					if control is None:
+						continue
+					self.capture_view.add_name_to_table(control)
 
 	def height(self):
 		return len(self.controls)
