@@ -155,6 +155,7 @@ class CaptureView():
 			('.+48',): lambda x: "+48V" if x else "0v",
 			('.lo-cut',): lambda x: "CUT" if x else "lo",
 			('.phase',): lambda x: "PHASE" if x else "0",
+			('.bypass',): lambda x: "BYPASS" if x else "comp",
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
@@ -525,7 +526,7 @@ class Release(Enum):
 		return self.releases
 
 class Knee(Enum):
-	knees = ['HARD'] + [('SOF%d' % k) for k in range(1,10)]
+	knees = ['HARD'] + [('SOFT%d' % k) for k in range(1,10)]
 	def values(self):
 		return self.knees
 
@@ -582,6 +583,7 @@ class ValueFactory:
 			('.knee',): Knee,
 			('.pre_delay',): PreDelay,
 			('.time',): ReverbTime,
+			('.bypass',): Bool,
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
