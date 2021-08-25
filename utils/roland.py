@@ -234,6 +234,10 @@ class Capture():
 			'link':           0x0008000d,
 			'daw_monitor':    0x00090000,
 			'reverb_return':  0x00080007,
+			'left':               0x0000,
+			'right':              0x0100,
+			'volume':               0x01,
+			'stereo':               0x00,
 		},
 		'monitor': {
 			'a': 0x0000,
@@ -361,10 +365,10 @@ class Byte(Value):
 		self.value = value
 		self.max = maxval
 	def increment(self):
-		if self.value < self.max:
+		if self.pack()[0] < self.max:
 			self.value += 1
 	def decrement(self):
-		if self.value > 0:
+		if self.pack()[0] > 0:
 			self.value -= 1
 
 	def unpack(self, data):
@@ -446,11 +450,42 @@ class Sens(Value):
 	def pack(self):
 		return [int(self.value * 2)]
 
+class Threshold(Byte):
+	def __init__(self, value=-12):
+		return Byte.__init__(self, value, 40)
+	def unpack(self, data):
+		return data[0] - 40
+	def pack(self):
+		return [self.value + 40]
+
+class Gate(Byte):
+	def __init__(self, value=-70):
+		return Byte.__init__(self, value, 50)
+	def unpack(self, data):
+		return data[0] - 70
+	def pack(self):
+		return [self.value + 70]
+
+class Ratio(Byte):
+	def __init__(self, value=0):
+		self.max = 13
+	def format(self):
+		ratios = [1, 1.12, 1.25, 1.4, 1.6, 1.8, 2, 2.5, 3.2, 4, 5.6, 8, 16, math.inf]
+		return ":"+str(ratios[self.value]) if self.value < len(ratios) else "%d?" % self.value
+
+class Attenuation(Byte):
+	def __init__(self, value=0):
+		Byte.__init__(self, value, 0x2)
+	def format(self):
+		values = [-20, -10, +4]
+		return str(values[self.value]) if self.value < len(values) else "%d?" % self.value
+	
+
 class ReverbType(Byte):
-	def __init__(self, value):
+	def __init__(self, value=0):
 		Byte.__init__(self, value, 0x5)
 
-	def format_reverb_type(self, value):
+	def format(self, value):
 		return { v:k for (k,v) in Capture.value_map['reverb']['type'].items() }[value]
 
 class ValueFactory:
@@ -462,6 +497,11 @@ class ValueFactory:
 			("reverb.type",): ReverbType,
 			('.sens',): Sens,
 			(".solo",".mute",".stereo",'.+48','.lo-cut','.phase'): Bool,
+			('.gate',): Byte,
+			('.threshold',): Threshold,
+			('.ratio',): Ratio,
+			('.gate',): Gate,
+			('.attenuation',): Attenuation,
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:

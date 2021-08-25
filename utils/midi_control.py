@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import time
 from term import Term
@@ -33,11 +34,12 @@ class Listener(object):
 		name = self.app.capture_view.lookup_name(addr)
 		value = self.app.mixer.memory.get_formatted(addr)
 
-		self.app.display()
-		self.app.debug("%s %s %s\n" % (addr, name, value))
+		#self.app.debug("%s %s %s\n" % (addr, name, value))
 
 		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
+
+		self.app.display(False)
 
 	def register_addr(self, addr, handler):
 		self.addr_listeners[addr] = handler
@@ -74,8 +76,8 @@ class App(object):
 
 	def send(self, message):
 		if self.midi_out:
-			self.midi_out.send_message(message)
 			self.debug("> " + render_bytes(message))
+			self.midi_out.send_message(message)
 			return message
 
 	def load_mixer_values(self):
@@ -116,18 +118,21 @@ class App(object):
 				while True:
 					key = self.term.getch()
 					if self.on_keyboard(key):
-						self.display()
+						self.display(False)
 					elif key in ('q',"\033"):
 						break
 			except KeyboardInterrupt:
 				print('')
 			finally:
-				print("Exit.")
+				term_width, term_height = self.term.size()
+				print("\033[r\033["+str(term_height-1)+"HExit.", end="")
 				if self.midi_in: self.midi_in.close_port()
 				if self.midi_out: self.midi_out.close_port()
 				del midi_in, api_in, midi_out, api_out
 
 	def on_keyboard(self, key):
+		debug_string = self.debug_string
+		self.debug_string = ""
 		if key in Term.KEY_DOWN:
 			self.mixer.cursor_down()
 		elif key in Term.KEY_UP:
@@ -161,19 +166,26 @@ class App(object):
 				self.mixer.set_monitor(chr(ord(self.mixer.monitor)+1))
 				self.load_mixer_values()
 		else:
+			self.debug_string = debug_string
 			return False
 		return True
 
-	def display(self):
+	def display(self, clear_debug=True):
+		#while self.term.blocked: pass
+		self.term.blocked = True
 		#self.height = 12
 		rendered = self.mixer.render()
 		#rendered = ""
 		#self.height = rendered.count("\n")
-		self.term.display(rendered + '\n\033['+str(self.height)+';6H\n' + self.debug_string)
-		self.debug_string = ""
+		term_width, term_height = self.term.size()
+		debug_out = "\n\033[2K\n\033[2K\033[20;"+str(term_height)+"r\033[20;1H" + self.debug_string + "\033[r"
+		self.term.display(rendered + debug_out)
+		if clear_debug:
+			self.debug_string = ""
+		self.term.blocked = False
 	
 	def debug(self, message):
-		self.debug_string = message + "\n"
+		self.debug_string += "\033[2K" + message + "\n"
 		#self.height += message.count("\n") + 1
 
 

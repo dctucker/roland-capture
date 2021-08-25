@@ -60,10 +60,10 @@ class Mixer(object):
 					row += [desc]
 				if control == 'volume':
 					row += [
-						"master.direct_monitor channel.1 channel.volume",
-						"master.direct_monitor channel.1 channel.volume", #TODO
-						"master.daw_monitor channel.1 channel.volume",
-						"master.daw_monitor channel.2 channel.volume", #TODO
+						"master.direct_monitor master.left master.volume",
+						"master.direct_monitor master.right master.volume",
+						"master.daw_monitor master.left master.volume",
+						"master.daw_monitor master.right master.volume",
 					]
 				else:
 					row += [None, None, None, None]

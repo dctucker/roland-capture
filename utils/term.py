@@ -24,6 +24,7 @@ class Term:
 	KEY_UP    = ('\033[A',)
 
 	def __init__(self):
+		self.blocked = False
 		if is_nt():
 			self.init_nt()
 		else:
@@ -44,12 +45,14 @@ class Term:
 		atexit.register(self.cleanup_posix)
 
 	def block(self):
+		self.blocked = True
 		if is_nt():
 			return
 		termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.oldterm)
 		fcntl.fcntl(self.fd, fcntl.F_SETFL, self.oldflags)
 
 	def unblock(self):
+		self.blocked = False
 		if is_nt():
 			return
 		termios.tcsetattr(self.fd, termios.TCSANOW, self.newattr)
@@ -89,5 +92,7 @@ class Term:
 		self.unblock()
 
 	def clear(self):
-		print('\033[?25l\033[J\033[H')
+		print('\033[?25l\033[2J\033[H',end="")
 
+	def size(self):
+		return os.get_terminal_size()
