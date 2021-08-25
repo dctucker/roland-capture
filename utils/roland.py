@@ -538,8 +538,30 @@ class Attenuation(Enum):
 		return "%+d" % lookup if lookup else "?"
 
 class ReverbType(Enum):
+	types = [k for k in Capture.value_map['reverb']['type'].keys()]
 	def values(self):
-		Capture.value_map['reverb']['type'].values()
+		return self.types
+	def format(self):
+		return self.lookup().upper()
+
+class PreDelay(Enum):
+	delays = [0.0, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 10, 20, 40, 80, 160]
+	def values(self):
+		return self.delays
+
+class ReverbTime(Value):
+	def increment(self):
+		if self.value < 5.0:
+			self.value += 0.1
+	def decrement(self):
+		if self.value > 0.1:
+			self.value -= 0.1
+	def pack(self):
+		return [int(self.value * 10) - 1]
+	def unpack(self, data):
+		return (data[0] + 1) * 0.1
+	def format(self):
+		return "%0.1f" % self.value
 
 class ValueFactory:
 	def get_class(desc):
@@ -558,6 +580,8 @@ class ValueFactory:
 			('.attack',): Attack,
 			('.release',): Release,
 			('.knee',): Knee,
+			('.pre_delay',): PreDelay,
+			('.time',): ReverbTime,
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:

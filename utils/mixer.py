@@ -28,6 +28,7 @@ class Mixer(object):
 			"daw_monitor monitor.c": [],
 			"daw_monitor monitor.d": [],
 			"preamp": [],
+			"reverb": [],
 		}
 		for monitor in 'a','b','c','d':
 			page = 'input monitor.' + monitor
@@ -90,15 +91,33 @@ class Mixer(object):
 			controls += [row]
 		self.pages[page] = controls
 
+		page = "reverb"
+		controls = [
+			['reverb reverb.type', None, None, None, None, None, 'master.reverb_return']
+		]
+		for control in 'pre_delay','time':
+			row = [None]
+			for verb in 'echo', 'room', 'small_hall', 'large_hall', 'plate':
+				row += [
+					'reverb reverb.%s reverb.%s' % (verb, control),
+				]
+			row += [None]
+			controls += [row]
+		self.pages[page] = controls
+
 	def setup_controls(self):
 		page = self.page
 		controls = []
+		self.spacing = 5
 		if 'input' in page:
 			self.header = [str(ch+1) for ch in range(0,16)]
 		elif 'daw_monitor' in page:
 			self.header = [str(ch+1) for ch in range(0,10)] + ["DIRL","DIRR","DAWL","DAWR"]
 		elif 'preamp' in page:
 			self.header = [str(ch+1) for ch in range(0,16)]
+		elif 'reverb' in page:
+			self.spacing = 10
+			self.header = ['Type','Echo','Room','Sm. Hall','Lg. Hall','Plate','Return']
 		self.controls = self.pages[page]
 
 	def setup_name_table(self):
@@ -118,7 +137,7 @@ class Mixer(object):
 	def render(self):
 		ret = ""
 		selected_control = ""
-		spacing = 5
+		spacing = self.spacing
 		channels = max(len(row) for row in self.controls)
 		ret += "\033[2K"
 		ret += self.page
