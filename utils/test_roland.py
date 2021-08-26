@@ -9,12 +9,11 @@ class TestCapture(unittest.TestCase):
 		with self.assertRaises(Exception) as ctx:
 			Capture.get_addr("daw_monitor.c.channel.4.reverb")
 		self.assertEqual(0x00050b07, Capture.get_addr("preamp.channel.12.gate"))
-		self.assertEqual(0x00050004, Capture.get_addr("preamp.channel.1.hi-z"))
-		self.assertEqual(0x00050104, Capture.get_addr("preamp.channel.2.hi-z"))
+		self.assertEqual(0x00050003, Capture.get_addr("preamp.channel.1.hi-z"))
+		self.assertEqual(0x00050103, Capture.get_addr("preamp.channel.2.hi-z"))
 		with self.assertRaises(Exception) as ctx:
 			Capture.get_addr("preamp.channel.3.hi-z")
 
-		self.assertEqual(0x00050104, Capture.get_addr("preamp.channel.2.hi-z"))
 		self.assertEqual(0x00030001, Capture.get_addr("patchbay.3-4"))
 		self.assertEqual(0x00040000, Capture.get_addr("reverb.type"))
 		self.assertEqual(0x00040101, Capture.get_addr("reverb.echo.pre_delay"))

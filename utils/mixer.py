@@ -65,7 +65,7 @@ class OutputPage(Page):
 		row = []
 		for ch in range(0,10,2):
 			row += ["%s.channel.%d.stereo" % (page, ch+1)]
-		row += ["master.direct_monitor.left.stereo", "master.daw_monitor.left.stereo"]
+		row += ["master.direct_monitor.%s.left.stereo" % self.monitor, "master.daw_monitor.%s.left.stereo" % self.monitor]
 		controls += [row]
 		for control in self.controls:
 			row = []
@@ -74,10 +74,10 @@ class OutputPage(Page):
 				row += [desc]
 			if control == 'volume':
 				row += [
-					"master.direct_monitor.left.volume",
-					"master.direct_monitor.right.volume",
-					"master.daw_monitor.left.volume",
-					"master.daw_monitor.right.volume",
+					"master.direct_monitor.%s.left.volume" % self.monitor,
+					"master.direct_monitor.%s.right.volume" % self.monitor,
+					"master.daw_monitor.%s.left.volume" % self.monitor,
+					"master.daw_monitor.%s.right.volume" % self.monitor,
 				]
 			else:
 				row += [None, None, None, None]
@@ -115,7 +115,7 @@ class ReverbPage(Page):
 	def get_controls(self):
 		page = "reverb"
 		controls = [
-			['reverb.type', None, None, 'master.direct_monitor.reverb_return']
+			['reverb.type', None, None, 'master.direct_monitor.a.reverb_return']
 		]
 		for verb in 'echo', 'room', 'small_hall', 'large_hall', 'plate':
 			row = [None]
