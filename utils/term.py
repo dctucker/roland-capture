@@ -22,6 +22,13 @@ class Term:
 	KEY_RIGHT = ('\033[C', '\xe0M')
 	KEY_DOWN  = ('\033[B', '\xe0P')
 	KEY_UP    = ('\033[A',)
+	CLEAR_LINE= ('\033[2K')
+
+	def fg_color(color):
+		return '\033[38;5;%dm' % color
+
+	def bg_color(color):
+		return '\033[48;5;%dm' % color
 
 	def __init__(self):
 		self.blocked = False
@@ -87,12 +94,17 @@ class Term:
 
 	def display(self, s):
 		self.block()
-		self.clear()
+		self.home()
+		#self.clear()
 		print(str(s))
 		self.unblock()
 
+	def home(self):
+		print("\033[H", end="")
+
 	def clear(self):
-		print('\033[?25l\033[2J\033[H',end="")
+		print('\033[?25l\033[J',end="")
+		self.home()
 
 	def size(self):
 		return os.get_terminal_size()

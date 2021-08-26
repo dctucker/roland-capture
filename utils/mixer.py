@@ -1,4 +1,4 @@
-from roland import Capture, CaptureView, Memory
+from roland import Capture, CaptureView, Memory, Bool
 
 class Cursor(object):
 	def __init__(self):
@@ -106,7 +106,7 @@ class PreampPage(Page):
 		return 7
 
 	def get_labels(self):
-		return ['Stereo','Hi-Z'] + [ control.capitalize() for control in self.controls ]
+		return ['Stereo','Impedance','Phantom','Low Cut','Polarity','Sensitivity','Compressor','Gate','Threshold','Ratio','Attack','Release','Gain','Knee']
 
 	def get_header(self):
 		return [str(ch+1) for ch in range(0,12)]
@@ -130,7 +130,7 @@ class ReverbPage(Page):
 	def get_labels(self):
 		labels = ['','Echo','Room','Small Hall','Large Hall','Plate']
 		verb = self.mixer.get_memory_value("reverb.type")
-		v = verb.value if verb else 0
+		v = verb.value if verb and verb.value else 0
 		labels[v] = "\033[0;4m%s\033[24m" % labels[v]
 		return labels
 
@@ -266,16 +266,23 @@ class Mixer(object):
 		for r, row in enumerate(self.controls):
 			w = spacing*int(channels/len(row))
 			for c, control in enumerate(row):
+				active = False
 				if control is None:
-					value = ' '
+					formatted = ' '
 				else:
-					value = self.memory.get_formatted( Capture.get_addr(control) )
+					addr = Capture.get_addr(control)
+					value = self.memory.get_value(addr)
+					if type(value) is Bool and value.value:
+						active = True
+					formatted = self.memory.get_formatted(addr)
 				if self.cursor.x == c and self.cursor.y == r:
 					ret += "\033[7m"
 					selected_control = control
 				else:
 					ret += "\033[0m"
-				ret += value.center(w)
+				if active:
+					ret += "\033[1m"
+				ret += formatted.center(w)
 			ret += "\033[0m"
 			if labels is not None and r < len(labels):
 				ret += " \033[1;30m" + labels[r] + "\033[0m" #.center(spacing)
