@@ -163,23 +163,18 @@ class App(object):
 			addr, data = self.mixer.zero_selected()
 			self.set_mixer_value(addr, data)
 		elif key in ('p','\033[Z'):
-			self.mixer.set_page("preamp")
-			self.load_mixer_values()
+			self.set_page("preamp")
 		elif key in ('l',):
-			self.mixer.set_page("line")
-			self.load_mixer_values()
+			self.set_page("line")
 		elif key in ('i',):
-			self.mixer.set_page("input_monitor." + self.mixer.monitor)
-			self.load_mixer_values()
+			self.set_page("input_monitor." + self.mixer.monitor)
 		elif key in ('o',):
-			self.mixer.set_page("daw_monitor." + self.mixer.monitor)
-			self.load_mixer_values()
+			self.set_page("daw_monitor." + self.mixer.monitor)
 		elif key in ('\t',):
 			if 'input' in self.mixer.page:
-				self.mixer.set_page("daw_monitor." + self.mixer.monitor)
+				self.set_page("daw_monitor." + self.mixer.monitor)
 			else:
-				self.mixer.set_page("input_monitor." + self.mixer.monitor)
-			self.load_mixer_values()
+				self.set_page("input_monitor." + self.mixer.monitor)
 		elif key in ('[',):
 			if self.mixer.monitor > 'a':
 				self.mixer.set_monitor(chr(ord(self.mixer.monitor)-1))
@@ -189,15 +184,18 @@ class App(object):
 				self.mixer.set_monitor(chr(ord(self.mixer.monitor)+1))
 				self.load_mixer_values()
 		elif key in ('r','v',):
-			self.mixer.set_page('reverb')
-			self.load_mixer_values()
+			self.set_page('reverb')
 		elif key in ('y','P',):
-			self.mixer.set_page('patchbay')
-			self.load_mixer_values()
+			self.set_page('patchbay')
 		else:
 			self.debug_string = debug_string
 			return False
 		return True
+
+	def set_page(self, page):
+		self.mixer.set_page(page)
+		self.load_mixer_values()
+		self.term.clear()
 
 	def display(self, clear_debug=True):
 		if self.term.blocked: return
@@ -207,14 +205,15 @@ class App(object):
 		#rendered = ""
 		#self.height = rendered.count("\n")
 		term_width, term_height = self.term.size()
-		debug_out = "\n\033[2K\n\033[2K\033[20;"+str(term_height)+"r\033[20;1H" + self.debug_string + "\033[r"
+		CL = Term.CLEAR_LINE
+		debug_out = CL + "\n" + CL + "\033[20;%dr\033[%d;1H\033[38;5;24m%s\033[0m\033[r" % (term_height, term_height, self.debug_string)
 		self.term.display(rendered + debug_out)
 		if clear_debug:
 			self.debug_string = ""
 		self.term.blocked = False
 	
 	def debug(self, message, end="\n"):
-		self.debug_string += "\033[2K" + message + end
+		self.debug_string += Term.CLEAR_LINE + message + end
 		#self.height += message.count("\n") + 1
 
 

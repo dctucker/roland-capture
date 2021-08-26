@@ -120,9 +120,9 @@ class CaptureView():
 		formatters = {
 			(".mute",)   : lambda x: "MUTE"   if x else "m",
 			(".solo",)   : lambda x: "SOLO"   if x else "s",
-			(".stereo",) : lambda x: "STEREO" if x else " -- --",
+			(".stereo",) : lambda x: "STEREO" if x else "--mono--",
 			('.+48',)    : lambda x: "+48V"   if x else "0VDC",
-			('.lo-cut',) : lambda x: "CUT"    if x else "lo",
+			('.lo-cut',) : lambda x: "LO CUT" if x else "low",
 			('.phase',)  : lambda x: "-PHASE" if x else "+",
 			('.bypass',) : lambda x: "BYPASS" if x else "comp",
 			('.hi-z',)   : lambda x: "HI-Z"   if x else "lo-z",
