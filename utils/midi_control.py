@@ -168,11 +168,17 @@ class App(object):
 		elif key in ('l',):
 			self.mixer.set_page("line")
 			self.load_mixer_values()
+		elif key in ('i',):
+			self.mixer.set_page("input_monitor." + self.mixer.monitor)
+			self.load_mixer_values()
+		elif key in ('o',):
+			self.mixer.set_page("daw_monitor." + self.mixer.monitor)
+			self.load_mixer_values()
 		elif key in ('\t',):
 			if 'input' in self.mixer.page:
-				self.mixer.set_page("daw_monitor monitor." + self.mixer.monitor)
+				self.mixer.set_page("daw_monitor." + self.mixer.monitor)
 			else:
-				self.mixer.set_page("input monitor." + self.mixer.monitor)
+				self.mixer.set_page("input_monitor." + self.mixer.monitor)
 			self.load_mixer_values()
 		elif key in ('[',):
 			if self.mixer.monitor > 'a':
@@ -184,6 +190,9 @@ class App(object):
 				self.load_mixer_values()
 		elif key in ('r','v',):
 			self.mixer.set_page('reverb')
+			self.load_mixer_values()
+		elif key in ('y','P',):
+			self.mixer.set_page('patchbay')
 			self.load_mixer_values()
 		else:
 			self.debug_string = debug_string

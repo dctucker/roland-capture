@@ -1,3 +1,5 @@
+from functools import reduce
+import operator
 import math
 
 def render_bytes(message):
@@ -85,47 +87,14 @@ class Roland():
 
 class CaptureView():
 	def __init__(self):
-		self.setup_mixer()
-		self.setup_name_table()
+		self.name_table = {}
+
 	def instance():
 		global capture_view
 		if 'capture_view' not in globals():
 			capture_view = CaptureView()
 		return capture_view
 	
-	def setup_mixer(self):
-		mixer = []
-		for monitor in 'a','b','c','d':
-			for ch in range(1, 1+16):
-				s = "input monitor.%s channel.%d channel." % (monitor, ch)
-				segment = []
-				if ch % 2 == 1: segment += [ s + "stereo" ]
-				segment += [
-					s + "mute",
-					s + "solo",
-					s + "reverb",
-					s + "pan",
-					s + "volume",
-				]
-				mixer += segment
-			for ch in range(1, 1+12):
-				s = "daw_monitor monitor.%s channel.%d channel." % (monitor, ch)
-				segment = []
-				if ch % 2 == 1: segment += [ s + "stereo" ]
-				segment += [
-					s + "stereo",
-					s + "mute",
-					s + "solo",
-					s + "pan",
-					s + "volume",
-				]
-				mixer += segment
-		mixer += [ "master.reverb_return", "reverb reverb.type" ]
-		for type in "echo", "room", "small_hall", "large_hall", "plate":
-			for param in "pre_delay", "time":
-				mixer += [ "reverb reverb.%s reverb.%s" % (type, param) ]
-		self.mixer = mixer
-
 	def render_addrs(self):
 		for desc in self.mixer:
 			address = Capture.get_addr(desc)
@@ -141,7 +110,7 @@ class CaptureView():
 			self.add_name_to_table(s)
 
 	def lookup_name(self, addr):
-		""" convert 0x00060008 into "input monitor.a channel.1 channel.volume" """
+		""" convert 0x00060008 into "input_monitor.a.channel.1.volume" """
 		if addr in self.name_table:
 			return self.name_table[addr]
 		return hex(addr)
@@ -149,19 +118,65 @@ class CaptureView():
 	def format_value(self, value, desc):
 		if value is None: return "?"
 		formatters = {
-			(".mute", ): lambda x: "MUTE" if x else "m",
-			(".solo", ): lambda x: "SOLO" if x else "s",
-			(".stereo", ): lambda x: "STEREO" if x else " -- --",
-			('.+48',): lambda x: "+48V" if x else "0v",
-			('.lo-cut',): lambda x: "CUT" if x else "lo",
-			('.phase',): lambda x: "PHASE" if x else "0",
-			('.bypass',): lambda x: "BYPASS" if x else "comp",
+			(".mute",)   : lambda x: "MUTE"   if x else "m",
+			(".solo",)   : lambda x: "SOLO"   if x else "s",
+			(".stereo",) : lambda x: "STEREO" if x else " -- --",
+			('.+48',)    : lambda x: "+48V"   if x else "0VDC",
+			('.lo-cut',) : lambda x: "CUT"    if x else "lo",
+			('.phase',)  : lambda x: "-PHASE" if x else "+",
+			('.bypass',) : lambda x: "BYPASS" if x else "comp",
+			('.hi-z',)   : lambda x: "HI-Z"   if x else "lo-z",
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
 				if part in desc:
 					return formatter(value.value)
 		return value.format()
+
+monitors = { chr(97+m): m<<12 for m in range(0,4) }
+channels_16 = { ch+1: ch<<8 for ch in range(0, 16) }
+channels_12 = { ch+1: ch<<8 for ch in range(0, 12) }
+input_params = {
+	'stereo': 0x00, # even channels only
+	'solo':   0x02,
+	'mute':   0x03,
+	'pan':    0x04,
+	'volume': 0x08,
+	'reverb': 0x0e, # direct monitor only
+}
+daw_params = { k:v for k,v in input_params.items() if k != 'reverb' }
+preamp_params = {
+	'+48':    0x00,
+	'lo-cut': 0x01,
+	'phase':  0x02,
+	#'hi-z':   0x03,    # only present on 1-2
+	'sens':   0x04,    # max value 0x74
+	'stereo': 0x05,
+	'bypass':    0x06, # compressor
+	'gate':      0x07, # max value 0x32
+	'attack':    0x08, # max value 0x7c
+	'release':   0x09, # max value 0x7c
+	'threshold': 0x0a, # max value 0x28
+	'ratio':     0x0b, # max value 0x0d
+	'gain':      0x0c, # max value 0x50
+	'knee':      0x0d, # max value 0x09
+}
+lines = { ch+13: ch<<8 for ch in range(0,4) }
+master_params = {
+	'stereo':   0x00,
+	'volume':   0x01,
+}
+master_left_right = {
+	'left' : { 0: 0x0000 } | master_params,
+	'right': { 0: 0x0100 } | master_params,
+}
+reverb_types = ['echo', 'room', 'small_hall', 'large_hall', 'plate']
+reverb_params = {
+	'pre_delay': 0x01,
+	'time':      0x02,
+}
+patchbay_outputs = ["%d-%d" % (ch,ch+1) for ch in range(1,10,2)]
+
 
 class Capture():
 	value_map = {
@@ -173,15 +188,15 @@ class Capture():
 			'patchbay':    0x04,
 		},
 		'patchbay': {
-			'monitor_a': 0x00,
-			'monitor_b': 0x01,
-			'monitor_c': 0x02,
-			'monitor_d': 0x03,
-			'wave_1-2':  0x05,
-			'wave_3-4':  0x06,
-			'wave_5-6':  0x07,
-			'wave_7-8':  0x08,
-			'wave_9-10': 0x09,
+			'mix_a': 0x00,
+			'mix_b': 0x01,
+			'mix_c': 0x02,
+			'mix_d': 0x03,
+			'wave_1-2':  0x04,
+			'wave_3-4':  0x05,
+			'wave_5-6':  0x06,
+			'wave_7-8':  0x07,
+			'wave_9-10': 0x08,
 		},
 		'preamp': {
 			'line': {
@@ -205,105 +220,104 @@ class Capture():
 	}
 	# received on USB connect to Windows machine: f0 41 10 00 00 6b 11  01 00 00 00  00 00 0b 60  14 f7
 	memory_map = {
-		'initial_setting':    0x00000002,
-		'reverb': {
-			0:                0x00040000,
-			'echo':       0x0100,
-			'room':       0x0200,
-			'small_hall': 0x0300,
-			'large_hall': 0x0400,
-			'plate':      0x0500,
-			'type':      0x00,
-			'pre_delay': 0x01,
-			'time':      0x02,
+		'initial_setting': 0x00000002,
+		'reverb': { 0: 0x00040000 } | {
+			'type': 0x0000,
+		} | {
+			verb: { 0: (i+1) << 8 } | reverb_params
+			for i,verb in enumerate(reverb_types)
 		},
-		'patchbay': {
-			0:                0x00030000,
-			'output': {
-				'1-2':  0x00,
-				'3-4':  0x01,
-				'5-6':  0x02,
-				'7-8':  0x03,
-				'9-10': 0x04,
-			},
+		'patchbay': { 0: 0x00030000 } | {
+			output: i
+			for i,output in enumerate(patchbay_outputs)
 		},
 
-		'input':              0x00060000,
-		'daw_monitor':        0x00070000,
+		'input_monitor': { 0: 0x00060000 } | {
+			m: { 0: mon,
+				'channel': {
+					ch: { 0: channel } | input_params
+					for ch,channel in channels_16.items()
+				}
+			}
+			for m,mon in monitors.items()
+		},
+		'daw_monitor': { 0: 0x00070000 } | {
+			m: { 0: mon,
+				'channel': {
+					ch: { 0: channel } | daw_params
+					for ch,channel in channels_12.items()
+				}
+			}
+			for m,mon in monitors.items()
+		},
+		'preamp': { 0: 0x00050000 } | {
+			'channel': {
+				ch: { 0: channel, 'hi-z': 0x03 } | preamp_params
+				for ch,channel in channels_12.items() if ch <= 2
+			} | {
+				ch: { 0: channel } | preamp_params
+				for ch,channel in channels_12.items() if ch >= 3
+			}
+		},
+		'line': { 0: 0x00051000 } | {
+			'channel': {
+				ch: { 0: channel,
+					'stereo':      0x00,
+					'attenuation': 0x01,
+				}
+				for ch,channel in lines.items()
+			}
+		},
 		'master': {
-			'direct_monitor': 0x00080000,
-			'link':           0x0008000d,
-			'daw_monitor':    0x00090000,
-			'reverb_return':  0x00080007,
-			'left':               0x0000,
-			'right':              0x0100,
-			'volume':               0x01,
-			'stereo':               0x00,
-		},
-		'monitor': {
-			'a': 0x0000,
-			'b': 0x1000,
-			'c': 0x2000,
-			'd': 0x3000,
-		},
-		'channel': {
-			1: 0x000,  2: 0x100,  3: 0x200,  4: 0x300,  5: 0x400,  6: 0x500,  7: 0x600,  8: 0x700,
-			9: 0x800, 10: 0x900, 11: 0xa00, 12: 0xb00, 13: 0xc00, 14: 0xd00, 15: 0xe00, 16: 0xf00,
-			'stereo': 0x00, # even channels only
-			'solo':   0x02,
-			'mute':   0x03,
-			'pan':    0x04,
-			'volume': 0x08,
-			'reverb': 0x0e, # direct monitor only
-		},
-
-		'preamp': {
-			0:                0x00050000,     # max channel 0x0b00
-			1: 0x000,  2: 0x100,  3: 0x200,  4: 0x300,  5: 0x400,  6: 0x500,
-			7: 0x600,  8: 0x700,  9: 0x800, 10: 0x900, 11: 0xa00, 12: 0xb00,
-			'line': {
-				13: 0x1000,
-				14: 0x1100,
-				15: 0x1200,
-				16: 0x1300,
-				'stereo':      0x00,
-				'attenuation': 0x01,
+			'direct_monitor': { 0: 0x00080000 } | master_left_right | {
+				'reverb_return': 0x0007,
+				'link':          0x000d,
 			},
-			'+48':    0x00,
-			'lo-cut': 0x01,
-			'phase':  0x02,
-			'hi-z':   0x03,    # only present on 1-2
-			'sens':   0x04,    # max value 0x74
-			'stereo': 0x05,
-			'bypass':    0x06, # compressor
-			'gate':      0x07, # max value 0x32
-			'attack':    0x08, # max value 0x7c
-			'release':   0x09, # max value 0x7c
-			'threshold': 0x0a, # max value 0x28
-			'ratio':     0x0b, # max value 0x0d
-			'gain':      0x0c, # max value 0x50
-			'knee':      0x0d, # max value 0x09
+			'daw_monitor': { 0: 0x00090000 } | master_left_right | {
+			},
 		},
-		'meters_active':      0x000a0000, # 0=stop, 1=start
-		'load_settings':      0x01000000, # send buffer size of 0x05eb (1515 dec)
+		'meters_active': 0x000a0000, # 0=stop, 1=start
+		'load_settings': 0x01000000, # send buffer size of 0x05eb (1515 dec)
 	}
+
+	def get_subtree(desc):
+		maplist = [ int(word) if word.isdigit() else word for word in desc.split('.') ]
+		return reduce(operator.getitem, maplist, Capture.memory_map)
+
+	# new and improved
 	def map_lookup(lookup, desc):
 		addr = 0
 		words = desc.split(' ')
 		for word in words:
 			selected = lookup
+			value = 0
 			for token in word.split('.'):
 				if token.isdigit():
 					token = int(token)
-				selected = selected[token]
-			if type(selected) is dict:
-				value = selected[0]
-			else:
-				value = selected
+				try:
+					selected = selected[token]
+				except:
+					raise Exception("Failed to lookup " + desc)
+				if type(selected) is dict:
+					if 0 in selected.keys():
+						value += selected[0]
+			if type(selected) is not dict:
+				value += selected
 			if addr | value != addr + value:
 				raise Exception("%s conflicts with address space" % word)
 			addr += value
 		return addr
+
+	def memory_names(prefix="", start=None):
+		if start is None: start = Capture.memory_map
+		ret = []
+		for k,v in start.items():
+			if type(v) is dict:
+				ret += Capture.memory_names("%s%s." % (prefix, str(k)), v)
+			else:
+				if k != 0:
+					ret += ["%s%s" % (prefix, k)]
+		return ret
 
 	def addr_to_desc(addr):
 		a = addr
@@ -475,6 +489,8 @@ class Gain(Scaled):
 		return Scaled.__init__(self, value, 80)
 	def offset(self):
 		return 40
+	def format(self):
+		return Volume.format(self)
 
 class Gate(Scaled):
 	def __init__(self, value=-70):
@@ -484,7 +500,7 @@ class Gate(Scaled):
 	def format(self):
 		if self.value <= -self.offset():
 			return '-inf'
-		return Scaled.format(self)
+		return Volume.format(self)
 
 class Enum(Byte):
 	def __init__(self, value=0):
@@ -550,6 +566,21 @@ class PreDelay(Enum):
 	def values(self):
 		return self.delays
 
+class Patch(Enum):
+	feeds = [
+		'MIX A',
+		'MIX B',
+		'MIX C',
+		'MIX D',
+		'WAVE 1/2',
+		'WAVE 3/4',
+		'WAVE 5/6',
+		'WAVE 7/8',
+		'WAVE 9/10',
+	]
+	def values(self):
+		return self.feeds
+
 class ReverbTime(Value):
 	def increment(self):
 		if self.value < 5.0:
@@ -571,7 +602,7 @@ class ValueFactory:
 			(".pan",): Pan,
 			("reverb.type",): ReverbType,
 			('.sens',): Sens,
-			(".solo",".mute",".stereo",'.+48','.lo-cut','.phase'): Bool,
+			(".solo",".mute",".stereo",'.hi-z','.+48','.lo-cut','.phase','.bypass'): Bool,
 			('.gate',): Byte,
 			('.threshold',): Threshold,
 			('.gain',): Gain,
@@ -583,7 +614,7 @@ class ValueFactory:
 			('.knee',): Knee,
 			('.pre_delay',): PreDelay,
 			('.time',): ReverbTime,
-			('.bypass',): Bool,
+			('patchbay.',): Patch,
 		}
 		for parts, formatter in formatters.items():
 			for part in parts:
