@@ -7,6 +7,173 @@ class Cursor(object):
 	def yx(self):
 		return self.y, self.x
 
+class Page(object):
+	def __init__(self, mixer):
+		self.mixer = mixer
+	def get_controls(self):
+		raise Exception("Not implemented")
+	def get_spacing(self):
+		return 5
+	def get_labels(self):
+		return None
+
+class InputPage(Page):
+	controls = "mute","solo","reverb","pan","volume"
+	def __init__(self, mixer, monitor):
+		Page.__init__(self, mixer)
+		self.monitor = monitor
+
+	def get_header(self):
+		return [str(ch+1) for ch in range(0,16)]
+
+	def get_labels(self):
+		return ['Stereo'] + [ control.capitalize() for control in self.controls ]
+
+	def get_controls(self):
+		page = "input_monitor." + self.monitor
+		controls = []
+		row = []
+		for ch in range(0,16,2):
+			row += [
+				"%s.channel.%d.stereo" % (page, ch+1)
+			]
+		controls += [row]
+		for control in self.controls:
+			row = []
+			for ch in range(0, 16):
+				desc = "%s.channel.%d.%s" % (page, ch+1, control)
+				row += [desc]
+			controls += [row]
+		return controls
+
+
+class OutputPage(Page):
+	controls = "mute", "solo", "pan", "volume"
+	def __init__(self, mixer, monitor):
+		Page.__init__(self, mixer)
+		self.monitor = monitor
+
+	def get_labels(self):
+		return ['Stereo'] + [ control.capitalize() for control in self.controls ]
+
+	def get_header(self):
+		return [str(ch+1) for ch in range(0,10)] + ["INL","INR","DAWL","DAWR"]
+
+	def get_controls(self):
+		page = "daw_monitor." + self.monitor
+		controls = []
+		row = []
+		for ch in range(0,10,2):
+			row += ["%s.channel.%d.stereo" % (page, ch+1)]
+		row += ["master.direct_monitor.left.stereo", "master.daw_monitor.left.stereo"]
+		controls += [row]
+		for control in self.controls:
+			row = []
+			for ch in range(0, 10):
+				desc = "%s.channel.%d.%s" % (page, ch+1, control)
+				row += [desc]
+			if control == 'volume':
+				row += [
+					"master.direct_monitor.left.volume",
+					"master.direct_monitor.right.volume",
+					"master.daw_monitor.left.volume",
+					"master.daw_monitor.right.volume",
+				]
+			else:
+				row += [None, None, None, None]
+			controls += [row]
+		return controls
+
+class PreampPage(Page):
+	controls = "+48","lo-cut","phase","sens","bypass","gate","threshold","ratio","attack","release","gain","knee"
+	def get_controls(self):
+		page = "preamp"
+		controls = []
+		row = []
+		for ch in range(0,12,2):
+			row += ["%s.channel.%d.stereo" % (page, ch+1)]
+		controls += [row]
+		controls += [["%s.channel.%d.hi-z" % (page, ch+1) if ch < 2 else None for ch in range(0,12)]]
+		for control in self.controls:
+			row = []
+			for ch in range(0, 12):
+				desc = "%s.channel.%d.%s" % (page, ch+1, control)
+				row += [desc]
+			controls += [row]
+		return controls
+
+	def get_spacing(self):
+		return 7
+
+	def get_labels(self):
+		return ['Stereo','Hi-Z'] + [ control.capitalize() for control in self.controls ]
+
+	def get_header(self):
+		return [str(ch+1) for ch in range(0,12)]
+
+class ReverbPage(Page):
+	def get_controls(self):
+		page = "reverb"
+		controls = [
+			['reverb.type', None, None, 'master.direct_monitor.reverb_return']
+		]
+		for verb in 'echo', 'room', 'small_hall', 'large_hall', 'plate':
+			row = [None]
+			for control in 'pre_delay','time':
+				row += [
+					'reverb.%s.%s' % (verb, control),
+				]
+			row += [None]
+			controls += [row]
+		return controls
+
+	def get_labels(self):
+		labels = ['','Echo','Room','Small Hall','Large Hall','Plate']
+		verb = self.mixer.get_memory_value("reverb.type")
+		v = verb.value if verb else 0
+		labels[v] = "\033[0;4m%s\033[24m" % labels[v]
+		return labels
+
+	def get_spacing(self):
+		return 14
+
+	def get_header(self):
+		return ["Type", "Pre delay [ms]", "Time [s]", "Return"]
+
+class LinePage(Page):
+	def get_controls(self):
+		return [
+			["line.channel.13.stereo", "line.channel.15.stereo"],
+			["line.channel.%d.attenuation" % (ch+1) for ch in range(12,16)]
+		]
+	def get_spacing(self):
+		return 7
+
+	def get_header(self):
+		return [str(ch+1) for ch in range(12,16)]
+
+	def get_labels(self):
+		return ["Stereo","Attenuation"]
+
+class Patchbay(Page):
+	def get_controls(self):
+		return [
+			["patchbay.1-2"],
+			["patchbay.3-4"],
+			["patchbay.5-6"],
+			["patchbay.7-8"],
+			["patchbay.9-10"],
+		]
+
+	def get_labels(self):
+		return [ "1-2", "3-4", "5-6", "7-8", "9-10" ]
+
+	def get_spacing(self):
+		return 14
+	
+	def get_header(self):
+		return ['Source', 'Output']
+
 class Mixer(object):
 	def __init__(self):
 		self.capture_view = CaptureView.instance()
@@ -15,120 +182,35 @@ class Mixer(object):
 		self.setup_pages()
 		self.setup_name_table()
 		self.monitor = 'a'
-		self.set_page('input monitor.' + self.monitor)
+		self.set_page('input_monitor.' + self.monitor)
 
 	def setup_pages(self):
 		self.pages = {
-			"input monitor.a": [],
-			"input monitor.b": [],
-			"input monitor.c": [],
-			"input monitor.d": [],
-			"daw_monitor monitor.a": [],
-			"daw_monitor monitor.b": [],
-			"daw_monitor monitor.c": [],
-			"daw_monitor monitor.d": [],
-			"preamp": [],
-			"line": [],
-			"reverb": [],
+			"input_monitor.a": InputPage(self, 'a'),
+			"input_monitor.b": InputPage(self, 'b'),
+			"input_monitor.c": InputPage(self, 'c'),
+			"input_monitor.d": InputPage(self, 'd'),
+			"daw_monitor.a" : OutputPage(self, 'a'),
+			"daw_monitor.b" : OutputPage(self, 'b'),
+			"daw_monitor.c" : OutputPage(self, 'c'),
+			"daw_monitor.d" : OutputPage(self, 'd'),
+			"preamp"        : PreampPage(self),
+			"line"          : LinePage(self),
+			"reverb"        : ReverbPage(self),
+			"patchbay"      : Patchbay(self),
 		}
-		for monitor in 'a','b','c','d':
-			page = 'input monitor.' + monitor
-			controls = []
-			row = []
-			for ch in range(0,16,2):
-				row += [
-					"%s channel.%d channel.stereo" % (page, ch+1)
-				]
-			controls += [row]
-			for control in "mute","solo","reverb","pan","volume":
-				row = []
-				for ch in range(0, 16):
-					desc = "%s channel.%d channel.%s" % (page, ch+1, control)
-					row += [desc]
-				controls += [row]
-			self.pages[page] = controls
-
-			page = "daw_monitor monitor." + monitor
-			controls = []
-			row = []
-			for ch in range(0,10,2):
-				row += ["%s channel.%d channel.stereo" % (page, ch+1)]
-			row += ["master.direct_monitor channel.stereo", "master.daw_monitor channel.stereo"]
-			controls += [row]
-			for control in "mute", "solo", "pan", "volume":
-				row = []
-				for ch in range(0, 10):
-					desc = "%s channel.%d channel.%s" % (page, ch+1, control)
-					row += [desc]
-				if control == 'volume':
-					row += [
-						"master.direct_monitor master.left master.volume",
-						"master.direct_monitor master.right master.volume",
-						"master.daw_monitor master.left master.volume",
-						"master.daw_monitor master.right master.volume",
-					]
-				else:
-					row += [None, None, None, None]
-				controls += [row]
-			self.pages[page] = controls
-
-		page = "preamp"
-		controls = []
-		row = []
-		for ch in range(0,12,2):
-			row += ["%s preamp.%d preamp.stereo" % (page, ch+1)]
-		controls += [row]
-		for control in "+48","lo-cut","phase","sens","bypass","gate","threshold","ratio","attack","release","gain","knee":
-			row = []
-			for ch in range(0, 12):
-				desc = "%s preamp.%d preamp.%s" % (page, ch+1, control)
-				row += [desc]
-			controls += [row]
-		self.pages[page] = controls
-
-		page = "line"
-		controls = [
-			["preamp preamp.line.13 preamp.line.stereo", "preamp preamp.line.15 preamp.line.stereo"],
-			["preamp preamp.line.%d preamp.line.attenuation" % (ch+1) for ch in range(12,16)]
-		]
-		self.pages[page] = controls
-
-		page = "reverb"
-		controls = [
-			['reverb reverb.type', None, None, None, None, None, 'master.reverb_return']
-		]
-		for control in 'pre_delay','time':
-			row = [None]
-			for verb in 'echo', 'room', 'small_hall', 'large_hall', 'plate':
-				row += [
-					'reverb reverb.%s reverb.%s' % (verb, control),
-				]
-			row += [None]
-			controls += [row]
-		self.pages[page] = controls
 
 	def setup_controls(self):
-		page = self.page
+		page_name = self.page
+		page = self.pages[page_name]
 		controls = []
-		self.spacing = 5
-		if 'input' in page:
-			self.header = [str(ch+1) for ch in range(0,16)]
-		elif 'daw_monitor' in page:
-			self.header = [str(ch+1) for ch in range(0,10)] + ["DIRL","DIRR","DAWL","DAWR"]
-		elif 'preamp' in page:
-			self.spacing = 7
-			self.header = [str(ch+1) for ch in range(0,12)]
-		elif 'line' in page:
-			self.spacing = 7
-			self.header = [str(ch+1) for ch in range(12,16)]
-		elif 'reverb' in page:
-			self.spacing = 10
-			self.header = ['Type','Echo','Room','Sm. Hall','Lg. Hall','Plate','Return']
-		self.controls = self.pages[page]
+		self.spacing  = page.get_spacing()
+		self.header   = page.get_header()
+		self.controls = page.get_controls()
 
 	def setup_name_table(self):
-		for page, rows in self.pages.items():
-			for row in rows:
+		for name, page in self.pages.items():
+			for row in page.get_controls():
 				for control in row:
 					if control is None:
 						continue
@@ -140,16 +222,47 @@ class Mixer(object):
 	def width(self):
 		return len(self.controls[self.cursor.y])
 
+	def highlight(s, positions):
+		ret = "\033[1;30m"
+		for i,v in enumerate(s):
+			if i in positions:
+				ret += "\033[36m%s\033[1;30m" % v
+			else:
+				ret += v
+		return ret
+
+	def legend(self):
+		return 'i o [abcd] l p r y'
+
+	def get_highlight_for_page(self):
+		legend = self.legend()
+		mon = ord(self.monitor) - 97
+		if 'input' in self.page:
+			i = legend.find('i')
+			m = legend.find('[') + mon + 1
+			return (i, m)
+		if 'daw_monitor' in self.page:
+			o = legend.find('o')
+			m = legend.find('[') + mon + 1
+			return (o, m)
+		if 'patchbay' in self.page:
+			return (legend.find('y'),)
+		return (legend.find(self.page[0]),)
+
 	def render(self):
 		ret = ""
 		selected_control = ""
 		spacing = self.spacing
 		channels = max(len(row) for row in self.controls)
 		ret += "\033[2K"
-		ret += self.page
+		ret += "%s\033[0m" % Mixer.highlight(self.legend(), self.get_highlight_for_page())
+		ret += " \033[4m %s \033[0m" % self.page
 		ret += "\n\033[2K\n\033[2K"
-		ret += ''.join(h.center(spacing) for h in self.header)
+		ret += '\033[1;30m'
+		ret += ''.join(h.center(spacing) if i < channels else h for i,h in enumerate(self.header))
+		ret += '\033[0m'
 		ret += "\n\033[2K"
+		labels = self.pages[self.page].get_labels()
 		for r, row in enumerate(self.controls):
 			w = spacing*int(channels/len(row))
 			for c, control in enumerate(row):
@@ -163,7 +276,10 @@ class Mixer(object):
 				else:
 					ret += "\033[0m"
 				ret += value.center(w)
-			ret += "\033[0m\n\033[2K"
+			ret += "\033[0m"
+			if labels is not None and r < len(labels):
+				ret += " \033[1;30m" + labels[r] + "\033[0m" #.center(spacing)
+			ret += "\n\033[2K"
 
 		ret += "\n\033[2K%s\n" % (selected_control or '')
 		return ret
@@ -211,6 +327,10 @@ class Mixer(object):
 		if control is None:
 			return None
 		return Capture.get_addr(control)
+
+	def get_memory_value(self, control):
+		addr = Capture.get_addr(control)
+		return self.memory.get_value(addr)
 
 	def decrement_selected(self):
 		addr = self.get_selected_addr()
