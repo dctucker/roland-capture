@@ -1,6 +1,7 @@
 from functools import reduce
 import operator
 import math
+from math import inf, pow, log10
 
 def render_bytes(message):
 	return ', '.join("0x%02x" % d for d in message)
@@ -46,14 +47,14 @@ def nibbles_to_long(buf):
 
 def db_to_long(db):
 	""" convert -6.02 to 0x100000 """
-	return int(math.pow(10, db/20) * 0x200000)
+	return int(pow(10, db/20) * 0x200000)
 
 def long_to_db(long):
 	""" convert 0x200000 to 0 """
 	ratio = long / 0x200000
 	if ratio == 0:
-		return -math.inf
-	return 20*math.log10(ratio)
+		return -inf
+	return 20*log10(ratio)
 
 def long_to_pan(long):
 	return round(100 * (long - 0x4000) / 0x4000)
@@ -170,13 +171,12 @@ master_left_right = {
 	'left' : { 0: 0x0000 } | master_params,
 	'right': { 0: 0x0100 } | master_params,
 }
-reverb_types = ['echo', 'room', 'small_hall', 'large_hall', 'plate']
+reverb_types = ['off', 'echo', 'room', 'small_hall', 'large_hall', 'plate']
 reverb_params = {
 	'pre_delay': 0x01,
 	'time':      0x02,
 }
 patchbay_outputs = ["%d-%d" % (ch,ch+1) for ch in range(1,10,2)]
-
 
 class Capture():
 	value_map = {
@@ -225,7 +225,7 @@ class Capture():
 			'type': 0x0000,
 		} | {
 			verb: { 0: (i+1) << 8 } | reverb_params
-			for i,verb in enumerate(reverb_types)
+			for i,verb in enumerate(reverb_types[1:])
 		},
 		'patchbay': { 0: 0x00030000 } | {
 			output: i
@@ -354,6 +354,9 @@ class Capture():
 		return 1
 
 class Value(object):
+	size = None
+	min, max = None, None
+	step = None
 	def __init__(self, value=None):
 		self.value = value
 	def set_packed(self, data):
@@ -381,31 +384,41 @@ class Value(object):
 		if self.value is None: return None
 		return [self.value]
 
+	def get_size(self):
+		return self.size
+
 	@classmethod
 	def default(cls):
 		return 0
 
 class Byte(Value):
-	def __init__(self, value=0, maxval=0x7f):
+	size = 1
+	min, max = 0x0, 0x7f
+	step = 0x1
+
+	def __init__(self, value=0):
 		self.value = value
-		self.max = maxval
+
 	def increment(self):
-		if self.pack()[0] < self.max:
-			self.value += 1
+		if self.value == -inf:
+			self.value = self.min
+		elif self.value < self.max:
+			self.value += self.step
+
 	def decrement(self):
-		if self.pack()[0] > 0:
-			self.value -= 1
+		if self.value == inf:
+			self.value = self.max
+		elif self.value > self.min:
+			self.value -= self.step
 
 	def unpack(self, data):
-		return data[0]
+		return data[0] + self.min
 	def pack(self):
-		return [self.value & 0x7f]
+		return [(self.value - self.min) & 0x7f]
 
-class Bool(Value):
-	def increment(self):
-		self.value = 1
-	def decrement(self):
-		self.value = 0
+class Bool(Byte):
+	min, max = 0, 1
+	step = 1
 
 	def unpack(self, data):
 		return data[0] != 0
@@ -418,31 +431,40 @@ class Bool(Value):
 		return "off"
 
 class Volume(Value):
+	size = 6
+	min, max = -inf, 12
+	step = 1
+
 	def increment(self):
-		if self.value == -math.inf:
+		if self.value == -inf:
 			self.value = -71
-		if self.value < 12:
-			self.value += 1
+		if self.value < self.max:
+			self.value += self.step
+
 	def decrement(self):
 		self.value -= 1
 		if self.value < -71:
-			self.value = -math.inf
+			self.value = -inf
 
 	def unpack(self, data):
 		return long_to_db(nibbles_to_long(data))
 	def pack(self):
 		long = db_to_long(self.value)
 		long = min(0x7fffff, long)
-		if self.value != -math.inf and round(self.value) == 0:
+		if self.value != -inf and round(self.value) == 0:
 			long = 0x200000
-		return to_nibbles(long, 6)
+		return to_nibbles(long, self.size)
 
 	def format(self):
-		if self.value == -math.inf:
+		if self.value == -inf:
 			return "-∞"
 		return "%+d" % round(self.value)
 
 class Pan(Value):
+	size = 4
+	min, max = -100, 100
+	step = 1
+
 	def increment(self):
 		if self.value < 100:
 			self.value += 1
@@ -452,7 +474,7 @@ class Pan(Value):
 	def unpack(self, data):
 		return long_to_pan(nibbles_to_long(data))
 	def pack(self):
-		return to_nibbles(pan_to_long(self.value), 4)
+		return to_nibbles(pan_to_long(self.value), self.size)
 
 	def format(self):
 		if self.value < 0:
@@ -463,70 +485,64 @@ class Pan(Value):
 			return "C"
 
 class Sens(Value):
+	size = 1
+	min, max = 0.0, 58.0
+	step = 0.5
+
 	def increment(self):
-		if self.value < 58.0:
-			self.value += 0.5
+		if self.value < self.max:
+			self.value += self.step
 	def decrement(self):
-		if self.value > 0:
-			self.value -= 0.5
+		if self.value > self.min:
+			self.value -= self.step
 	def unpack(self, data):
-		return data[0] * 0.5
+		return data[0] * self.step
 	def pack(self):
-		return [int(self.value * 2)]
+		return [int(self.value / self.step)]
 
 class Scaled(Byte):
-	def __init__(self, value=0, maxval=0x7f):
-		return Byte.__init__(self, value, maxval)
-	def offset(self):
-		pass
-	def unpack(self, data):
-		return data[0] - self.offset()
-	def pack(self):
-		return [self.value + self.offset()]
+	min, max = None, None
+	def __init__(self, value=0):
+		return Byte.__init__(self, value)
 
 class Threshold(Scaled):
+	min, max = -40, 0 #max = 0x28
 	def __init__(self, value=-12):
-		return Scaled.__init__(self, value, 40)
-	def offset(self):
-		return 40
+		return Scaled.__init__(self, value)
 
 class Gain(Scaled):
+	min, max = -40, 40 #max = 0x50
 	def __init__(self, value=-12):
-		return Scaled.__init__(self, value, 80)
-	def offset(self):
-		return 40
+		return Scaled.__init__(self, value)
 	def format(self):
 		return Volume.format(self)
 
 class Gate(Scaled):
+	min, max = -70, -20 #max = 0x32
 	def __init__(self, value=-70):
-		return Byte.__init__(self, value, 50)
-	def offset(self):
-		return 70
+		return Byte.__init__(self, value)
 	def format(self):
-		if self.value <= -self.offset():
-			return '-inf'
+		if self.value <= self.min:
+			return '-∞'
 		return Volume.format(self)
 
 class Enum(Byte):
 	def __init__(self, value=0):
-		Byte.__init__(self, value, len(self.values())-1)
+		Byte.__init__(self, value)
+		self.max = len(self.values)-1
 	def lookup(self):
-		values = self.values()
-		return values[self.value] if self.value < len(values) else None
+		values = self.values
+		v = self.value
+		return values[v] if v < len(values) else None
 	def format(self):
 		lookup = self.lookup()
 		return str(lookup) if lookup is not None else "?"
-	def values(self):
-		raise Exception("Not implemented: Enum.values")
 
 class Ratio(Enum):
-	ratios = [1, 1.12, 1.25, 1.4, 1.6, 1.8, 2, 2.5, 3.2, 4, 5.6, 8, 16, math.inf]
-	def values(self):
-		return self.ratios
+	values = [1, 1.12, 1.25, 1.4, 1.6, 1.8, 2, 2.5, 3.2, 4, 5.6, 8, 16, inf]
 
 class Attack(Enum):
-	attacks = [
+	values = [
 		 0.0,  0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,
 		 1.0,  1.1,  1.2,  1.3,  1.4,  1.5,  1.6,  1.7,  1.8,  1.9,
 		 2.0,  2.1,  2.2,  2.4,  2.5,  2.7,  2.8,  3.0,  3.2,  3.3,  3.6,  3.8,
@@ -539,53 +555,32 @@ class Attack(Enum):
 		237,  250,  266,  280,  300,  315,  335,  355,  376,  400,  422,  450,
 		473,  500,  530,  560,  600,  630,  670,  710,  750,  800
 	]
-	def values(self):
-		return self.attacks
 
 class Release(Enum):
-	releases = [int(attack * 10) for attack in Attack.attacks]
-	def values(self):
-		return self.releases
+	values = [int(attack * 10) for attack in Attack.values]
 
 class Knee(Enum):
-	knees = ['HARD'] + [('SOFT%d' % k) for k in range(1,10)]
-	def values(self):
-		return self.knees
+	values = ['HARD'] + [('SOFT%d' % k) for k in range(1,10)]
 
 class Attenuation(Enum):
-	attenuations = [-20, -10, 4]
-	def values(self):
-		return self.attenuations
+	values = [-20, -10, 4]
 	def format(self):
 		lookup = self.lookup()
 		return "%+d" % lookup if lookup else "?"
 
 class ReverbType(Enum):
-	types = [k for k in Capture.value_map['reverb']['type'].keys()]
-	def values(self):
-		return self.types
+	values = reverb_types
 	def format(self):
-		return self.lookup().upper()
+		return self.lookup().upper().replace('_',' ')
 
 class PreDelay(Enum):
-	delays = [0.0, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 10, 20, 40, 80, 160]
-	def values(self):
-		return self.delays
+	values = [0.0, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 10, 20, 40, 80, 160]
 
 class Patch(Enum):
-	feeds = [
-		'MIX A',
-		'MIX B',
-		'MIX C',
-		'MIX D',
-		'WAVE 1/2',
-		'WAVE 3/4',
-		'WAVE 5/6',
-		'WAVE 7/8',
-		'WAVE 9/10',
+	values = [
+		'MIX A', 'MIX B', 'MIX C', 'MIX D',
+		'WAVE 1/2', 'WAVE 3/4', 'WAVE 5/6', 'WAVE 7/8', 'WAVE 9/10',
 	]
-	def values(self):
-		return self.feeds
 
 class ReverbTime(Value):
 	def increment(self):
