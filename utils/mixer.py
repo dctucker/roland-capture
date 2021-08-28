@@ -354,3 +354,9 @@ class Mixer(object):
 		data = self.memory.zero(addr) if addr else None
 		return addr, data
 
+class TerminalMixer(Mixer):
+	pass
+
+class GraphicalMixer(Mixer):
+	pass
+

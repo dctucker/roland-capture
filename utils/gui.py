@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import *
 import sys
@@ -138,13 +139,16 @@ class MainWindow(QWidget):
 		frame_geom.moveCenter(desk_center)
 		self.move(frame_geom.topLeft())
 
-def main():
-	app = QApplication(sys.argv)
-	app.setWheelScrollLines(1)
-	window = MainWindow()
-	window.show()
+class MainGraphical():
+	def __init__(self):
+		app = QApplication(sys.argv)
+		app.setWheelScrollLines(1)
+		window = MainWindow()
+		window.show()
+		sys.exit(app.exec_())
 
-	sys.exit(app.exec_())
+def main():
+	MainGraphical()
 
 if __name__ == '__main__':
 	main()

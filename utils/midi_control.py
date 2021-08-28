@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import time
 from term import Term
 from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
@@ -9,7 +8,9 @@ from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		get_compiled_api)
 from rtmidi.midiutil import open_midiinput, open_midioutput
 from roland import render_bytes, Roland, Capture, CaptureView, Memory
-from mixer import Mixer
+from mixer import TerminalMixer, GraphicalMixer
+from tui import MainTerminal
+from controller import Controller
 
 mixer_port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
 
@@ -39,7 +40,7 @@ class Listener(object):
 		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
 
-		self.app.display(False)
+		self.app.interface.update(False)
 
 	def register_addr(self, addr, handler):
 		self.addr_listeners[addr] = handler
@@ -56,9 +57,11 @@ class App(object):
 		self.debug_string = ""
 		self.height = 12
 		self.term = Term()
-		self.mixer = Mixer()
+		self.mixer = TerminalMixer()
+		self.controller = Controller(self)
+		self.interface = MainTerminal(self.controller, self.term)
 		self.listener = Listener(self)
-		self.term.clear()
+		self.interface.refresh()
 
 	def get_mixer_value(self, desc, handler=None):
 		addr = Capture.get_addr(desc)
@@ -92,7 +95,7 @@ class App(object):
 				i += 1
 		self.term.blocked = False
 
-	def main(self):
+	def setup_midi(self):
 		apis = get_compiled_api()
 
 		midi_in = None
@@ -111,107 +114,27 @@ class App(object):
 			self.debug("Opened %s for input" % port_name)
 			midi_in.ignore_types(sysex=False)
 			midi_in.set_callback(self.listener)
-
 		except:
 			print("Unable to open MIDI ports")
+
 		self.midi_in = midi_in
 		self.midi_out = midi_out
+		self.api_in = api_in
+		self.api_out = api_out
 
+	def main(self):
+		self.setup_midi()
 		self.load_mixer_values()
-
-		if not hasattr(sys, 'ps1'): # non-interactive mode only
-			try:
-				while True:
-					key = self.term.getch()
-					if key == "":
-						time.sleep(0.01)
-						continue
-					if self.on_keyboard(key):
-						self.display(False)
-					elif key in ('q',"\033"):
-						break
-			except KeyboardInterrupt:
-				print('')
-			finally:
-				term_width, term_height = self.term.size()
-				print("\033[r\033["+str(term_height-1)+"HExit.", end="")
-				if self.midi_in: self.midi_in.close_port()
-				if self.midi_out: self.midi_out.close_port()
-				del midi_in, api_in, midi_out, api_out
+		self.interface.present(self)
 
 	def on_keyboard(self, key):
-		debug_string = self.debug_string
-		self.debug_string = ""
-		if key in Term.KEY_DOWN:
-			self.mixer.cursor_down()
-		elif key in Term.KEY_UP:
-			self.mixer.cursor_up()
-		elif key in Term.KEY_LEFT:
-			self.mixer.cursor_left()
-		elif key in Term.KEY_RIGHT:
-			self.mixer.cursor_right()
-		elif key in ('a','b','c','d'):
-			self.mixer.set_monitor(key)
-			self.load_mixer_values()
-		elif key in ('-','_'):
-			addr, data = self.mixer.decrement_selected()
-			self.set_mixer_value(addr, data)
-		elif key in ('=','+'):
-			addr, data = self.mixer.increment_selected()
-			self.set_mixer_value(addr, data)
-		elif key in ('0',):
-			addr, data = self.mixer.zero_selected()
-			self.set_mixer_value(addr, data)
-		elif key in ('p','\033[Z'):
-			self.set_page("preamp")
-		elif key in ('l',):
-			self.set_page("line")
-		elif key in ('i',):
-			self.set_page("input_monitor." + self.mixer.monitor)
-		elif key in ('o',):
-			self.set_page("daw_monitor." + self.mixer.monitor)
-		elif key in ('\t',):
-			if 'input' in self.mixer.page:
-				self.set_page("daw_monitor." + self.mixer.monitor)
-			else:
-				self.set_page("input_monitor." + self.mixer.monitor)
-		elif key in ('[',):
-			if self.mixer.monitor > 'a':
-				self.mixer.set_monitor(chr(ord(self.mixer.monitor)-1))
-				self.load_mixer_values()
-		elif key in (']',):
-			if self.mixer.monitor < 'd':
-				self.mixer.set_monitor(chr(ord(self.mixer.monitor)+1))
-				self.load_mixer_values()
-		elif key in ('r','v',):
-			self.set_page('reverb')
-		elif key in ('y','P',):
-			self.set_page('patchbay')
-		else:
-			self.debug_string = debug_string
-			return False
-		return True
+		return self.interface.on_keyboard(key)
 
 	def set_page(self, page):
 		self.mixer.set_page(page)
 		self.load_mixer_values()
-		self.term.clear()
+		self.interface.refresh()
 
-	def display(self, clear_debug=True):
-		if self.term.blocked: return
-		self.term.blocked = True
-		#self.height = 12
-		rendered = self.mixer.render()
-		#rendered = ""
-		#self.height = rendered.count("\n")
-		term_width, term_height = self.term.size()
-		CL = Term.CLEAR_LINE
-		debug_out = CL + "\n" + CL + "\033[20;%dr\033[%d;1H\033[38;5;24m%s\033[0m\033[r" % (term_height, term_height, self.debug_string)
-		self.term.display(rendered + debug_out)
-		if clear_debug:
-			self.debug_string = ""
-		self.term.blocked = False
-	
 	def debug(self, message, end="\n"):
 		self.debug_string += Term.CLEAR_LINE + message + end
 		#self.height += message.count("\n") + 1
