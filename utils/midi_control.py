@@ -2,7 +2,6 @@
 
 import os
 import time
-from term import Term
 from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
 		get_compiled_api)
@@ -30,11 +29,11 @@ class Listener(object):
 	def __call__(self, event, data=None):
 		message, deltatime = event
 		#self.app.debug("< " + render_bytes(message))
+
 		addr, data = Roland.parse_sysex(message)
 		self.app.mixer.memory.set(addr, data)
 		name = self.app.capture_view.lookup_name(addr)
 		value = self.app.mixer.memory.get_formatted(addr)
-
 		self.app.debug("0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
 
 		self.app.mixer.memory.set(addr, data)
@@ -54,12 +53,10 @@ class App(object):
 	capture_view = CaptureView.instance()
 
 	def __init__(self):
-		self.debug_string = ""
 		self.height = 12
-		self.term = Term()
 		self.mixer = TerminalMixer()
 		self.controller = Controller(self)
-		self.interface = MainTerminal(self.controller, self.term)
+		self.interface = MainTerminal(self.controller, self.mixer)
 		self.listener = Listener(self)
 		self.interface.refresh()
 
@@ -84,7 +81,7 @@ class App(object):
 			return message
 
 	def load_mixer_values(self):
-		self.term.blocked = True
+		self.interface.block()
 		i = 0
 		for row in self.mixer.controls:
 			for control in row:
@@ -93,7 +90,7 @@ class App(object):
 					time.sleep(0.02)
 				self.get_mixer_value(control)
 				i += 1
-		self.term.blocked = False
+		self.interface.unblock()
 
 	def setup_midi(self):
 		apis = get_compiled_api()
@@ -136,8 +133,7 @@ class App(object):
 		self.interface.refresh()
 
 	def debug(self, message, end="\n"):
-		self.debug_string += Term.CLEAR_LINE + message + end
-		#self.height += message.count("\n") + 1
+		self.interface.debug(message, end)
 
 
 	#def demo(self):

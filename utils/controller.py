@@ -52,15 +52,4 @@ class Controller():
 		app.set_page('reverb')
 	def patchbay(app):
 		app.set_page('patchbay')
-	def debug(app, message):
-		app.debug(message)
-	def clear_debug(app):
-		app.debug_string = ""
-
-	def remember_debug(self):
-		self.app.saved_debug_string = self.app.debug_string
-	def recall_debug(self):
-		self.app.debug_string = self.app.saved_debug_string
-	def get_debug(self):
-		return self.app.debug_string
 

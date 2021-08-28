@@ -8,12 +8,11 @@ class Cursor(object):
 		return self.y, self.x
 
 class Page(object):
+	spacing = 5
 	def __init__(self, mixer):
 		self.mixer = mixer
 	def get_controls(self):
 		raise Exception("Not implemented")
-	def get_spacing(self):
-		return 5
 	def get_labels(self):
 		return None
 
@@ -86,6 +85,7 @@ class OutputPage(Page):
 
 class PreampPage(Page):
 	controls = "+48","lo-cut","phase","sens","bypass","gate","threshold","ratio","attack","release","gain","knee"
+	spacing = 7
 	def get_controls(self):
 		page = "preamp"
 		controls = []
@@ -102,9 +102,6 @@ class PreampPage(Page):
 			controls += [row]
 		return controls
 
-	def get_spacing(self):
-		return 7
-
 	def get_labels(self):
 		return ['Stereo','Impedance','Phantom','Low Cut','Polarity','Sensitivity','Compressor','Gate','Threshold','Ratio','Attack','Release','Gain','Knee']
 
@@ -112,6 +109,7 @@ class PreampPage(Page):
 		return [str(ch+1) for ch in range(0,12)]
 
 class ReverbPage(Page):
+	spacing = 14
 	def get_controls(self):
 		page = "reverb"
 		controls = [
@@ -131,24 +129,19 @@ class ReverbPage(Page):
 		labels = ['','Echo','Room','Small Hall','Large Hall','Plate']
 		verb = self.mixer.get_memory_value("reverb.type")
 		v = verb.value if verb and verb.value else 0
-		labels[v] = "\033[0;4m%s\033[24m" % labels[v]
+		labels[v] = "*%s" % labels[v]
 		return labels
-
-	def get_spacing(self):
-		return 14
 
 	def get_header(self):
 		return ["Type", "Pre delay [ms]", "Time [s]", "Return"]
 
 class LinePage(Page):
+	spacing = 7
 	def get_controls(self):
 		return [
 			["line.channel.13.stereo", "line.channel.15.stereo"],
 			["line.channel.%d.attenuation" % (ch+1) for ch in range(12,16)]
 		]
-	def get_spacing(self):
-		return 7
-
 	def get_header(self):
 		return [str(ch+1) for ch in range(12,16)]
 
@@ -156,6 +149,7 @@ class LinePage(Page):
 		return ["Stereo","Attenuation"]
 
 class Patchbay(Page):
+	spacing = 14
 	def get_controls(self):
 		return [
 			["patchbay.1-2"],
@@ -168,9 +162,6 @@ class Patchbay(Page):
 	def get_labels(self):
 		return [ "1-2", "3-4", "5-6", "7-8", "9-10" ]
 
-	def get_spacing(self):
-		return 14
-	
 	def get_header(self):
 		return ['Source', 'Output']
 
@@ -201,12 +192,10 @@ class Mixer(object):
 		}
 
 	def setup_controls(self):
-		page_name = self.page
-		page = self.pages[page_name]
+		self.page = self.pages[self.page_name]
 		controls = []
-		self.spacing  = page.get_spacing()
-		self.header   = page.get_header()
-		self.controls = page.get_controls()
+		self.header   = self.page.get_header()
+		self.controls = self.page.get_controls()
 
 	def setup_name_table(self):
 		for name, page in self.pages.items():
@@ -222,85 +211,16 @@ class Mixer(object):
 	def width(self):
 		return len(self.controls[self.cursor.y])
 
-	def highlight(s, positions):
-		ret = "\033[1;30m"
-		for i,v in enumerate(s):
-			if i in positions:
-				ret += "\033[36m%s\033[1;30m" % v
-			else:
-				ret += v
-		return ret
-
-	def legend(self):
-		return 'i o [abcd] l p r y'
-
-	def get_highlight_for_page(self):
-		legend = self.legend()
-		mon = ord(self.monitor) - 97
-		if 'input' in self.page:
-			i = legend.find('i')
-			m = legend.find('[') + mon + 1
-			return (i, m)
-		if 'daw_monitor' in self.page:
-			o = legend.find('o')
-			m = legend.find('[') + mon + 1
-			return (o, m)
-		if 'patchbay' in self.page:
-			return (legend.find('y'),)
-		return (legend.find(self.page[0]),)
-
-	def render(self):
-		ret = ""
-		selected_control = ""
-		spacing = self.spacing
-		channels = max(len(row) for row in self.controls)
-		ret += "\033[2K"
-		ret += "%s\033[0m" % Mixer.highlight(self.legend(), self.get_highlight_for_page())
-		ret += " \033[4m %s \033[0m" % self.page
-		ret += "\n\033[2K\n\033[2K"
-		ret += '\033[1;30m'
-		ret += ''.join(h.center(spacing) if i < channels else h for i,h in enumerate(self.header))
-		ret += '\033[0m'
-		ret += "\n\033[2K"
-		labels = self.pages[self.page].get_labels()
-		for r, row in enumerate(self.controls):
-			w = spacing*int(channels/len(row))
-			for c, control in enumerate(row):
-				active = False
-				if control is None:
-					formatted = ' '
-				else:
-					addr = Capture.get_addr(control)
-					value = self.memory.get_value(addr)
-					if type(value) is Bool and value.value:
-						active = True
-					formatted = self.memory.get_formatted(addr)
-				if self.cursor.x == c and self.cursor.y == r:
-					ret += "\033[7m"
-					selected_control = control
-				else:
-					ret += "\033[0m"
-				if active:
-					ret += "\033[1m"
-				ret += formatted.center(w)
-			ret += "\033[0m"
-			if labels is not None and r < len(labels):
-				ret += " \033[1;30m" + labels[r] + "\033[0m" #.center(spacing)
-			ret += "\n\033[2K"
-
-		ret += "\n\033[2K%s\n" % (selected_control or '')
-		return ret
-
 	def set_page(self, page):
-		self.page = page
+		self.page_name = page
 		self.setup_controls()
 		self.cursor.y = min(self.cursor.y, self.height()-1)
 		self.cursor.x = min(self.cursor.x, self.width()-1)
 
 	def set_monitor(self, m):
 		self.monitor = m
-		if 'monitor.' in self.page:
-			self.set_page(self.page[:-1] + self.monitor)
+		if 'monitor.' in self.page_name:
+			self.set_page(self.page_name[:-1] + self.monitor)
 
 	def cursor_down(self):
 		w = self.width()
@@ -355,7 +275,78 @@ class Mixer(object):
 		return addr, data
 
 class TerminalMixer(Mixer):
-	pass
+	def render(self):
+		ret = ""
+		selected_control = ""
+		spacing = self.page.spacing
+		channels = max(len(row) for row in self.controls)
+		ret += "\033[2K"
+		ret += "%s\033[0m" % TerminalMixer.highlight(self.legend(), self.get_highlight_for_page())
+		ret += " \033[4m %s \033[0m" % self.page_name
+		ret += "\n\033[2K\n\033[2K"
+		ret += '\033[1;30m'
+		ret += ''.join(h.center(spacing) if i < channels else h for i,h in enumerate(self.header))
+		ret += '\033[0m'
+		ret += "\n\033[2K"
+		labels = self.page.get_labels()
+		for r, row in enumerate(self.controls):
+			w = spacing*int(channels/len(row))
+			for c, control in enumerate(row):
+				active = False
+				if control is None:
+					formatted = ' '
+				else:
+					addr = Capture.get_addr(control)
+					value = self.memory.get_value(addr)
+					if type(value) is Bool and value.value:
+						active = True
+					formatted = self.memory.get_formatted(addr)
+				if self.cursor.x == c and self.cursor.y == r:
+					ret += "\033[7m"
+					selected_control = control
+				else:
+					ret += "\033[0m"
+				if active:
+					ret += "\033[1m"
+				ret += formatted.center(w)
+			ret += "\033[0m"
+			if labels is not None and r < len(labels):
+				label = labels[r]
+				if len(label) > 0 and label[0] == "*":
+					ret += " \033[0;4m%s\033[24m" % label[1:]
+				else:
+					ret += " \033[1;30m%s\033[0m" % label
+			ret += "\n\033[2K"
+
+		ret += "\n\033[2K%s\n" % (selected_control or '')
+		return ret
+
+	def highlight(s, positions):
+		ret = "\033[1;30m"
+		for i,v in enumerate(s):
+			if i in positions:
+				ret += "\033[36m%s\033[1;30m" % v
+			else:
+				ret += v
+		return ret
+
+	def get_highlight_for_page(self):
+		legend = self.legend()
+		mon = ord(self.monitor) - 97
+		if 'input' in self.page_name:
+			i = legend.find('i')
+			m = legend.find('[') + mon + 1
+			return (i, m)
+		if 'daw_monitor' in self.page_name:
+			o = legend.find('o')
+			m = legend.find('[') + mon + 1
+			return (o, m)
+		if 'patchbay' in self.page_name:
+			return (legend.find('y'),)
+		return (legend.find(self.page_name[0]),)
+
+	def legend(self):
+		return 'i o [abcd] l p r y'
 
 class GraphicalMixer(Mixer):
 	pass
