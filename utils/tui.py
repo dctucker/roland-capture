@@ -3,13 +3,20 @@ import sys
 import time
 
 class MainTerminal():
-	def __init__(self, controller, term):
+	def __init__(self, controller, mixer):
+		self.debug_string = ""
 		self.controller = controller
-		self.term = term
+		self.mixer = mixer
+		self.term = Term()
+
+	def block(self):
+		self.term.blocked = True
+	def unblock(self):
+		self.term.blocked = False
 
 	def on_keyboard(self, key):
-		self.controller.remember_debug()
-		self.controller.clear_debug()
+		self.remember_debug()
+		self.clear_debug()
 		keyboard_map = {
 			Term.KEY_DOWN:     ('down',),
 			Term.KEY_UP:       ('up',),
@@ -38,7 +45,7 @@ class MainTerminal():
 					name = action[0]
 					self.controller.call_app(name)
 				return True
-		self.controller.recall_debug()
+		self.recall_debug()
 		return False
 
 	def refresh(self):
@@ -71,8 +78,23 @@ class MainTerminal():
 		rendered = self.controller.app.mixer.render()
 		term_width, term_height = self.term.size()
 		CL = Term.CLEAR_LINE
-		debug_out = CL + "\n" + CL + "\033[20;%dr\033[%d;1H\033[38;5;24m%s\033[0m\033[r" % (term_height, term_height, self.controller.get_debug())
+		debug_out = CL + "\n" + CL
+		debug_out += "\033[20;%dr\033[%d;1H" % (term_height, term_height)
+		debug_out += "\033[38;5;24m%s" % self.debug_string
+		debug_out += "\033[0m\033[r"
 		self.term.display(rendered + debug_out)
 		if clear_debug:
 			self.controller.clear_debug()
 		self.term.blocked = False
+
+	def debug(self, message, end=""):
+		self.debug_string += Term.CLEAR_LINE + message + end
+
+	def remember_debug(self):
+		self.saved_debug_string = self.debug_string
+
+	def recall_debug(self):
+		self.debug_string = self.saved_debug_string
+
+	def clear_debug(self):
+		self.debug_string = ""
