@@ -23,6 +23,10 @@ class Controller():
 	def increment(app):
 		addr, data = app.mixer.increment_selected()
 		app.set_mixer_value(addr, data)
+	def assign(app, arg):
+		name, value = arg
+		addr, data = app.mixer.set_memory_value(name, value)
+		#app.set_mixer_value(addr, data)
 	def zero(app):
 		addr, data = app.mixer.zero_selected()
 		app.set_mixer_value(addr, data)

@@ -274,3 +274,7 @@ class Mixer(object):
 		data = self.memory.zero(addr) if addr else None
 		return addr, data
 
+	def set_memory_value(self, name, value):
+		addr = Capture.get_addr(name)
+		data = self.memory.set_value(addr, value.value)
+		return addr, data
