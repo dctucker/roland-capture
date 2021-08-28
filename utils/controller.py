@@ -1,7 +1,15 @@
-class Controller():
-	def __init__(self, app):
-		self.app = app
 
+class BaseController():
+	def __init__(self, app=None):
+		self.app = app
+	def call_app(app, func, *args, **kwargs):
+		raise Exception("BaseController not implemented")
+
+class NullController(BaseController):
+	def call_app(app, func, *args, **kwargs):
+		return
+
+class Controller(BaseController):
 	def call_app(self, func, *args, **kwargs):
 		f = getattr(Controller, func)
 		return f(self.app, *args, **kwargs)
@@ -55,4 +63,3 @@ class Controller():
 		app.set_page('reverb')
 	def patchbay(app):
 		app.set_page('patchbay')
-

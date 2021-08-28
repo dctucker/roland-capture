@@ -9,6 +9,31 @@ from mixer import Mixer
 from roland import ValueFactory, Bool, Capture, Volume
 
 css = """
+QTabWidget::pane {
+  border: 1px solid #999;
+  top:-1px; 
+  background: rgb(54, 54, 54);; 
+} 
+
+QTabBar::tab {
+  background: rgb(23, 23, 23); 
+  padding: 5px 10px;
+} 
+
+QTabBar::tab:selected { 
+  background: rgb(54, 54, 54); 
+  border: 1px solid #999;
+  border-bottom: none;
+}
+QPushButton {
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+		stop:0 #747474,
+		stop:0.3 #616161,
+		stop:0.6 #555555,
+		stop:1.0 #333333
+	);
+	border: 1px solid #222222
+}
 QPushButton:checked {
 	background-color: #6cbde8
 }
@@ -36,10 +61,26 @@ QSlider::handle:vertical {
 	height: 30px;
 	margin: 0 -8px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
 }
+QDial {
+	background-color: #bb4400
+}
 """
 
 class GraphicalMixer(Mixer):
-	pass
+	page_titles = {
+		'input_monitor.a': 'Input A',
+		'input_monitor.b': 'B',
+		'input_monitor.c': 'C',
+		'input_monitor.d': 'D',
+		'daw_monitor.a': 'DAW A',
+		'daw_monitor.b': 'B',
+		'daw_monitor.c': 'C',
+		'daw_monitor.d': 'D',
+	}
+	def page_title(self, page_name):
+		if page_name in self.page_titles:
+			return self.page_titles[page_name]
+		return page_name.title()
 
 class Control(QWidget):
 	def set_name(self, control):
@@ -50,7 +91,7 @@ class Control(QWidget):
 		if t is VolSlider or t is Knob:
 			if min_ == -inf:
 				min_ = -71
-			print(min_, max_) # TODO floats are getting passed here, needs fix
+			#print(min_, max_) # TODO floats are getting passed here, needs fix
 			self.setRange(min_, max_)
 
 	def set_value(self, value):
@@ -121,7 +162,6 @@ class ToggleButton(QPushButton, Control):
 class Knob(QDial, Control):
 	def __init__(self):
 		QDial.__init__(self)
-		self.text = "1"
 	def minimumSizeHint(self):
 		return QSize(40,40)
 	def sizeHint(self):
@@ -136,14 +176,20 @@ class Knob(QDial, Control):
 			else:
 				self.setValue(value.value)
 
+class Option(QComboBox):
+	def __init__(self):
+		QComboBox.__init__(self)
+
 class ControlFactory():
 	bools = list(ValueFactory.classes.keys())[list(ValueFactory.classes.values()).index(Bool)]
 	def get_class(control):
 		classes = {
 			ControlFactory.bools: ToggleButton,
-			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre-delay'): Knob,
+			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre_delay',): Knob,
 			('.volume',): VolSlider,
-			('.attenuation'): VolSlider,
+			('.attenuation',): VolSlider,
+			('patchbay.',): Knob,   # TODO implement dropdown list box
+			('reverb.type',): Knob, # TODO implement dropdown list box
 		}
 		for parts, cls in classes.items():
 			for part in parts:
@@ -163,7 +209,7 @@ class ControlFactory():
 			min_, max_ = value.min, value.max
 
 		widget_class = ControlFactory.get_class(control)
-		#print(widget_class)
+		#print(control, widget_class)
 		widget = widget_class()
 		widget.set_name(control)
 		try:
@@ -176,18 +222,35 @@ class MainWindow(QWidget):
 	def __init__(self, mixer):
 		QWidget.__init__(self)
 		self.mixer = mixer
-		self.widgets = { page: {} for page in self.mixer.pages }
+		self.controls = { page: {} for page in self.mixer.pages }
 		self.layouts = { page: self.setup_page_layout(page) for page in self.mixer.pages }
 
 		#self.resize(1260,475)
 		self.center()
 
-		self.setLayout(self.layouts[self.mixer.page_name])
+		tab_layout = self.setup_tabs()
+		self.setLayout(tab_layout)
 		self.setStyleSheet(css)
+	
+	def setup_tabs(self):
+		self.tab = QTabWidget()
 
-	def setup_page_layout(self, page_name=None):
-		if page_name is None:
-			page_name = self.mixer.page_name
+		self.pages = { page: QWidget() for page in self.mixer.pages }
+		for page_name in self.mixer.pages.keys():
+			widget = QWidget()
+			widget.page_name = page_name
+			widget.setLayout(self.layouts[page_name])
+			self.pages[page_name] = widget
+			title = self.mixer.page_title(page_name)
+			self.tab.addTab(widget, title)
+
+		self.tab.currentChanged.connect(self.tab_change)
+
+		tab_layout = QVBoxLayout()
+		tab_layout.addWidget(self.tab)
+		return tab_layout
+
+	def setup_page_layout(self, page_name):
 		page = self.mixer.pages[page_name]
 		controls = page.get_controls()
 		grid = QGridLayout()
@@ -199,16 +262,20 @@ class MainWindow(QWidget):
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
 				if control is None: continue
+
 				widget = cw(ControlFactory.make(control))
 				if len(row) <= max_columns/ 2:
 					grid.addWidget(widget, i+1, j*2, 1, 2, alignment=Qt.AlignHCenter)
 				else:
 					grid.addWidget(widget, i+1, j, alignment=Qt.AlignHCenter)
-				self.widgets[page_name][control] = widget
+				self.controls[page_name][control] = widget
 
+		#grid.setRowStretch(i+1, 1)
 		for i, label in enumerate(page.get_labels()):
 			widget = QLabel(label)
 			grid.addWidget(widget, i+1, max_columns)
+			if max_columns <= 4:
+				grid.setColumnStretch(max_columns, 1)
 		return grid
 
 	def control_change(self):
@@ -217,7 +284,7 @@ class MainWindow(QWidget):
 		control = sender.name
 		page_name = self.mixer.page_name
 
-		widget = self.widgets[page_name][control]
+		widget = self.controls[page_name][control]
 		v = ValueFactory.get_class(control)(value)
 		if type(v) is Volume:
 			if v.value < -70:
@@ -226,6 +293,10 @@ class MainWindow(QWidget):
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
 		print("%s = %s" % (control, value))
+
+	def tab_change(self):
+		page_name = self.tab.currentWidget().page_name
+		self.mixer.set_page(page_name)
 
 	def connect_widget(self, widget):
 		#if type(widget) is ToggleButton
@@ -269,8 +340,8 @@ class MainGraphical():
 
 	def notify(self, control):
 		page_name = self.mixer.page_name
-		if control in self.window.widgets[page_name].keys():
-			widget = self.window.widgets[page_name][control]
+		if control in self.window.controls[page_name].keys():
+			widget = self.window.controls[page_name][control]
 
 			addr = Capture.get_addr(control)
 			value = self.mixer.memory.get_value(addr)
@@ -280,8 +351,9 @@ class MainGraphical():
 			widget.update_label(value.format())
 
 def main():
+	from controller import NullController
 	mixer = GraphicalMixer()
-	controller = None
+	controller = NullController()
 	return MainGraphical(controller, mixer).present()
 
 if __name__ == '__main__':
