@@ -7,8 +7,8 @@ from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		get_compiled_api)
 from rtmidi.midiutil import open_midiinput, open_midioutput
 from roland import render_bytes, Roland, Capture, CaptureView, Memory
-from mixer import TerminalMixer, GraphicalMixer
-from tui import MainTerminal
+from gui import GraphicalMixer, MainGraphical
+from tui import TerminalMixer,  MainTerminal
 from controller import Controller
 
 mixer_port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
@@ -122,7 +122,13 @@ class App(object):
 	def main(self):
 		self.setup_midi()
 		self.load_mixer_values()
-		self.interface.present(self)
+		self.interface.present()
+		self.cleanup()
+
+	def cleanup(self):
+		if self.midi_in : self.midi_in.close_port()
+		if self.midi_out: self.midi_out.close_port()
+		del self.midi_in, self.api_in, self.midi_out, self.api_out
 
 	def on_keyboard(self, key):
 		return self.interface.on_keyboard(key)
