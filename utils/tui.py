@@ -71,9 +71,12 @@ class MainTerminal():
 				term_width, term_height = self.term.size()
 				print("\033[r\033["+str(term_height-1)+"HExit.", end="")
 
+	def notify(self, control):
+		self.update(False)
+
 	def update(self, clear_debug=True):
 		if self.term.blocked: return
-		self.term.blocked = True
+		self.block()
 		rendered = self.controller.app.mixer.render()
 		term_width, term_height = self.term.size()
 		CL = Term.CLEAR_LINE
@@ -84,7 +87,7 @@ class MainTerminal():
 		self.term.display(rendered + debug_out)
 		if clear_debug:
 			self.controller.clear_debug()
-		self.term.blocked = False
+		self.unblock()
 
 	def debug(self, message, end=""):
 		self.debug_string += Term.CLEAR_LINE + message + end

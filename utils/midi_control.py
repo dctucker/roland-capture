@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import time
 from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
@@ -38,8 +39,7 @@ class Listener(object):
 
 		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
-
-		self.app.interface.update(False)
+		self.app.interface.notify(name)
 
 	def register_addr(self, addr, handler):
 		self.addr_listeners[addr] = handler
@@ -52,11 +52,15 @@ class Listener(object):
 class App(object):
 	capture_view = CaptureView.instance()
 
-	def __init__(self):
+	def __init__(self, graphical=False):
 		self.height = 12
-		self.mixer = TerminalMixer()
 		self.controller = Controller(self)
-		self.interface = MainTerminal(self.controller, self.mixer)
+		if graphical:
+			self.mixer = GraphicalMixer()
+			self.interface = MainGraphical(self.controller, self.mixer)
+		else:
+			self.mixer = TerminalMixer()
+			self.interface = MainTerminal(self.controller, self.mixer)
 		self.listener = Listener(self)
 		self.interface.refresh()
 
@@ -147,5 +151,8 @@ class App(object):
 	#	self.send(Capture.set_volume(0, 0x200000)) #Roland.send_data(0x00060008, [2,0,0,0,0,0])
 
 if __name__ == '__main__':
-	App().main()
+	if '-g' in sys.argv:
+		App(graphical=True).main()
+	else:
+		App().main()
 

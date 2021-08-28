@@ -651,6 +651,13 @@ class Memory(object):
 		value = self.get(addr)
 		return ValueFactory.from_packed(name, value)
 
+	def set_value(self, addr, val):
+		name = self.capture_view.lookup_name(addr)
+		value = ValueFactory.get_class(name)(val)
+		data = value.pack()
+		self.set(addr, data)
+		return data
+
 	def get_long(self, addr):
 		return self.get_value(addr).unpack()
 
