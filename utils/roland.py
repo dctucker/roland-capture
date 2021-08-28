@@ -529,7 +529,7 @@ class Gate(Scaled):
 class Enum(Byte):
 	def __init__(self, value=0):
 		Byte.__init__(self, value)
-		self.max = len(self.values)-1
+		self.min, self.max = 0, len(self.values)-1
 	def lookup(self):
 		values = self.values
 		v = self.value
@@ -583,12 +583,15 @@ class Patch(Enum):
 	]
 
 class ReverbTime(Value):
+	size = 1
+	min, max = 0.1, 5.0
+	step = 0.1
 	def increment(self):
-		if self.value < 5.0:
-			self.value += 0.1
+		if self.value < self.max:
+			self.value += self.step
 	def decrement(self):
-		if self.value > 0.1:
-			self.value -= 0.1
+		if self.value > self.min:
+			self.value -= self.step
 	def pack(self):
 		return [int(self.value * 10) - 1]
 	def unpack(self, data):
@@ -597,30 +600,30 @@ class ReverbTime(Value):
 		return "%0.1f" % self.value
 
 class ValueFactory:
+	classes = {
+		(".volume",".reverb"): Volume,
+		(".pan",): Pan,
+		("reverb.type",): ReverbType,
+		('.sens',): Sens,
+		(".solo",".mute",".stereo",'.hi-z','.+48','.lo-cut','.phase','.bypass'): Bool,
+		('.gate',): Byte,
+		('.threshold',): Threshold,
+		('.gain',): Gain,
+		('.ratio',): Ratio,
+		('.gate',): Gate,
+		('.attenuation',): Attenuation,
+		('.attack',): Attack,
+		('.release',): Release,
+		('.knee',): Knee,
+		('.pre_delay',): PreDelay,
+		('.time',): ReverbTime,
+		('patchbay.',): Patch,
+	}
 	def get_class(desc):
-		formatters = {
-			(".volume",".reverb"): Volume,
-			(".pan",): Pan,
-			("reverb.type",): ReverbType,
-			('.sens',): Sens,
-			(".solo",".mute",".stereo",'.hi-z','.+48','.lo-cut','.phase','.bypass'): Bool,
-			('.gate',): Byte,
-			('.threshold',): Threshold,
-			('.gain',): Gain,
-			('.ratio',): Ratio,
-			('.gate',): Gate,
-			('.attenuation',): Attenuation,
-			('.attack',): Attack,
-			('.release',): Release,
-			('.knee',): Knee,
-			('.pre_delay',): PreDelay,
-			('.time',): ReverbTime,
-			('patchbay.',): Patch,
-		}
-		for parts, formatter in formatters.items():
+		for parts, cls in ValueFactory.classes.items():
 			for part in parts:
 				if part in desc:
-					return formatter
+					return cls
 		return Value
 	def from_packed(desc, data):
 		if data is None or data == []: return Value()

@@ -5,8 +5,11 @@ from PyQt5.QtWidgets import *
 import sys
 
 from math import inf
-from mixer import InputPage
-from roland import ValueFactory
+from mixer import Mixer
+from roland import ValueFactory, Bool
+
+class GraphicalMixer(Mixer):
+	pass
 
 class Control(QWidget):
 	def set_name(self, control):
@@ -17,6 +20,7 @@ class Control(QWidget):
 		if t is VolSlider or t is Knob:
 			if min_ == -inf:
 				min_ = -71
+			print(min_, max_) # TODO floats are getting passed here, needs fix
 			self.setRange(min_, max_)
 
 class VolSlider(QSlider, Control):
@@ -47,80 +51,83 @@ class ToggleButton(QPushButton, Control):
 		return self.isChecked()
 
 class Knob(QDial, Control):
-	def __init__(self, range_=(-100,100)):
+	def __init__(self):
 		QDial.__init__(self)
-		self.setRange(*range_)
 		self.text = "1"
 	def minimumSizeHint(self):
 		return QSize(20,20)
 
 class ControlFactory():
+	bools = list(ValueFactory.classes.keys())[list(ValueFactory.classes.values()).index(Bool)]
 	def get_class(control):
 		classes = {
+			ControlFactory.bools: ToggleButton,
+			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre-delay'): Knob,
 			('.volume',): VolSlider,
-			('.mute','.solo','.stereo',): ToggleButton,
-			('.reverb','.pan'): Knob,
+			('.attenuation'): VolSlider,
 		}
 		for parts, cls in classes.items():
 			for part in parts:
 				if part in control:
 					return cls
+		raise Exception("Control class unknown: %s" % control)
+
 	def make(control):
 		value_class = ValueFactory.get_class(control)
+		value = value_class()
+		if value.size == 1:
+			value.value = value.min
+			min_ = value.pack()[0]
+			value.value = value.max
+			max_ = value.pack()[0]
+		else:
+			min_, max_ = value.min, value.max
 
 		widget_class = ControlFactory.get_class(control)
+		#print(widget_class)
 		widget = widget_class()
 		widget.set_name(control)
-		widget.set_range(value_class.min, value_class.max)
+		try:
+			widget.set_range(min_, max_)
+		except:
+			raise Exception("Widget is None: %s" % control)
 		return widget
 
 class MainWindow(QWidget):
 	def __init__(self):
 		QWidget.__init__(self)
-		self.resize(1260,475)
+		self.mixer = GraphicalMixer()
+		self.layouts = { page: self.setup_page_layout(page) for page in self.mixer.pages }
+
+		#self.resize(1260,475)
 		self.center()
 
-		#layout = QHBoxLayout()
-		#for i in range(0,8):
-		#	layout.addWidget(InputStereoChannel())
-		#self.setLayout(layout)
+		self.setLayout(self.layouts['preamp'])
 
-		#grid = QGridLayout()
-		#cw = self.connect_widget
-		#for ch in range(0, 16):
-		#	i = 0
-		#	j = ch
-		#	if ch % 2 == 0:
-		#		grid.addWidget(cw(ToggleButton('STEREO')), i, j, 1, 2)
-		#	grid.addWidget(cw(ToggleButton('SOLO')), i+1, j)
-		#	grid.addWidget(cw(ToggleButton('MUTE')), i+2, j)
-		#	grid.addWidget(cw(Knob((-71,12))), i+3, j)
-		#	grid.addWidget(cw(Knob()), i+4, j)
-		#	grid.addWidget(cw(VolSlider()), i+5, j, alignment=Qt.AlignHCenter)
-		#	grid.setRowStretch(i+5, 10)
-		#self.setLayout(grid)
-
-		self.input_page = InputPage(None, 'a')
-		controls = self.input_page.get_controls()
+	def setup_page_layout(self, page_name=None):
+		if page_name is None:
+			page_name = self.mixer.page_name
+		page = self.mixer.pages[page_name]
+		controls = page.get_controls()
 		grid = QGridLayout()
 		cw = self.connect_widget
 		max_columns = max([len(row) for row in controls])
-		for j, header in enumerate(self.input_page.get_header()):
+		for j, header in enumerate(page.get_header()):
 			widget = QLabel(header)
 			grid.addWidget(widget, 0, j, alignment=Qt.AlignHCenter)
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
+				if control is None: continue
 				widget = ControlFactory.make(control)
 				if len(row) <= max_columns/ 2:
 					grid.addWidget(cw(widget), i+1, j*2, 1, 2, alignment=Qt.AlignHCenter)
 				else:
 					grid.addWidget(cw(widget), i+1, j, alignment=Qt.AlignHCenter)
 
-		for i, label in enumerate(self.input_page.get_labels()):
+		for i, label in enumerate(page.get_labels()):
 			widget = QLabel(label)
 			grid.addWidget(widget, i+1, max_columns)
-
-		self.setLayout(grid)
+		return grid
 
 	def control_change(self):
 		sender = self.sender()
@@ -139,16 +146,25 @@ class MainWindow(QWidget):
 		frame_geom.moveCenter(desk_center)
 		self.move(frame_geom.topLeft())
 
+
 class MainGraphical():
-	def __init__(self):
-		app = QApplication(sys.argv)
-		app.setWheelScrollLines(1)
-		window = MainWindow()
-		window.show()
-		sys.exit(app.exec_())
+	def __init__(self, controller, mixer):
+		self.controller = controller
+		self.mixer = mixer
+
+		self.app = QApplication(sys.argv)
+		self.app.setWheelScrollLines(1)
+		self.window = MainWindow()
+
+	def present(self):
+		self.window.show()
+		return self.app.exec_()
+		
 
 def main():
-	MainGraphical()
+	mixer = GraphicalMixer()
+	controller = None
+	return MainGraphical(controller, mixer).present()
 
 if __name__ == '__main__':
-	main()
+	sys.exit(main())
