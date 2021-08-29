@@ -62,8 +62,6 @@ class Space(QLabel, Control):
 	def sizeHint(self):
 		return QSize(40, 20)
 
-	pass
-
 class VolSlider(Control):
 	def __init__(self):
 		Control.__init__(self)
@@ -76,6 +74,7 @@ class VolSlider(Control):
 		slider.setSingleStep(1)
 		slider.setMinimum(-71)
 		slider.setMaximum(12)
+		#slider.setTracking(False)
 		slider.setFocusPolicy(Qt.NoFocus)
 		self.slider = slider
 
@@ -100,10 +99,12 @@ class VolSlider(Control):
 		self.slider.setRange(min_, max_)
 
 	def set_value(self, value):
+		self.slider.setTracking(False)
 		if value.value == -inf:
-			self.slider.setValue(-71)
+			self.slider.setSliderPosition(-71)
 		else:
-			self.slider.setValue(value.value)
+			self.slider.setSliderPosition(value.value)
+		self.slider.setTracking(True)
 
 class ToggleButton(QPushButton, Control):
 	def __init__(self, title=""):
@@ -123,26 +124,43 @@ class ToggleButton(QPushButton, Control):
 		return self.isChecked()
 
 	def set_value(self, value):
-		#self.checked = value.value
 		self.setChecked(value.value)
 
 class Knob(QDial, Control):
 	def __init__(self):
 		QDial.__init__(self)
 		Control.__init__(self)
+
+		self.dragging = False
+		self.mouse_press_point = None
+		self.base_value = 0
+		self.scale_factor = 1.0
 	def minimumSizeHint(self):
 		return QSize(40,40)
 	def sizeHint(self):
 		return QSize(40,40)
 
+	def mousePressEvent(self, event):
+		self.mouse_press_point = event.pos()
+		self.dragging = True
+		self.base_value = self.value()
+
+	def mouseReleaseEvent(self, event):
+		self.dragging = False
+
+	def mouseMoveEvent(self, event):
+		new_value = self.base_value + self.scale_factor * (self.mouse_press_point.y() - event.y())
+		self.setSliderPosition(new_value)
+
 	def set_value(self, value):
-		if value.size == 1:
-			self.setValue(value.pack()[0])
+		self.setTracking(False)
+		if value.value == -inf:
+			self.setSliderPosition(-71)
+		elif value.size == 1:
+			self.setSliderPosition(value.pack()[0])
 		else:
-			if value.value == -inf:
-				self.setValue(-71)
-			else:
-				self.setValue(value.value)
+			self.setSliderPosition(value.value)
+		self.setTracking(True)
 
 class Option(QComboBox, Control):
 	def __init__(self):
@@ -199,6 +217,10 @@ class ControlFactory():
 			raise Exception("Unable to set widget range: %s" % control)
 		return widget
 
+class TabBar(QTabBar):
+	def wheelEvent(self, event):
+		event.ignore()
+
 class MainWindow(QMainWindow):
 	def __init__(self, controller, mixer):
 		QMainWindow.__init__(self)
@@ -223,10 +245,10 @@ class MainWindow(QMainWindow):
 			print('key')
 			return False
 		return super(MainWindow, self).eventFilter(obj, event)
-	
 		
 	def setup_tabs(self):
 		self.tab = QTabWidget()
+		self.tab.setTabBar(TabBar())
 		self.tab.setFocusPolicy(Qt.NoFocus)
 
 		self.pages = { page: Widget() for page in self.mixer.pages }
@@ -293,7 +315,11 @@ class MainWindow(QMainWindow):
 		control = sender.name
 		page_name = self.mixer.page_name
 
+		if control not in self.controls[page_name]:
+			print("control not found on active page: %s" % control)
+			return
 		widget = self.controls[page_name][control]
+		widget.setFocus()
 		v = ValueFactory.get_class(control)(value)
 		if type(v) is Volume:
 			if v.value < -70:
@@ -305,7 +331,7 @@ class MainWindow(QMainWindow):
 
 	def tab_change(self):
 		page_name = self.tab.currentWidget().page_name
-		self.mixer.set_page(page_name)
+		self.controller.call_app('set_page', page_name)
 
 	def get_cursor_widget(self, cursor=None):
 		if cursor is None:

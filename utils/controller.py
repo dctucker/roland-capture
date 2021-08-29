@@ -77,7 +77,7 @@ class Controller(BaseController):
 	def assign(app, arg):
 		name, value = arg
 		addr, data = app.mixer.set_memory_value(name, value)
-		#app.set_mixer_value(addr, data)
+		app.set_mixer_value(addr, data)
 	def zero(app):
 		addr, data = app.mixer.zero_selected()
 		app.set_mixer_value(addr, data)
@@ -85,6 +85,8 @@ class Controller(BaseController):
 		app.set_page("preamp")
 	def line(app):
 		app.set_page("line")
+	def set_page(app, page):
+		app.set_page(page)
 	def inputs(app):
 		app.set_page("input_monitor." + app.mixer.monitor)
 	def outputs(app):
