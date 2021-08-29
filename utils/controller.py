@@ -90,7 +90,7 @@ class Controller(BaseController):
 	def outputs(app):
 		app.set_page("daw_monitor." + app.mixer.monitor)
 	def toggle_inputs_outputs(app):
-		if 'input' in app.mixer.page:
+		if 'input' in app.mixer.page_name:
 			app.set_page("daw_monitor." + app.mixer.monitor)
 		else:
 			app.set_page("input_monitor." + app.mixer.monitor)
