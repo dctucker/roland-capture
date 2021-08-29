@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from PyQt5.QtGui import QPalette, QColor
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QPalette, QColor, QKeyEvent
+from PyQt5.QtCore import Qt, QSize, QEvent
 from PyQt5.QtWidgets import *
 import sys
 
@@ -31,15 +31,14 @@ class GraphicalMixer(Mixer):
 class Widget(QWidget):
 	def __init__(self):
 		QWidget.__init__(self)
-	#	self.setFocusPolicy(Qt.NoFocus)
-	#def keyPressEvent(self, event):
-	#	QWidget.keyPressEvent(self, event)
+		self.setFocusPolicy(Qt.NoFocus)
 
 class Control(Widget):
 	def set_name(self, control):
 		self.name = control
 		self.setAccessibleName(self.name)
 		self.setAttribute(Qt.WA_StyledBackground, True)
+
 	def set_range(self, min_, max_):
 		t = type(self)
 		if t is VolSlider or t is Knob:
@@ -57,7 +56,6 @@ class Space(QLabel, Control):
 	def __init__(self):
 		QLabel.__init__(self, "       ")
 		self.setContentsMargins(0,0,0,0)
-		#self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
 	def minimumSizeHint(self):
 		return QSize(40, 20)
@@ -68,7 +66,7 @@ class Space(QLabel, Control):
 
 class VolSlider(Control):
 	def __init__(self):
-		Widget.__init__(self)
+		Control.__init__(self)
 		layout = QVBoxLayout()
 
 		slider = QSlider()
@@ -78,6 +76,7 @@ class VolSlider(Control):
 		slider.setSingleStep(1)
 		slider.setMinimum(-71)
 		slider.setMaximum(12)
+		slider.setFocusPolicy(Qt.NoFocus)
 		self.slider = slider
 
 		self.label = QLabel("0.0", alignment=Qt.AlignHCenter)
@@ -109,10 +108,12 @@ class VolSlider(Control):
 class ToggleButton(QPushButton, Control):
 	def __init__(self, title=""):
 		QPushButton.__init__(self)
+		Control.__init__(self)
 		self.setText(title)
 		self.setCheckable(True)
 		self.sizePolicy().setVerticalStretch(1)
 		self.sizePolicy().setHorizontalStretch(1)
+		self.setFocusPolicy(Qt.NoFocus)
 		self.valueChanged = self.clicked
 	def minimumSizeHint(self):
 		return QSize(40, 20)
@@ -128,6 +129,7 @@ class ToggleButton(QPushButton, Control):
 class Knob(QDial, Control):
 	def __init__(self):
 		QDial.__init__(self)
+		Control.__init__(self)
 	def minimumSizeHint(self):
 		return QSize(40,40)
 	def sizeHint(self):
@@ -145,6 +147,7 @@ class Knob(QDial, Control):
 class Option(QComboBox, Control):
 	def __init__(self):
 		QComboBox.__init__(self)
+		Control.__init__(self)
 		self.valueChanged = self.currentIndexChanged
 		#Control.__init__(self)
 	def populate(self, value):
@@ -196,9 +199,9 @@ class ControlFactory():
 			raise Exception("Unable to set widget range: %s" % control)
 		return widget
 
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
 	def __init__(self, controller, mixer):
-		QWidget.__init__(self)
+		QMainWindow.__init__(self)
 		self.controller = controller
 		self.mixer = mixer
 		self.controls = { page: {} for page in self.mixer.pages }
@@ -209,10 +212,19 @@ class MainWindow(QWidget):
 		self.center()
 
 		tab_layout = self.setup_tabs()
-		self.setLayout(tab_layout)
+		#self.setLayout(tab_layout)
+		self.setCentralWidget(self.tab)
 		self.setStyleSheet(css)
-		self.grabKeyboard()
+		#self.grabKeyboard()
+		self.installEventFilter(self)
 	
+	def eventFilter(self, obj, event):
+		if event.type() is QEvent.KeyPress:
+			print('key')
+			return False
+		return super(MainWindow, self).eventFilter(obj, event)
+	
+		
 	def setup_tabs(self):
 		self.tab = QTabWidget()
 		self.tab.setFocusPolicy(Qt.NoFocus)
@@ -331,11 +343,12 @@ class MainWindow(QWidget):
 		frame_geom.moveCenter(desk_center)
 		self.move(frame_geom.topLeft())
 	
-	def keyPressEvent(self, event):
-		self.on_keyboard(event)
+	#def keyPressEvent(self, event):
+	#	self.on_keyboard(event)
 
-class MainGraphical():
+class MainGraphical(QApplication):
 	def __init__(self, controller, mixer):
+		QApplication.__init__(self, sys.argv)
 		self.controller = controller
 		self.controller.cursors = (
 			(Qt.Key_Up,),
@@ -347,15 +360,20 @@ class MainGraphical():
 		self.controller.keyboard_map[Qt.Key_Tab,] = self.controller.keyboard_map['\t',]
 		self.mixer = mixer
 
-		self.app = QApplication(sys.argv)
-		self.app.setWheelScrollLines(1)
+		self.controller = controller
+		self.setWheelScrollLines(1)
 		self.window = MainWindow(self.controller, self.mixer)
 		self.window.controller = controller
-		self.window.on_keyboard = self.on_keyboard
+
+	def notify(self, receiver, event):
+		if event.type() == QEvent.KeyPress:
+			self.on_keyboard(event)
+			return True
+		return QApplication.notify(self, receiver, event)
 
 	def present(self):
 		self.window.show()
-		return self.app.exec_()
+		return self.exec_()
 
 	def block(self):
 		self.window.setEnabled(False)
@@ -381,7 +399,7 @@ class MainGraphical():
 	def update(self):
 		self.window.update_focus()
 
-	def notify(self, control):
+	def notify_control(self, control):
 		page_name = self.mixer.page_name
 		if control in self.window.controls[page_name].keys():
 			widget = self.window.controls[page_name][control]
@@ -407,7 +425,6 @@ def main():
 	mixer = GraphicalMixer()
 	controller = NullController(app)
 	interface = MainGraphical(controller, mixer)
-	app.interface = interface
 	return interface.present()
 
 if __name__ == '__main__':

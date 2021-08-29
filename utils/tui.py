@@ -54,7 +54,7 @@ class MainTerminal():
 				term_width, term_height = self.term.size()
 				print("\033[r\033["+str(term_height-1)+"HExit.", end="")
 
-	def notify(self, control):
+	def notify_control(self, control):
 		self.update(False)
 
 	def update(self, clear_debug=True):

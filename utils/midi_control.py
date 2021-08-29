@@ -39,7 +39,7 @@ class Listener(object):
 
 		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
-		self.app.interface.notify(name)
+		self.app.interface.notify_control(name)
 
 	def register_addr(self, addr, handler):
 		self.addr_listeners[addr] = handler
