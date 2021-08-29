@@ -153,7 +153,6 @@ class App(object):
 	def debug(self, message, end="\n"):
 		self.interface.debug(message, end)
 
-
 	#def demo(self):
 	#	self.send(Capture.get_volume(0))           #message = Roland.receive_data(0x00060008, 3)
 	#	self.send(Capture.set_volume(0, 0x200000)) #Roland.send_data(0x00060008, [2,0,0,0,0,0])

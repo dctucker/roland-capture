@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import *
 import sys
@@ -38,6 +39,7 @@ class Control(Widget):
 	def set_name(self, control):
 		self.name = control
 		self.setAccessibleName(self.name)
+		self.setAttribute(Qt.WA_StyledBackground, True)
 	def set_range(self, min_, max_):
 		t = type(self)
 		if t is VolSlider or t is Knob:
@@ -50,6 +52,19 @@ class Control(Widget):
 
 	def update_label(self, value):
 		pass
+
+class Space(QLabel, Control):
+	def __init__(self):
+		QLabel.__init__(self, "       ")
+		self.setContentsMargins(0,0,0,0)
+		#self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+
+	def minimumSizeHint(self):
+		return QSize(40, 20)
+	def sizeHint(self):
+		return QSize(40, 20)
+
+	pass
 
 class VolSlider(Control):
 	def __init__(self):
@@ -176,6 +191,7 @@ class MainWindow(QWidget):
 		self.mixer = mixer
 		self.controls = { page: {} for page in self.mixer.pages }
 		self.layouts = { page: self.setup_page_layout(page) for page in self.mixer.pages }
+		self.previous_cursor = None
 
 		#self.resize(1260,475)
 		self.center()
@@ -222,9 +238,8 @@ class MainWindow(QWidget):
 			grid.addWidget(widget, 0, j, alignment=Qt.AlignHCenter)
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
-				if control is None: continue
-
-				widget = cw(ControlFactory.make(control))
+				#if control is None:
+				widget = cw(ControlFactory.make(control)) if control else Space()
 				if len(row) <= max_columns/ 2:
 					grid.addWidget(widget, i+1, j*2, 1, 2, alignment=Qt.AlignHCenter)
 				else:
@@ -259,6 +274,31 @@ class MainWindow(QWidget):
 		page_name = self.tab.currentWidget().page_name
 		self.mixer.set_page(page_name)
 
+	def get_cursor_widget(self, cursor=None):
+		if cursor is None:
+			cursor = self.mixer.cursor
+		layout = self.layouts[self.mixer.page_name].itemAtPosition(cursor.y+1, cursor.x)
+		return layout.widget()
+
+	def update_focus(self):
+		page_name = self.mixer.page_name
+		control = self.mixer.get_selected_control()
+		#widget = get_cursor_widget()
+		if control is None:
+			widget = self.get_cursor_widget(self.previous_cursor)
+		else:
+			widget = self.controls[page_name][control]
+
+		widget.setFocus()
+
+		if self.previous_cursor:
+			w = self.get_cursor_widget(self.previous_cursor)
+			w.setAttribute(Qt.WA_StyledBackground, False)
+			#w.setStyleSheet('background-color: none;')
+
+		w = self.get_cursor_widget()
+		w.setAttribute(Qt.WA_StyledBackground, True)
+
 	def connect_widget(self, widget):
 		#if type(widget) is ToggleButton
 		widget.valueChanged.connect(self.control_change)
@@ -283,6 +323,7 @@ class MainGraphical():
 			(Qt.Key_Right,),
 		)
 		self.controller.setup_keyboard_map()
+		self.controller.keyboard_map[Qt.Key_Tab,] = self.controller.keyboard_map['\t',]
 		self.mixer = mixer
 
 		self.app = QApplication(sys.argv)
@@ -302,7 +343,9 @@ class MainGraphical():
 		self.window.setEnabled(True)
 
 	def on_keyboard(self, event):
-		return self.controller.on_keyboard((event.text(), event.key()))
+		if self.controller.on_keyboard((event.text(), event.key())):
+			self.refresh()
+			self.update()
 
 	def debug(self, message, end="\n"):
 		print(message, end=end)
@@ -313,6 +356,9 @@ class MainGraphical():
 		if shown != selected:
 			widget = self.window.pages[selected]
 			self.window.tab.setCurrentWidget(widget)
+
+	def update(self):
+		self.window.update_focus()
 
 	def notify(self, control):
 		page_name = self.mixer.page_name
