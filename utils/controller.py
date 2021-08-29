@@ -2,12 +2,56 @@
 class BaseController():
 	def __init__(self, app=None):
 		self.app = app
+		self.cursors = None
+
 	def call_app(app, func, *args, **kwargs):
 		raise Exception("BaseController not implemented")
 
+	def setup_keyboard_map(self):
+		UP, DOWN, LEFT, RIGHT = self.cursors
+		self.keyboard_map = {
+			UP:             ('up',),
+			DOWN:           ('down',),
+			LEFT:           ('left',),
+			RIGHT:          ('right',),
+			('a',):         ('monitor', 'a',),
+			('b',):         ('monitor', 'b',),
+			('c',):         ('monitor', 'c',),
+			('d',):         ('monitor', 'd',),
+			('-','_'):      ('decrement',),
+			('=','+'):      ('increment',),
+			('0',):         ('zero',),
+			('p','\033[Z'): ('preamp',),
+			('l',):         ('line',),
+			('i',):         ('inputs',),
+			('o',):         ('outputs',),
+			('\t',):        ('toggle_inputs_outputs',),
+			('[',):         ('previous_monitor',),
+			(']',):         ('next_monitor',),
+			('r','v',):     ('reverb',),
+			('y','P',):     ('patchbay',),
+			('q',):         ('quit',),
+		}
+
+	def on_keyboard(self, pressed):
+		for keys, action in self.keyboard_map.items():
+			for press in pressed:
+				if press in keys:
+					if len(action) == 2:
+						name, arg = action
+						self.call_app(name, arg)
+						print(action)
+					else:
+						name = action[0]
+						self.call_app(name)
+						print(action)
+					return True
+		return False
+
 class NullController(BaseController):
-	def call_app(app, func, *args, **kwargs):
-		return
+	def call_app(self, func, *args, **kwargs):
+		if func == 'quit':
+			self.app.quit()
 
 class Controller(BaseController):
 	def call_app(self, func, *args, **kwargs):
@@ -23,8 +67,7 @@ class Controller(BaseController):
 	def right(app):
 		app.mixer.cursor_right()
 	def monitor(app, monitor):
-		app.mixer.set_monitor(monitor)
-		app.load_mixer_values()
+		app.set_monitor(monitor)
 	def decrement(app):
 		addr, data = app.mixer.decrement_selected()
 		app.set_mixer_value(addr, data)
@@ -53,13 +96,13 @@ class Controller(BaseController):
 			app.set_page("input_monitor." + app.mixer.monitor)
 	def previous_monitor(app):
 		if app.mixer.monitor > 'a':
-			app.mixer.set_monitor(chr(ord(app.mixer.monitor)-1))
-			app.load_mixer_values()
+			app.set_monitor(chr(ord(app.mixer.monitor)-1))
 	def next_monitor(app):
 		if app.mixer.monitor < 'd':
-			app.mixer.set_monitor(chr(ord(app.mixer.monitor)+1))
-			app.load_mixer_values()
+			app.set_monitor(chr(ord(app.mixer.monitor)+1))
 	def reverb(app):
 		app.set_page('reverb')
 	def patchbay(app):
 		app.set_page('patchbay')
+	def quit(app):
+		app.quit()

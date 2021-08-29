@@ -8,81 +8,33 @@ from math import inf
 from mixer import Mixer
 from roland import ValueFactory, Bool, Capture, Volume
 
-css = """
-QTabWidget::pane {
-  border: 1px solid #999;
-  top:-1px; 
-  background: rgb(54, 54, 54);; 
-} 
-
-QTabBar::tab {
-  background: rgb(23, 23, 23); 
-  padding: 5px 10px;
-} 
-
-QTabBar::tab:selected { 
-  background: rgb(54, 54, 54); 
-  border: 1px solid #999;
-  border-bottom: none;
-}
-QPushButton {
-	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-		stop:0 #747474,
-		stop:0.3 #616161,
-		stop:0.6 #555555,
-		stop:1.0 #333333
-	);
-	border: 1px solid #222222
-}
-QPushButton:checked {
-	background-color: #6cbde8
-}
-QSlider::groove:vertical {
-	border: 1px solid #333333;
-	width: 2px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-	background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #616161, stop:1 #747474);
-	margin: 0 2px;
-}
-
-QSlider::handle:vertical {
-	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-		stop:0    #e8e9e9,
-		stop:0.20 #c1c5c8,
-		stop:0.33 #1a1b1f,
-		stop:0.35 #5c6063,
-		stop:0.45 #404145,
-		stop:0.5  #2b3034,
-		stop:0.55 #8e8e8e,
-		stop:0.79 #c9ced1,
-		stop:0.80 #28292b,
-		stop:1    #171719
-	);
-	border: 2px outset #5c5c5c;
-	height: 30px;
-	margin: 0 -8px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-}
-QDial {
-	background-color: #bb4400
-}
-"""
+with open('style.css') as file:
+	css = file.read()
 
 class GraphicalMixer(Mixer):
 	page_titles = {
-		'input_monitor.a': 'Input A',
-		'input_monitor.b': 'B',
-		'input_monitor.c': 'C',
-		'input_monitor.d': 'D',
-		'daw_monitor.a': 'DAW A',
-		'daw_monitor.b': 'B',
-		'daw_monitor.c': 'C',
-		'daw_monitor.d': 'D',
+		'input_monitor.a': 'Input\nA',
+		'input_monitor.b': 'Input\nB',
+		'input_monitor.c': 'Input\nC',
+		'input_monitor.d': 'Input\nD',
+		'daw_monitor.a': 'Output\nA',
+		'daw_monitor.b': 'Output\nB',
+		'daw_monitor.c': 'Output\nC',
+		'daw_monitor.d': 'Output\nD',
 	}
 	def page_title(self, page_name):
 		if page_name in self.page_titles:
 			return self.page_titles[page_name]
 		return page_name.title()
 
-class Control(QWidget):
+class Widget(QWidget):
+	def __init__(self):
+		QWidget.__init__(self)
+	#	self.setFocusPolicy(Qt.NoFocus)
+	#def keyPressEvent(self, event):
+	#	QWidget.keyPressEvent(self, event)
+
+class Control(Widget):
 	def set_name(self, control):
 		self.name = control
 		self.setAccessibleName(self.name)
@@ -91,7 +43,6 @@ class Control(QWidget):
 		if t is VolSlider or t is Knob:
 			if min_ == -inf:
 				min_ = -71
-			#print(min_, max_) # TODO floats are getting passed here, needs fix
 			self.setRange(min_, max_)
 
 	def set_value(self, value):
@@ -102,7 +53,7 @@ class Control(QWidget):
 
 class VolSlider(Control):
 	def __init__(self):
-		QWidget.__init__(self)
+		Widget.__init__(self)
 		layout = QVBoxLayout()
 
 		slider = QSlider()
@@ -219,8 +170,9 @@ class ControlFactory():
 		return widget
 
 class MainWindow(QWidget):
-	def __init__(self, mixer):
+	def __init__(self, controller, mixer):
 		QWidget.__init__(self)
+		self.controller = controller
 		self.mixer = mixer
 		self.controls = { page: {} for page in self.mixer.pages }
 		self.layouts = { page: self.setup_page_layout(page) for page in self.mixer.pages }
@@ -231,24 +183,33 @@ class MainWindow(QWidget):
 		tab_layout = self.setup_tabs()
 		self.setLayout(tab_layout)
 		self.setStyleSheet(css)
+		self.grabKeyboard()
 	
 	def setup_tabs(self):
 		self.tab = QTabWidget()
+		self.tab.setFocusPolicy(Qt.NoFocus)
 
-		self.pages = { page: QWidget() for page in self.mixer.pages }
+		self.pages = { page: Widget() for page in self.mixer.pages }
 		for page_name in self.mixer.pages.keys():
-			widget = QWidget()
+			widget = Widget()
 			widget.page_name = page_name
 			widget.setLayout(self.layouts[page_name])
 			self.pages[page_name] = widget
 			title = self.mixer.page_title(page_name)
 			self.tab.addTab(widget, title)
 
+		self.tab.insertTab(8, Widget(), "")
+		self.tab.setTabEnabled(8, False)
+		self.tab.insertTab(4, Widget(), "")
+		self.tab.setTabEnabled(4, False)
 		self.tab.currentChanged.connect(self.tab_change)
 
 		tab_layout = QVBoxLayout()
 		tab_layout.addWidget(self.tab)
 		return tab_layout
+
+	def current_page_name(self):
+		return self.tab.currentWidget().page_name
 
 	def setup_page_layout(self, page_name):
 		page = self.mixer.pages[page_name]
@@ -308,16 +269,27 @@ class MainWindow(QWidget):
 		desk_center = QDesktopWidget().availableGeometry().center()
 		frame_geom.moveCenter(desk_center)
 		self.move(frame_geom.topLeft())
+	
+	def keyPressEvent(self, event):
+		self.on_keyboard(event)
 
 class MainGraphical():
 	def __init__(self, controller, mixer):
 		self.controller = controller
+		self.controller.cursors = (
+			(Qt.Key_Up,),
+			(Qt.Key_Down,),
+			(Qt.Key_Left,),
+			(Qt.Key_Right,),
+		)
+		self.controller.setup_keyboard_map()
 		self.mixer = mixer
 
 		self.app = QApplication(sys.argv)
 		self.app.setWheelScrollLines(1)
-		self.window = MainWindow(self.mixer)
+		self.window = MainWindow(self.controller, self.mixer)
 		self.window.controller = controller
+		self.window.on_keyboard = self.on_keyboard
 
 	def present(self):
 		self.window.show()
@@ -329,14 +301,18 @@ class MainGraphical():
 	def unblock(self):
 		self.window.setEnabled(True)
 
-	def on_keyboard(self, key):
-		pass # TODO
+	def on_keyboard(self, event):
+		return self.controller.on_keyboard((event.text(), event.key()))
 
 	def debug(self, message, end="\n"):
 		print(message, end=end)
 
 	def refresh(self):
-		pass # TODO
+		selected = self.mixer.page_name
+		shown = self.window.current_page_name()
+		if shown != selected:
+			widget = self.window.pages[selected]
+			self.window.tab.setCurrentWidget(widget)
 
 	def notify(self, control):
 		page_name = self.mixer.page_name
@@ -350,11 +326,22 @@ class MainGraphical():
 			widget.set_value(value)
 			widget.update_label(value.format())
 
+	def quit(self):
+		self.window.close()
+		print("Exit.")
+
+class AppStub():
+	def quit(self):
+		self.interface.quit()
+
 def main():
 	from controller import NullController
+	app = AppStub()
 	mixer = GraphicalMixer()
-	controller = NullController()
-	return MainGraphical(controller, mixer).present()
+	controller = NullController(app)
+	interface = MainGraphical(controller, mixer)
+	app.interface = interface
+	return interface.present()
 
 if __name__ == '__main__':
 	sys.exit(main())
