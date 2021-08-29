@@ -7,7 +7,7 @@ import sys
 
 from math import inf
 from mixer import Mixer
-from roland import ValueFactory, Bool, Capture, Volume
+from roland import ValueFactory, Bool, Capture, Volume, Enum
 
 with open('style.css') as file:
 	css = file.read()
@@ -142,9 +142,19 @@ class Knob(QDial, Control):
 			else:
 				self.setValue(value.value)
 
-class Option(QComboBox):
+class Option(QComboBox, Control):
 	def __init__(self):
 		QComboBox.__init__(self)
+		self.valueChanged = self.currentIndexChanged
+		#Control.__init__(self)
+	def populate(self, value):
+		for i, v in enumerate(value.values):
+			value.value = i
+			title = value.format()
+			self.addItem(title)
+	def value(self):
+		return self.currentIndex()
+		
 
 class ControlFactory():
 	bools = list(ValueFactory.classes.keys())[list(ValueFactory.classes.values()).index(Bool)]
@@ -154,8 +164,7 @@ class ControlFactory():
 			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre_delay',): Knob,
 			('.volume',): VolSlider,
 			('.attenuation',): VolSlider,
-			('patchbay.',): Knob,   # TODO implement dropdown list box
-			('reverb.type',): Knob, # TODO implement dropdown list box
+			('patchbay.','reverb.type',): Option,
 		}
 		for parts, cls in classes.items():
 			for part in parts:
@@ -178,6 +187,9 @@ class ControlFactory():
 		#print(control, widget_class)
 		widget = widget_class()
 		widget.set_name(control)
+		if isinstance(value, Enum) and isinstance(widget, Option):
+			widget.populate(value)
+
 		try:
 			widget.set_range(min_, max_)
 		except:
@@ -235,7 +247,13 @@ class MainWindow(QWidget):
 		max_columns = max([len(row) for row in controls])
 		for j, header in enumerate(page.get_header()):
 			widget = QLabel(header)
-			grid.addWidget(widget, 0, j, alignment=Qt.AlignHCenter)
+			widget.sizePolicy().setVerticalStretch(0)
+			widget.sizePolicy().setHorizontalStretch(0)
+			align = None
+			if j < max_columns:
+				align = Qt.AlignHCenter | Qt.AlignTop
+			grid.addWidget(widget, 0, j, alignment=align or Qt.AlignTop)
+		sliders = False
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
 				#if control is None:
@@ -245,11 +263,14 @@ class MainWindow(QWidget):
 				else:
 					grid.addWidget(widget, i+1, j, alignment=Qt.AlignHCenter)
 				self.controls[page_name][control] = widget
+				if type(widget) is VolSlider:
+					sliders = True
 
-		#grid.setRowStretch(i+1, 1)
+		if not sliders:
+			grid.setRowStretch(i+2, 1)
 		for i, label in enumerate(page.get_labels()):
 			widget = QLabel(label)
-			grid.addWidget(widget, i+1, max_columns)
+			grid.addWidget(widget, i+1, max_columns, alignment=Qt.AlignLeft)
 			if max_columns <= 4:
 				grid.setColumnStretch(max_columns, 1)
 		return grid
