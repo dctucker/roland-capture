@@ -221,6 +221,8 @@ class Mixer(object):
 		self.monitor = m
 		if 'monitor.' in self.page_name:
 			self.set_page(self.page_name[:-1] + self.monitor)
+		else:
+			print(self.page_name)
 
 	def cursor_down(self):
 		w = self.width()

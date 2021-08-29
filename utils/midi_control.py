@@ -64,6 +64,9 @@ class App(object):
 		self.listener = Listener(self)
 		self.interface.refresh()
 
+	def quit(self):
+		self.interface.quit()
+
 	def get_mixer_value(self, desc, handler=None):
 		addr = Capture.get_addr(desc)
 		size = Capture.get_size(desc)
@@ -139,6 +142,11 @@ class App(object):
 
 	def set_page(self, page):
 		self.mixer.set_page(page)
+		self.load_mixer_values()
+		self.interface.refresh()
+
+	def set_monitor(self, monitor):
+		self.mixer.set_monitor(monitor)
 		self.load_mixer_values()
 		self.interface.refresh()
 

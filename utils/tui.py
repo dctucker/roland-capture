@@ -8,8 +8,16 @@ class MainTerminal():
 	def __init__(self, controller, mixer):
 		self.debug_string = ""
 		self.controller = controller
+		self.controller.cursors = (
+			Term.KEY_UP,
+			Term.KEY_DOWN,
+			Term.KEY_LEFT,
+			Term.KEY_RIGHT,
+		)
+		self.controller.setup_keyboard_map()
 		self.mixer = mixer
 		self.term = Term()
+		self.quitting = False
 
 	def block(self):
 		self.term.blocked = True
@@ -19,36 +27,9 @@ class MainTerminal():
 	def on_keyboard(self, key):
 		self.remember_debug()
 		self.clear_debug()
-		keyboard_map = {
-			Term.KEY_DOWN:     ('down',),
-			Term.KEY_UP:       ('up',),
-			Term.KEY_LEFT:     ('left',),
-			Term.KEY_RIGHT:    ('right',),
-			('a','b','c','d'): ('monitor', key,),
-			('-','_'):         ('decrement',),
-			('=','+'):         ('increment',),
-			('0',):            ('zero',),
-			('p','\033[Z'):    ('preamp',),
-			('l',):            ('line',),
-			('i',):            ('inputs',),
-			('o',):            ('outputs',),
-			('\t',):           ('toggle_inputs_outputs',),
-			('[',):            ('previous_monitor',),
-			(']',):            ('next_monitor',),
-			('r','v',):        ('reverb',),
-			('y','P',):        ('patchbay',),
-		}
-		for keys, action in keyboard_map.items():
-			if key in keys:
-				if len(action) == 2:
-					name, arg = action
-					self.controller.call_app(name, arg)
-				else:
-					name = action[0]
-					self.controller.call_app(name)
-				return True
+		ret = self.controller.on_keyboard((key,))
 		self.recall_debug()
-		return False
+		return ret
 
 	def refresh(self):
 		self.term.clear()
@@ -64,6 +45,8 @@ class MainTerminal():
 					if self.on_keyboard(key):
 						self.update(False)
 					elif key in ('q',"\033"):
+						break
+					if self.quitting:
 						break
 			except KeyboardInterrupt:
 				print('')
@@ -100,6 +83,9 @@ class MainTerminal():
 
 	def clear_debug(self):
 		self.debug_string = ""
+
+	def quit(self):
+		self.quitting = True
 
 class TerminalMixer(Mixer):
 	def render(self):
