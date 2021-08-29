@@ -373,6 +373,8 @@ class MainGraphical(QApplication):
 
 	def present(self):
 		self.window.show()
+		self.refresh()
+		self.update()
 		return self.exec_()
 
 	def block(self):
