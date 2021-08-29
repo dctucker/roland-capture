@@ -1,27 +1,27 @@
 QTabWidget::pane {
-  border: 1px solid #999;
-  background: #3b3b3b;;
-  top: -1px;
-} 
+	border: 1px solid #999;
+	background: #3b3b3b;;
+	top: -1px;
+}
 
 QTabBar::tab:disabled {
-  border-top: 1px solid #222;
-  background: #222;
+	border-top: 1px solid #222;
+	background: #222;
 }
 QTabBar::tab {
-  background: rgb(23, 23, 23); 
-  padding: 5px 10px;
-  height: 2.1em;
-  border-left: 1px solid #333;
-  border-top: 1px solid #333;
-  border-right: 1px solid #333;
-} 
+	background: rgb(23, 23, 23);
+	padding: 5px 10px;
+	height: 2.1em;
+	border-left: 1px solid #333;
+	border-top: 1px solid #333;
+	border-right: 1px solid #333;
+}
 
-QTabBar::tab:selected { 
-  background: #3b3b3b;
-  border-top: 1px solid #999;
-  border-left: 1px solid #999;
-  border-right: 1px solid #999;
+QTabBar::tab:selected {
+	background: #3b3b3b;
+	border-top: 1px solid #999;
+	border-left: 1px solid #999;
+	border-right: 1px solid #999;
 }
 QPushButton {
 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -59,6 +59,18 @@ QSlider::handle:vertical {
 	height: 30px;
 	margin: 0 -8px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
 }
+/*
 QDial {
 	background-color: #bb4400
+}
+#VolSlider::handle:focus:vertical {
+	border: 2px solid #f0f;
+}
+QSlider:focus {
+	border: 2px solid #f0f;
+	background-color: #f0f
+}
+*/
+QWidget:focus {
+	border: 1px solid #ccc;
 }
