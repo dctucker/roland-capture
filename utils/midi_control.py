@@ -12,12 +12,18 @@ from gui import GraphicalMixer, MainGraphical
 from tui import TerminalMixer,  MainTerminal
 from controller import Controller
 
-mixer_port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
+usage = """Usage: %s [-l|-p <port_name>] [-g|-t]
+Roland STUDIO-CAPTURE control
 
-def get_mixer_port(api):
+  -g, --graphical       launches in graphical mode
+  -l, --list            lists the available MIDI ports
+  -p, --port port_name  uses port_name instead of the default
+  -t, --terminal        launches in terminal mode""" % sys.argv[0]
+
+def get_mixer_port(api, port_name):
 	found = None
 	for port, name in enumerate(api.get_ports()):
-		if mixer_port in name:
+		if port_name in name:
 			found = port
 			break
 	return found
@@ -53,7 +59,7 @@ class App(object):
 	capture_view = CaptureView.instance()
 
 	def __init__(self, graphical=False):
-		self.height = 12
+		self.verbose = False
 		self.controller = Controller(self)
 		if graphical:
 			self.mixer = GraphicalMixer()
@@ -100,6 +106,9 @@ class App(object):
 		self.interface.unblock()
 
 	def setup_midi(self):
+		if self.port == None:
+			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
+
 		apis = get_compiled_api()
 
 		midi_in = None
@@ -126,6 +135,20 @@ class App(object):
 		self.api_in = api_in
 		self.api_out = api_out
 
+	def list_midi(self):
+		midi_in = None
+		midi_out = None
+		try:
+			api_out = MidiOut(API_LINUX_ALSA)
+			api_in = MidiIn(API_LINUX_ALSA)
+			ports = api_in.get_ports()
+			print("Available MIDI ports use with (-p)")
+			for p in ports:
+				print("  \"%s\"" % p)
+		except:
+			print("Unable to open MIDI ports")
+		return
+
 	def main(self):
 		self.setup_midi()
 		self.load_mixer_values()
@@ -151,15 +174,41 @@ class App(object):
 		self.interface.refresh()
 
 	def debug(self, message, end="\n"):
-		self.interface.debug(message, end)
+		if self.verbose:
+			self.interface.debug(message, end)
 
-	#def demo(self):
-	#	self.send(Capture.get_volume(0))           #message = Roland.receive_data(0x00060008, 3)
-	#	self.send(Capture.set_volume(0, 0x200000)) #Roland.send_data(0x00060008, [2,0,0,0,0,0])
+def main(argv):
+	if '-h' in argv:
+		print(usage)
+		return
+
+	if '-g' in argv:
+		graphical = True
+	elif '-t' in argv:
+		graphical = False
+	else:
+		graphical = os.environ.get('DISPLAY', False) != False
+	
+	if '-l' in argv:
+		App().list_midi()
+		return
+
+	port = None
+	if '-p' in argv:
+		_p = argv.index('-p')
+		if _p and _p + 1 < len(argv):
+			port = argv[_p+1]
+			
+	verbose = False
+	if '-v' in argv:
+		verbose = True
+
+	app = App(graphical=graphical)
+	app.port = port
+	app.verbose = verbose
+	app.main()
+
 
 if __name__ == '__main__':
-	if '-g' in sys.argv:
-		App(graphical=True).main()
-	else:
-		App().main()
+	main(sys.argv)
 

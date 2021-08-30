@@ -242,7 +242,7 @@ class MainWindow(QMainWindow):
 	
 	def eventFilter(self, obj, event):
 		if event.type() is QEvent.KeyPress:
-			print('key')
+			self.controller.app.debug('key')
 			return False
 		return super(MainWindow, self).eventFilter(obj, event)
 		
@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
 		page_name = self.mixer.page_name
 
 		if control not in self.controls[page_name]:
-			print("control not found on active page: %s" % control)
+			self.controller.app.debug("control not found on active page: %s" % control)
 			return
 		widget = self.controls[page_name][control]
 		widget.setFocus()
@@ -327,7 +327,7 @@ class MainWindow(QMainWindow):
 
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
-		print("%s = %s" % (control, value))
+		self.controller.app.debug("%s = %s" % (control, value))
 
 	def tab_change(self):
 		page_name = self.tab.currentWidget().page_name
@@ -435,13 +435,13 @@ class MainGraphical(QApplication):
 			addr = Capture.get_addr(control)
 			value = self.mixer.memory.get_value(addr)
 
-			print("setting " + control + " to " + value.format())
+			self.debug("setting " + control + " to " + value.format())
 			widget.set_value(value)
 			widget.update_label(value.format())
 
 	def quit(self):
 		self.window.close()
-		print("Exit.")
+		self.debug("Exit.")
 
 class AppStub():
 	def quit(self):
