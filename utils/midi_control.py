@@ -58,17 +58,12 @@ class Listener(object):
 class App(object):
 	capture_view = CaptureView.instance()
 
-	def __init__(self, graphical=False):
+	def __init__(self):
+		self.port = None
+		self.terminal = None
+		self.graphical = None
 		self.verbose = False
 		self.controller = Controller(self)
-		if graphical:
-			self.mixer = GraphicalMixer()
-			self.interface = MainGraphical(self.controller, self.mixer)
-		else:
-			self.mixer = TerminalMixer()
-			self.interface = MainTerminal(self.controller, self.mixer)
-		self.listener = Listener(self)
-		self.interface.refresh()
 
 	def quit(self):
 		self.interface.quit()
@@ -106,7 +101,7 @@ class App(object):
 		self.interface.unblock()
 
 	def setup_midi(self):
-		if self.port == None:
+		if self.port is None:
 			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
 
 		apis = get_compiled_api()
@@ -117,12 +112,12 @@ class App(object):
 			api_out = MidiOut(API_LINUX_ALSA)
 			api_in = MidiIn(API_LINUX_ALSA)
 
-			port_out = get_mixer_port(api_out)
+			port_out = get_mixer_port(api_out, self.port)
 			midi_out, port_name = open_midioutput(port_out, interactive=False)
 			self.debug("Opened %s for output" % port_name)
 
 			api_in.ignore_types(sysex=False)
-			port_in  = get_mixer_port(api_in)
+			port_in  = get_mixer_port(api_in, self.port)
 			midi_in, port_name = open_midiinput(port_in, interactive=False)
 			self.debug("Opened %s for input" % port_name)
 			midi_in.ignore_types(sysex=False)
@@ -149,7 +144,29 @@ class App(object):
 			print("Unable to open MIDI ports")
 		return
 
+	def list_controls(self):
+		for control in Capture.memory_names():
+			if control.count('.') < 1: continue
+			print(control)
+
+	def get(self, control):
+		self.setup_midi()
+		self.get_mixer_value(control)
+		self.cleanup()
+
 	def main(self):
+		if self.graphical:
+			self.mixer = GraphicalMixer()
+			self.interface = MainGraphical(self.controller, self.mixer)
+		elif self.terminal:
+			self.mixer = TerminalMixer()
+			self.interface = MainTerminal(self.controller, self.mixer)
+		else: # cli
+			self.mixer = Mixer()
+			self.interface = MainCli(self.controller, self.mixer)
+		self.listener = Listener(self)
+		self.interface.refresh()
+
 		self.setup_midi()
 		self.load_mixer_values()
 		self.interface.present()
@@ -182,32 +199,39 @@ def main(argv):
 		print(usage)
 		return
 
+	app = App()
+
 	if '-g' in argv:
-		graphical = True
-	elif '-t' in argv:
-		graphical = False
+		app.graphical = True
 	else:
-		graphical = os.environ.get('DISPLAY', False) != False
+		app.graphical = len(os.environ.get('DISPLAY', "")) > 0
+	if '-t' in argv:
+		app.terminal = True
+		app.graphical = False
+
 	
 	if '-l' in argv:
-		App().list_midi()
-		return
+		app.graphical = False
+		app.terminal = False
+		return app.list_midi()
 
-	port = None
+	if '-c' in argv:
+		return app.list_controls()
+
 	if '-p' in argv:
 		_p = argv.index('-p')
 		if _p and _p + 1 < len(argv):
-			port = argv[_p+1]
+			app.port = argv[_p+1]
 			
-	verbose = False
 	if '-v' in argv:
-		verbose = True
+		app.verbose = True
 
-	app = App(graphical=graphical)
-	app.port = port
-	app.verbose = verbose
+	if argv[-1] in Capture.memory_names():
+		app.terminal = False
+		control = argv[-1]
+		return app.get(control)
+
 	app.main()
-
 
 if __name__ == '__main__':
 	main(sys.argv)

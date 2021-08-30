@@ -309,16 +309,20 @@ class MainWindow(QMainWindow):
 				grid.setColumnStretch(max_columns, 1)
 		return grid
 
+	def get_control(self, control):
+		page_name = self.mixer.page_name
+		if control not in self.controls[page_name].keys():
+			self.controller.app.debug("control not found on active page: %s" % control)
+			return None
+		return self.controls[page_name][control]
+
 	def control_change(self):
 		sender = self.sender()
 		value = sender.value()
 		control = sender.name
-		page_name = self.mixer.page_name
 
-		if control not in self.controls[page_name]:
-			self.controller.app.debug("control not found on active page: %s" % control)
-			return
-		widget = self.controls[page_name][control]
+		widget = self.get_control(control)
+		if not widget: return
 		widget.setFocus()
 		v = ValueFactory.get_class(control)(value)
 		if type(v) is Volume:
@@ -330,8 +334,7 @@ class MainWindow(QMainWindow):
 		self.controller.app.debug("%s = %s" % (control, value))
 
 	def tab_change(self):
-		page_name = self.tab.currentWidget().page_name
-		self.controller.call_app('set_page', page_name)
+		self.controller.call_app('set_page', self.current_page_name())
 
 	def get_cursor_widget(self, cursor=None):
 		if cursor is None:
@@ -340,13 +343,12 @@ class MainWindow(QMainWindow):
 		return layout.widget()
 
 	def update_focus(self):
-		page_name = self.mixer.page_name
 		control = self.mixer.get_selected_control()
 		#widget = get_cursor_widget()
 		if control is None:
 			widget = self.get_cursor_widget(self.previous_cursor)
 		else:
-			widget = self.controls[page_name][control]
+			widget = self.get_control(control)
 
 		widget.setFocus()
 
@@ -428,16 +430,15 @@ class MainGraphical(QApplication):
 		self.window.update_focus()
 
 	def notify_control(self, control):
-		page_name = self.mixer.page_name
-		if control in self.window.controls[page_name].keys():
-			widget = self.window.controls[page_name][control]
+		widget = self.window.get_control(control)
+		if not widget: return
 
-			addr = Capture.get_addr(control)
-			value = self.mixer.memory.get_value(addr)
+		addr = Capture.get_addr(control)
+		value = self.mixer.memory.get_value(addr)
 
-			self.debug("setting " + control + " to " + value.format())
-			widget.set_value(value)
-			widget.update_label(value.format())
+		self.debug("setting " + control + " to " + value.format())
+		widget.set_value(value)
+		widget.update_label(value.format())
 
 	def quit(self):
 		self.window.close()
