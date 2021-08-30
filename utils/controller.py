@@ -31,6 +31,7 @@ class BaseController():
 			('r','v',):     ('reverb',),
 			('y','P',):     ('patchbay',),
 			('q',):         ('quit',),
+			('1',):         ('channel', 1),
 		}
 
 	def on_keyboard(self, pressed):
@@ -106,5 +107,7 @@ class Controller(BaseController):
 		app.set_page('reverb')
 	def patchbay(app):
 		app.set_page('patchbay')
+	def channel(app, ch):
+		app.set_channel(ch)
 	def quit(app):
 		app.quit()
