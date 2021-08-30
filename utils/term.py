@@ -38,7 +38,7 @@ class Term:
 			self.init_posix()
 
 	def init_posix(self):
-		os.system('clear')
+		#os.system('clear')
 		self.fd = sys.stdin.fileno()
 
 		self.oldterm = termios.tcgetattr(self.fd)

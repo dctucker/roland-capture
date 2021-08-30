@@ -35,24 +35,25 @@ class MainTerminal():
 		self.term.clear()
 
 	def present(self):
-		if not hasattr(sys, 'ps1'): # non-interactive mode only
-			try:
-				while True:
-					key = self.term.getch()
-					if key == "":
-						time.sleep(0.01)
-						continue
-					if self.on_keyboard(key):
-						self.update(False)
-					elif key in ('q',"\033"):
-						break
-					if self.quitting:
-						break
-			except KeyboardInterrupt:
-				print('')
-			finally:
-				term_width, term_height = self.term.size()
-				print("\033[r\033["+str(term_height-1)+"HExit.", end="")
+		self.term.clear()
+		self.update(False)
+		try:
+			while True:
+				key = self.term.getch()
+				if key == "":
+					time.sleep(0.01)
+					continue
+				if self.on_keyboard(key):
+					self.update(False)
+				elif key in ('q',"\033"):
+					break
+				if self.quitting:
+					break
+		except KeyboardInterrupt:
+			print('')
+		finally:
+			term_width, term_height = self.term.size()
+			print("\033[r\033["+str(term_height-1)+"HExit.", end="")
 
 	def notify_control(self, control):
 		self.update(False)
@@ -92,18 +93,18 @@ class TerminalMixer(Mixer):
 		ret = ""
 		selected_control = ""
 		spacing = self.page.spacing
-		channels = max(len(row) for row in self.controls)
+		max_width = max(len(row) for row in self.controls)
 		ret += "\033[2K"
 		ret += "%s\033[0m" % TerminalMixer.highlight(self.legend(), self.get_highlight_for_page())
 		ret += " \033[4m %s \033[0m" % self.page_name
 		ret += "\n\033[2K\n\033[2K"
 		ret += '\033[1;30m'
-		ret += ''.join(h.center(spacing) if i < channels else h for i,h in enumerate(self.header))
+		ret += ''.join(h.center(spacing) if i < max_width else h for i,h in enumerate(self.header))
 		ret += '\033[0m'
 		ret += "\n\033[2K"
 		labels = self.page.get_labels()
 		for r, row in enumerate(self.controls):
-			w = spacing*int(channels/len(row))
+			w = spacing*int(max_width/len(row))
 			for c, control in enumerate(row):
 				active = False
 				if control is None:

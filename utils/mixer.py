@@ -13,8 +13,10 @@ class Page(object):
 		self.mixer = mixer
 	def get_controls(self):
 		raise Exception("Not implemented")
+	def get_header(self):
+		return ['']
 	def get_labels(self):
-		return None
+		return ['']
 
 class InputPage(Page):
 	controls = "mute","solo","reverb","pan","volume"
@@ -165,6 +167,40 @@ class Patchbay(Page):
 	def get_header(self):
 		return ['Source', 'Output']
 
+class ChannelPage(Page):
+	spacing = 14
+	def __init__(self, mixer, channel):
+		Page.__init__(self, mixer)
+		self.channel = channel
+	def get_controls(self):
+		preamp_controls = PreampPage.controls
+		line_controls = ['attenuation']
+		input_controls = InputPage.controls
+		ch = self.channel
+
+		#"bypass", "gate", "threshold", "ratio",
+		#"attack", "release", "knee", "gain",
+		#"+48",
+		#"hi-z",
+		#"lo-cut",
+		#"phase",
+		#"sens",
+		controls = []
+		row = ["preamp.channel.%d.%s" % (ch, control) for control in preamp_controls[0:4]]
+		controls += [row]
+		row = ["preamp.channel.%d.%s" % (ch, control) for control in preamp_controls[4:8]]
+		controls += [row]
+		row = ["preamp.channel.%d.%s" % (ch, control) for control in preamp_controls[8:12]]
+		controls += [row]
+		controls += [[None] * 4]
+		
+		for control in input_controls:
+			row = []
+			for mon in ['a','b','c','d']:
+				row += ["input_monitor.%s.channel.%d.%s" % (mon, ch, control)]
+			controls += [row]
+		return controls
+
 class Mixer(object):
 	def __init__(self):
 		self.capture_view = CaptureView.instance()
@@ -189,6 +225,7 @@ class Mixer(object):
 			"line"          : LinePage(self),
 			"reverb"        : ReverbPage(self),
 			"patchbay"      : Patchbay(self),
+			"channel.1"     : ChannelPage(self, 1),
 		}
 
 	def setup_controls(self):
@@ -223,6 +260,9 @@ class Mixer(object):
 			self.set_page(self.page_name[:-1] + self.monitor)
 		else:
 			print(self.page_name)
+
+	def set_channel(self, ch):
+		self.set_page("channel.%d" % ch)
 
 	def cursor_down(self):
 		w = self.width()

@@ -34,6 +34,9 @@ class Widget(QWidget):
 		self.setFocusPolicy(Qt.NoFocus)
 
 class Control(Widget):
+	def __init__(self, name):
+		Widget.__init__(self)
+		self.set_name(name)
 	def set_name(self, control):
 		self.name = control
 		self.setAccessibleName(self.name)
@@ -62,55 +65,11 @@ class Space(QLabel, Control):
 	def sizeHint(self):
 		return QSize(40, 20)
 
-class VolSlider(Control):
-	def __init__(self):
-		Control.__init__(self)
-		layout = QVBoxLayout()
-
-		slider = QSlider()
-		slider.setTickPosition(QSlider.TicksBothSides)
-		slider.setTickInterval(10)
-		slider.setPageStep(1)
-		slider.setSingleStep(1)
-		slider.setMinimum(-71)
-		slider.setMaximum(12)
-		#slider.setTracking(False)
-		slider.setFocusPolicy(Qt.NoFocus)
-		self.slider = slider
-
-		self.label = QLabel("0.0", alignment=Qt.AlignHCenter)
-
-		layout.addWidget(self.slider)
-		layout.addWidget(self.label)
-
-		self.valueChanged = self.slider.valueChanged
-		self.setLayout(layout)
-
-	def update_label(self, value):
-		self.label.setText(str(value))
-
-	def minimumSizeHint(self):
-		return QSize(15, 120)
-
-	def set_name(self, name):
-		self.slider.name = name
-
-	def setRange(self, min_, max_):
-		self.slider.setRange(min_, max_)
-
-	def set_value(self, value):
-		self.slider.setTracking(False)
-		if value.value == -inf:
-			self.slider.setSliderPosition(-71)
-		else:
-			self.slider.setSliderPosition(value.value)
-		self.slider.setTracking(True)
-
 class ToggleButton(QPushButton, Control):
-	def __init__(self, title=""):
+	def __init__(self, name):
 		QPushButton.__init__(self)
-		Control.__init__(self)
-		self.setText(title)
+		Control.__init__(self, name)
+		self.setText(''.join(self.name.split('.')[-1]))
 		self.setCheckable(True)
 		self.sizePolicy().setVerticalStretch(1)
 		self.sizePolicy().setHorizontalStretch(1)
@@ -126,10 +85,24 @@ class ToggleButton(QPushButton, Control):
 	def set_value(self, value):
 		self.setChecked(value.value)
 
+class Option(QComboBox, Control):
+	def __init__(self, name):
+		QComboBox.__init__(self)
+		Control.__init__(self, name)
+		self.valueChanged = self.currentIndexChanged
+		#Control.__init__(self)
+	def populate(self, value):
+		for i, v in enumerate(value.values):
+			value.value = i
+			title = value.format()
+			self.addItem(title)
+	def value(self):
+		return self.currentIndex()
+		
 class Knob(QDial, Control):
-	def __init__(self):
+	def __init__(self, name):
 		QDial.__init__(self)
-		Control.__init__(self)
+		Control.__init__(self, name)
 
 		self.dragging = False
 		self.mouse_press_point = None
@@ -162,20 +135,49 @@ class Knob(QDial, Control):
 			self.setSliderPosition(value.value)
 		self.setTracking(True)
 
-class Option(QComboBox, Control):
-	def __init__(self):
-		QComboBox.__init__(self)
-		Control.__init__(self)
-		self.valueChanged = self.currentIndexChanged
-		#Control.__init__(self)
-	def populate(self, value):
-		for i, v in enumerate(value.values):
-			value.value = i
-			title = value.format()
-			self.addItem(title)
-	def value(self):
-		return self.currentIndex()
-		
+class VolSlider(Control):
+	def __init__(self, name):
+		slider = QSlider()
+		slider.setTickPosition(QSlider.TicksBothSides)
+		slider.setTickInterval(10)
+		slider.setPageStep(1)
+		slider.setSingleStep(1)
+		slider.setMinimum(-71)
+		slider.setMaximum(12)
+		slider.setFocusPolicy(Qt.NoFocus)
+		slider.setTracking(False)
+		self.slider = slider
+
+		Control.__init__(self, name)
+		layout = QVBoxLayout()
+
+		self.label = QLabel("0.0", alignment=Qt.AlignHCenter)
+
+		layout.addWidget(self.slider)
+		layout.addWidget(self.label)
+
+		self.valueChanged = self.slider.valueChanged
+		self.setLayout(layout)
+
+	def update_label(self, value):
+		self.label.setText(str(value))
+
+	def minimumSizeHint(self):
+		return QSize(15, 120)
+
+	def set_name(self, name):
+		self.slider.name = name
+
+	def setRange(self, min_, max_):
+		self.slider.setRange(min_, max_)
+
+	def set_value(self, value):
+		self.slider.setTracking(False)
+		if value.value == -inf:
+			self.slider.setSliderPosition(-71)
+		else:
+			self.slider.setSliderPosition(value.value)
+		self.slider.setTracking(True)
 
 class ControlFactory():
 	bools = list(ValueFactory.classes.keys())[list(ValueFactory.classes.values()).index(Bool)]
@@ -206,8 +208,7 @@ class ControlFactory():
 
 		widget_class = ControlFactory.get_class(control)
 		#print(control, widget_class)
-		widget = widget_class()
-		widget.set_name(control)
+		widget = widget_class(control)
 		if isinstance(value, Enum) and isinstance(widget, Option):
 			widget.populate(value)
 
