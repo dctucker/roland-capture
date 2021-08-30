@@ -40,11 +40,11 @@ class BaseController():
 					if len(action) == 2:
 						name, arg = action
 						self.call_app(name, arg)
-						print(action)
+						self.app.debug("action%s" % str(action))
 					else:
 						name = action[0]
 						self.call_app(name)
-						print(action)
+						self.app.debug("action%s" % str(action))
 					return True
 		return False
 
