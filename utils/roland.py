@@ -484,7 +484,12 @@ class Pan(Value):
 		else:
 			return "C"
 
-class Sens(Value):
+class Scaled(Byte):
+	min, max = None, None
+	def __init__(self, value=0):
+		return Byte.__init__(self, value)
+
+class Sens(Scaled):
 	size = 1
 	min, max = 0.0, 58.0
 	step = 0.5
@@ -499,11 +504,6 @@ class Sens(Value):
 		return data[0] * self.step
 	def pack(self):
 		return [int(self.value / self.step)]
-
-class Scaled(Byte):
-	min, max = None, None
-	def __init__(self, value=0):
-		return Byte.__init__(self, value)
 
 class Threshold(Scaled):
 	min, max = -40, 0 #max = 0x28

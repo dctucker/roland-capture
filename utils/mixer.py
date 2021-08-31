@@ -178,28 +178,34 @@ class ChannelPage(Page):
 		input_controls = InputPage.controls
 		ch = self.channel
 
-		#"bypass", "gate", "threshold", "ratio",
-		#"attack", "release", "knee", "gain",
-		#"+48",
-		#"hi-z",
-		#"lo-cut",
-		#"phase",
-		#"sens",
-		controls = []
-		row = ["preamp.channel.%d.%s" % (ch, control) for control in preamp_controls[0:4]]
-		controls += [row]
-		row = ["preamp.channel.%d.%s" % (ch, control) for control in preamp_controls[4:8]]
-		controls += [row]
-		row = ["preamp.channel.%d.%s" % (ch, control) for control in preamp_controls[8:12]]
-		controls += [row]
-		controls += [[None] * 4]
+		controls = [
+			[None, "bypass", "gate", "threshold", "ratio",],
+			[None, "attack", "release", "knee", "gain",],
+			["+48",],
+			["hi-z" if ch <= 2 else None,],
+			["lo-cut",],
+			["phase",],
+			["sens",],
+		]
+		for i, row in enumerate(controls):
+			for j, control in enumerate(row):
+				if control:
+					controls[i][j] = "preamp.channel.%d.%s" % (ch, control)
 		
-		for control in input_controls:
+		for i, control in enumerate(input_controls):
 			row = []
 			for mon in ['a','b','c','d']:
 				row += ["input_monitor.%s.channel.%d.%s" % (mon, ch, control)]
-			controls += [row]
+			controls[i+2] += row
 		return controls
+	def get_header(self):
+		return ['A','B','C','D']
+	def get_labels(self):
+		return [
+			'Compressor',
+			'Timing',
+			'Mute','Solo','Reverb','Pan','Volume',
+		]
 
 class Mixer(object):
 	def __init__(self):
