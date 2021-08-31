@@ -1,8 +1,8 @@
-from PyQt5.QtGui import QPalette, QColor, QKeyEvent
+from PyQt5.QtGui import QPalette, QColor, QKeyEvent, QPainter, QPen, QColor, QFont, QFontMetrics
 from PyQt5.QtCore import Qt, QSize, QEvent
 from PyQt5.QtWidgets import *
-from roland import ValueFactory, Bool, Capture, Volume, Enum
-from math import inf
+from roland import ValueFactory, Bool, Capture, Volume, Enum, Sens, Scaled, Pan
+from math import inf, log10
 
 with open('style.css') as file:
 	css = file.read()
@@ -21,17 +21,15 @@ class Control(Widget):
 		self.setAccessibleName(self.name)
 		self.setAttribute(Qt.WA_StyledBackground, True)
 
-	def set_range(self, min_, max_):
-		t = type(self)
-		if t is VolSlider or t is Knob:
-			if min_ == -inf:
-				min_ = -71
-			self.setRange(min_, max_)
-
 	def set_value(self, value):
 		raise Exception("set_value not implemented for %s" % value.__class__)
 
+	def set_range(self, min_, max_):
+		pass
+
 	def update_label(self, value):
+		pass
+	def populate(self, value):
 		pass
 
 class Space(QLabel, Control):
@@ -55,9 +53,9 @@ class ToggleButton(QPushButton, Control):
 		self.setFocusPolicy(Qt.NoFocus)
 		self.valueChanged = self.clicked
 	def minimumSizeHint(self):
-		return QSize(40, 20)
+		return QSize(45, 20)
 	def sizeHint(self):
-		return QSize(40, 20)
+		return QSize(45, 20)
 	def value(self):
 		return self.isChecked()
 
@@ -77,16 +75,69 @@ class Option(QComboBox, Control):
 			self.addItem(title)
 	def value(self):
 		return self.currentIndex()
+
+class Label(QLabel):
+	def __init__(self, text, alignment=Qt.AlignHCenter):
+		QLabel.__init__(self, text, alignment=alignment)
+
+class ValueLabel(Label): pass
+class NameLabel(Label): pass
 		
-class Knob(QDial, Control):
+class TrackControl(Control):
 	def __init__(self, name):
-		QDial.__init__(self)
 		Control.__init__(self, name)
+		self.label = None
+		self.header = None
+	def setup_layout(self):
+		layout = QVBoxLayout()
+		layout.setSpacing(0)
+
+		if self.header:
+			layout.addWidget(self.header, 0)
+		layout.addWidget(self.slider, 0)
+		if self.label:
+			layout.addWidget(self.label, 0)
+
+		self.valueChanged = self.slider.valueChanged
+		self.setLayout(layout)
+
+	def set_name(self, name):
+		self.slider.name = name
+
+	def set_value(self, value):
+		self.slider.setTracking(False)
+		if value.value == -inf:
+			self.slider.setSliderPosition(-71)
+		else:
+			self.slider.setSliderPosition(value.value)
+		self.slider.setTracking(True)
+		self.text = value.format()
+
+	def setRange(self, min_, max_):
+		self.slider.setRange(min_, max_)
+
+	def update_label(self, value):
+		if self.label:
+			self.label.setText(str(value))
+		self.slider.text = str(value)
+
+	def set_range(self, min_, max_):
+		if min_ == -inf:
+			min_ = -71
+		self.setRange(min_, max_)
+
+
+class Dial(QDial):
+	def __init__(self):
+		QDial.__init__(self)
 
 		self.dragging = False
 		self.mouse_press_point = None
 		self.base_value = 0
-		self.scale_factor = 1.0
+		self.scale_factor = 0.2
+		self.text = ""
+		self.pan_mode = False
+
 	def minimumSizeHint(self):
 		return QSize(40,40)
 	def sizeHint(self):
@@ -101,20 +152,69 @@ class Knob(QDial, Control):
 		self.dragging = False
 
 	def mouseMoveEvent(self, event):
-		new_value = self.base_value + self.scale_factor * (self.mouse_press_point.y() - event.y())
+		dx = self.mouse_press_point.x() - event.x()
+		dy = self.mouse_press_point.y() - event.y()
+		distance = abs(dy)
+		sign = (1.0 if dy > 0 else -1.0)
+		new_value = self.base_value + self.scale_factor * distance * sign
 		self.setSliderPosition(new_value)
 
-	def set_value(self, value):
-		self.setTracking(False)
-		if value.value == -inf:
-			self.setSliderPosition(-71)
-		elif value.size == 1:
-			self.setSliderPosition(value.pack()[0])
-		else:
-			self.setSliderPosition(value.value)
-		self.setTracking(True)
+	def paintEvent(self, event):
+		o = 4
+		p = QPainter(self)
+		p.setRenderHint(QPainter.Antialiasing)
+		pen0 = QPen(QColor(22,22,66), 4, Qt.SolidLine)
+		pen1 = QPen(QColor(255,127,0), 3, Qt.SolidLine)
+		pen2 = QPen(QColor(248,248,248))
+		s = self.size()
+		fm = QFontMetrics(self.font())
+		w = fm.width(self.text)
+		h = fm.height()
+		d = s.height()
+		x = s.width()/2 - d/2
+		min_angle = 240
+		max_angle = -300
+		center_angle = 90
 
-class VolSlider(Control):
+		if self.pan_mode:
+			angle = max_angle * self.value() / self.maximum()
+			p.setPen(pen0)
+			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, max_angle * 16)
+			p.setPen(pen1)
+			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, center_angle * 16, angle/2 * 16)
+			p.setPen(pen2)
+			p.drawText(x + d/2 - w/2, d/2 + h/4, self.text)
+		else:
+			angle = max_angle * (self.value() - self.minimum()) / (self.maximum() - self.minimum())
+			p.setPen(pen0)
+			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, max_angle * 16)
+			p.setPen(pen1)
+			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, angle * 16)
+			p.setPen(pen2)
+			p.drawText(x + d/2 - w/2, d/2 + h/4, self.text)
+
+class Knob(TrackControl):
+	def __init__(self, name):
+		self.slider = Dial()
+		TrackControl.__init__(self, name)
+		self.header = NameLabel(self.slider.name.split('.')[-1])
+		self.setup_layout()
+		self.slider.scale_factor = 0.5
+
+	def set_range(self, min_, max_):
+		TrackControl.set_range(self, min_, max_)
+		if min_ == -inf:
+			min_ = -71
+		self.slider.scale_factor = 0.2 * (max_ - min_)/60.0
+
+	def populate(self, value):
+		if isinstance(value, Enum):
+			range_factor = len(value.values) / 60.0
+			self.slider.scale_factor = 0.2 * range_factor
+		if isinstance(value, Pan):
+			self.slider.pan_mode = True
+
+class VolSlider(TrackControl):
 	def __init__(self, name):
 		slider = QSlider()
 		slider.setTickPosition(QSlider.TicksBothSides)
@@ -126,37 +226,12 @@ class VolSlider(Control):
 		slider.setFocusPolicy(Qt.NoFocus)
 		slider.setTracking(False)
 		self.slider = slider
-
-		Control.__init__(self, name)
-		layout = QVBoxLayout()
-
-		self.label = QLabel("0.0", alignment=Qt.AlignHCenter)
-
-		layout.addWidget(self.slider)
-		layout.addWidget(self.label)
-
-		self.valueChanged = self.slider.valueChanged
-		self.setLayout(layout)
-
-	def update_label(self, value):
-		self.label.setText(str(value))
+		TrackControl.__init__(self, name)
+		self.label = ValueLabel("?")
+		self.setup_layout()
 
 	def minimumSizeHint(self):
 		return QSize(15, 120)
-
-	def set_name(self, name):
-		self.slider.name = name
-
-	def setRange(self, min_, max_):
-		self.slider.setRange(min_, max_)
-
-	def set_value(self, value):
-		self.slider.setTracking(False)
-		if value.value == -inf:
-			self.slider.setSliderPosition(-71)
-		else:
-			self.slider.setSliderPosition(value.value)
-		self.slider.setTracking(True)
 
 class ControlFactory():
 	bools = list(ValueFactory.classes.keys())[list(ValueFactory.classes.values()).index(Bool)]
@@ -188,13 +263,9 @@ class ControlFactory():
 		widget_class = ControlFactory.get_class(control)
 		#print(control, widget_class)
 		widget = widget_class(control)
-		if isinstance(value, Enum) and isinstance(widget, Option):
-			widget.populate(value)
+		widget.set_range(min_, max_)
+		widget.populate(value)
 
-		try:
-			widget.set_range(min_, max_)
-		except:
-			raise Exception("Unable to set widget range: %s" % control)
 		return widget
 
 class TabBar(QTabBar):
@@ -210,14 +281,10 @@ class MainWindow(QMainWindow):
 		self.layouts = { page: self.setup_page_layout(page) for page in self.mixer.pages }
 		self.previous_cursor = None
 
-		#self.resize(1260,475)
-		self.center()
-
 		tab_layout = self.setup_tabs()
-		#self.setLayout(tab_layout)
+		self.center()
 		self.setCentralWidget(self.tab)
 		self.setStyleSheet(css)
-		#self.grabKeyboard()
 		self.installEventFilter(self)
 	
 	def eventFilter(self, obj, event):
@@ -304,10 +371,15 @@ class MainWindow(QMainWindow):
 		widget = self.get_control(control)
 		if not widget: return
 		widget.setFocus()
-		v = ValueFactory.get_class(control)(value)
+
+		v = ValueFactory.get_class(control)()
 		if type(v) is Volume:
-			if v.value < -70:
-				v.value = -inf
+			if value < -70:
+				value = -inf
+		elif isinstance(v, Scaled):
+			value *= v.step
+			value += v.min
+		v.value = value
 
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
