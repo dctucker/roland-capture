@@ -146,3 +146,9 @@ VRadioGroup QPushButton {
 	margin-bottom: 20px;
 	margin-top: 20px;
 }
+RadioButton::indicator {
+	image: none;
+}
+RadioButton:checked {
+	background-color: #6cbde8
+}

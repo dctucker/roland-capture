@@ -112,6 +112,10 @@ class Option(QComboBox, Control):
 	def value(self):
 		return self.currentIndex()
 
+class RadioButton(QRadioButton):
+	def minimumSizeHint(self):
+		return QSize(30, 30)
+
 class RadioGroup(Control):
 	valueChanged = pyqtSignal(int)
 	first_row = {}
@@ -120,28 +124,45 @@ class RadioGroup(Control):
 		Control.__init__(self, name)
 		self.label = None
 		self.header = None
-		self.layout = self.outer_layout()
-		self.setLayout(self.layout)
 		self.group.idClicked.connect(self.valueChanged)
+		self.buttons = []
+		self.layout = self.outer_layout()
+		self.sizePolicy().setVerticalStretch(1)
+		self.sizePolicy().setHorizontalStretch(1)
+		self.layout.setSpacing(0)
+		self.layout.setContentsMargins(0,0,0,0)
+		self.layout.addStretch()
 
 	def populate(self, value):
+		#for i,v in enumerate(value.values):
+		#	button = RadioButton()
+		#	button.setCheckable(True)
+		#	button.name = self.name
+		#	self.group.addButton(button, i)
+		#	print("added %d" % i)
+		#	self.buttons += [button]
+		#self.group.setExclusive(True)
+
 		first_row = None
 		for i,v in enumerate(value.values):
 			value.value = i
 			box = self.inner_layout()
-			button = PushButton()
-			button.setCheckable(True)
-			#button.setFixedSize(30, 30)
-			label = NameLabel('\n'.join(value.format().split(' ')))
+			box.setContentsMargins(1,1,1,1)
+			button = RadioButton()
+			self.group.addButton(button, i)
+
 			t = type(value)
 			if t not in self.first_row.keys():
-				box.addWidget(label, alignment=Qt.AlignTop)
+				label = NameLabel('\n'.join(value.format().split(' ')))
+				label.setFixedSize(50, 50)
+				label.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+				box.addWidget(label, alignment=Qt.AlignVCenter)
 				first_row = False
 			box.addWidget(button, alignment=Qt.AlignHCenter)
 			self.layout.addLayout(box)
-			self.group.addButton(button, i)
 		if first_row is not None:
 			RadioGroup.first_row[type(value)] = first_row
+		self.setLayout(self.layout)
 
 	def widget_layout(self):
 		raise Exception("Not implemented")
@@ -156,12 +177,18 @@ class VRadioGroup(RadioGroup):
 		return QVBoxLayout()
 	def inner_layout(self):
 		return QHBoxLayout()
+	def add_to_grid(self, grid, i, j):
+		for k,button in enumerate(self.buttons):
+			grid.addWidget(button, i+k, j)
 
 class HRadioGroup(RadioGroup):
 	def outer_layout(self):
 		return QHBoxLayout()
 	def inner_layout(self):
 		return QVBoxLayout()
+	def add_to_grid(self, grid, i, j):
+		for k,button in enumerate(self.buttons):
+			grid.addWidget(button, i, j+k)
 
 class TrackControl(Control):
 	def __init__(self, name):
@@ -327,7 +354,7 @@ class ControlFactory():
 		classes = {
 			ControlFactory.bools: ToggleButton,
 			('reverb.type',): VRadioGroup,
-			('.reverb_return',): VolSlider,
+			('.reverb_return',): Knob,
 			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre_delay',): Knob,
 			('.volume',): VolSlider,
 			('.attenuation',): VRadioGroup,
@@ -432,7 +459,18 @@ class MainWindow(QMainWindow):
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
 				#if control is None:
-				widget = cw(ControlFactory.make(control)) if control else Space()
+				if control is None:
+					if grid.itemAtPosition(i+1,j) is not None:
+						continue
+					widget = Space()
+				else:
+					widget = cw(ControlFactory.make(control))
+
+				#if isinstance(widget, RadioGroup):
+				#	widget.add_to_grid(grid, i+1, j)
+				#	self.controls[page_name][control] = widget
+				#	continue
+
 				align = Qt.AlignHCenter
 				rowspan, colspan = 1, 1
 				#if control and '.reverb_return' in control:
@@ -449,13 +487,14 @@ class MainWindow(QMainWindow):
 				if type(widget) is VolSlider:
 					sliders = True
 
-		if True: #not sliders:
-			grid.setRowStretch(i+2, 1)
+		grid.setRowStretch(i+2, 1)
+
+		j = grid.columnCount()
 		for i, label in enumerate(page.get_labels()):
 			widget = GridLabel(label)
-			grid.addWidget(widget, i+1, max_columns, alignment=Qt.AlignLeft)
+			grid.addWidget(widget, i+1, j, alignment=Qt.AlignLeft)
 			if max_columns <= 4:
-				grid.setColumnStretch(max_columns, 1)
+				grid.setColumnStretch(j, 1)
 		return grid
 
 	def get_control(self, control):
@@ -471,6 +510,7 @@ class MainWindow(QMainWindow):
 		control = sender.name
 
 		widget = self.get_control(control)
+		print(control)
 		if not widget: return
 		widget.setFocus()
 
@@ -485,7 +525,7 @@ class MainWindow(QMainWindow):
 
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
-		self.controller.app.debug("%s = %s (%d)" % (control, v.format(), value))
+		self.controller.app.debug("%s = %s (%s)" % (control, v.format(), str(value)))
 
 	def tab_change(self):
 		self.controller.call_app('set_page', self.current_page_name())
@@ -504,6 +544,8 @@ class MainWindow(QMainWindow):
 		else:
 			widget = self.get_control(control)
 
+		if widget is None:
+			return
 		widget.setFocus()
 
 		if self.previous_cursor:

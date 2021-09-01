@@ -115,7 +115,7 @@ class ReverbPage(Page):
 	def get_controls(self):
 		page = "reverb"
 		controls = [
-			['reverb.type', None, None]
+			['reverb.type', None, 'master.direct_monitor.a.reverb_return']
 		]
 		for verb in 'echo', 'room', 'small_hall', 'large_hall', 'plate':
 			row = [None]
@@ -125,7 +125,6 @@ class ReverbPage(Page):
 				]
 			#row += [None]
 			controls += [row]
-		controls += [[None, None, 'master.direct_monitor.a.reverb_return']]
 		return controls
 
 	def get_labels(self):
