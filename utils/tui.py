@@ -99,7 +99,7 @@ class TerminalMixer(Mixer):
 		ret += " \033[4m %s \033[0m" % self.page_name
 		ret += "\n\033[2K\n\033[2K"
 		ret += '\033[1;30m'
-		ret += ''.join(h.center(spacing) if i < max_width else h for i,h in enumerate(self.header))
+		ret += ''.join(h[0:spacing].center(spacing) if i < max_width else h for i,h in enumerate(self.header))
 		ret += '\033[0m'
 		ret += "\n\033[2K"
 		labels = self.page.get_labels()

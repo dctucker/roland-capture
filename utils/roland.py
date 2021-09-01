@@ -270,7 +270,9 @@ class Capture():
 		},
 		'master': {
 			'direct_monitor': { 0: 0x00080000 } | {
-				'a': { 0: 0x0000 } | master_left_right | { 'reverb_return': 0x0007, 'link': 0x000d },
+				'a': { 0: 0x0000 } | master_left_right | {
+					'reverb_return': 0x0007, 'link': 0x000d
+				},
 				'b': { 0: 0x1000 } | master_left_right | { 'link': 0x000d },
 				'c': { 0: 0x2000 } | master_left_right | { 'link': 0x000d },
 				'd': { 0: 0x3000 } | master_left_right | { 'link': 0x000d },

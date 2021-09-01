@@ -25,6 +25,7 @@ class GraphicalMixer(Mixer):
 class MainGraphical(QApplication):
 	def __init__(self, controller, mixer):
 		QApplication.__init__(self, sys.argv)
+		self.setWindowIcon(QIcon('./mixer-256.png'))
 		self.controller = controller
 		self.controller.cursors = (
 			(Qt.Key_Up,),
@@ -39,7 +40,6 @@ class MainGraphical(QApplication):
 		self.controller = controller
 		self.setWheelScrollLines(1)
 		self.window = MainWindow(self.controller, self.mixer)
-		self.window.controller = controller
 
 	def notify(self, receiver, event):
 		if event.type() == QEvent.KeyPress:

@@ -1,5 +1,5 @@
-from PyQt5.QtGui import QPalette, QColor, QKeyEvent, QPainter, QPen, QColor, QFont, QFontMetrics
-from PyQt5.QtCore import Qt, QSize, QEvent
+from PyQt5.QtGui import QPalette, QColor, QKeyEvent, QPainter, QPen, QColor, QFont, QFontMetrics, QIcon
+from PyQt5.QtCore import Qt, QSize, QEvent, pyqtSignal
 from PyQt5.QtWidgets import *
 from roland import ValueFactory, Bool, Capture, Volume, Enum, Sens, Scaled, Pan
 from math import inf, log10
@@ -7,10 +7,19 @@ from math import inf, log10
 with open('style.css') as file:
 	css = file.read()
 
+class Label(QLabel):
+	def __init__(self, text, alignment=Qt.AlignHCenter):
+		QLabel.__init__(self, text, alignment=alignment)
+
+class GridLabel(Label): pass
+class ValueLabel(Label): pass
+class NameLabel(Label): pass
+		
 class Widget(QWidget):
 	def __init__(self):
 		QWidget.__init__(self)
 		self.setFocusPolicy(Qt.NoFocus)
+		self.setContentsMargins(0,0,0,0)
 
 class Control(Widget):
 	def __init__(self, name):
@@ -35,32 +44,59 @@ class Control(Widget):
 class Space(QLabel, Control):
 	def __init__(self):
 		QLabel.__init__(self, "       ")
-		self.setContentsMargins(0,0,0,0)
 
 	def minimumSizeHint(self):
 		return QSize(40, 20)
 	def sizeHint(self):
 		return QSize(40, 20)
 
-class ToggleButton(QPushButton, Control):
-	def __init__(self, name):
+class PushButton(QPushButton):
+	def __init__(self):
 		QPushButton.__init__(self)
-		Control.__init__(self, name)
-		self.setText(''.join(self.name.split('.')[-1]))
 		self.setCheckable(True)
 		self.sizePolicy().setVerticalStretch(1)
 		self.sizePolicy().setHorizontalStretch(1)
 		self.setFocusPolicy(Qt.NoFocus)
-		self.valueChanged = self.clicked
 	def minimumSizeHint(self):
-		return QSize(45, 20)
+		return QSize(40, 20)
 	def sizeHint(self):
-		return QSize(45, 20)
+		return QSize(40, 20)
 	def value(self):
 		return self.isChecked()
 
+class ToggleButton(Control):
+	def __init__(self, name):
+		Control.__init__(self, name)
+		layout = QVBoxLayout()
+		layout.setSpacing(0)
+		layout.setContentsMargins(2,3,2,1)
+
+		self.sizePolicy().setVerticalStretch(1)
+		self.sizePolicy().setHorizontalStretch(1)
+
+		self.button = PushButton()
+		self.button.name = self.name
+		color_map = {
+			('.bypass',): "#fb9931",
+			('.+48','hi-z','phase',): "#ef4389",
+		}
+		for parts, color in color_map.items():
+			for part in parts:
+				if part in self.name:
+					self.setStyleSheet("QPushButton:checked { background-color: %s }" % color)
+
+		title = ''.join(self.name.split('.')[-1])
+		self.header = NameLabel(title)
+
+		self.valueChanged = self.button.clicked
+		layout.addWidget(self.header, alignment=Qt.AlignBottom)
+		layout.addWidget(self.button, alignment=Qt.AlignTop)
+		self.setLayout(layout)
+
 	def set_value(self, value):
-		self.setChecked(value.value)
+		self.button.setChecked(value.value)
+	def value(self):
+		return self.button.isChecked()
 
 class Option(QComboBox, Control):
 	def __init__(self, name):
@@ -76,13 +112,33 @@ class Option(QComboBox, Control):
 	def value(self):
 		return self.currentIndex()
 
-class Label(QLabel):
-	def __init__(self, text, alignment=Qt.AlignHCenter):
-		QLabel.__init__(self, text, alignment=alignment)
+class RadioGroup(QGroupBox, Control):
+	valueChanged = pyqtSignal(object)
+	first_row = {}
+	def __init__(self, name):
+		Control.__init__(self, name)
+		self.label = None
+		self.header = None
+		self.layout = QHBoxLayout()
+		#self.group = QGroupBox()
+		self.setLayout(self.layout)
 
-class ValueLabel(Label): pass
-class NameLabel(Label): pass
-		
+	def populate(self, value):
+		first_row = None
+		for i,v in enumerate(value.values):
+			value.value = i
+			box = QVBoxLayout()
+			button = QRadioButton()
+			label = NameLabel('\n'.join(value.format().split(' ')))
+			t = type(value)
+			if t not in self.first_row.keys():
+				box.addWidget(label)
+				first_row = False
+			box.addWidget(button, alignment=Qt.AlignHCenter)
+			self.layout.addLayout(box)
+		if first_row is not None:
+			RadioGroup.first_row[type(value)] = first_row
+
 class TrackControl(Control):
 	def __init__(self, name):
 		Control.__init__(self, name)
@@ -91,12 +147,13 @@ class TrackControl(Control):
 	def setup_layout(self):
 		layout = QVBoxLayout()
 		layout.setSpacing(0)
+		layout.setContentsMargins(1,2,1,0)
 
 		if self.header:
-			layout.addWidget(self.header, 0)
+			layout.addWidget(self.header, 0, alignment=Qt.AlignBottom | Qt.AlignHCenter)
 		layout.addWidget(self.slider, 0)
 		if self.label:
-			layout.addWidget(self.label, 0)
+			layout.addWidget(self.label, 0, alignment=Qt.AlignTop | Qt.AlignHCenter)
 
 		self.valueChanged = self.slider.valueChanged
 		self.setLayout(layout)
@@ -137,11 +194,16 @@ class Dial(QDial):
 		self.scale_factor = 0.2
 		self.text = ""
 		self.pan_mode = False
+		self.setContentsMargins(0,0,0,0)
+		self.sizePolicy().setVerticalStretch(1)
+		self.sizePolicy().setHorizontalStretch(1)
+
+		self.fm = QFontMetrics(self.font())
 
 	def minimumSizeHint(self):
-		return QSize(40,40)
+		return QSize(42,42)
 	def sizeHint(self):
-		return QSize(40,40)
+		return QSize(42,42)
 
 	def mousePressEvent(self, event):
 		self.mouse_press_point = event.pos()
@@ -163,14 +225,13 @@ class Dial(QDial):
 		o = 4
 		p = QPainter(self)
 		p.setRenderHint(QPainter.Antialiasing)
-		pen0 = QPen(QColor(22,22,66), 4, Qt.SolidLine)
-		pen1 = QPen(QColor(255,127,0), 3, Qt.SolidLine)
+		pen0 = QPen(QColor(0,0,0), 4, Qt.SolidLine)
+		pen1 = QPen(QColor(108,189,232), 3, Qt.SolidLine)
 		pen2 = QPen(QColor(248,248,248))
+		tw = self.fm.width(self.text)
+		th = self.fm.height()
 		s = self.size()
-		fm = QFontMetrics(self.font())
-		w = fm.width(self.text)
-		h = fm.height()
-		d = s.height()
+		d = 40  #max(s.height(), s.width())
 		x = s.width()/2 - d/2
 		min_angle = 240
 		max_angle = -300
@@ -183,7 +244,6 @@ class Dial(QDial):
 			p.setPen(pen1)
 			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, center_angle * 16, angle/2 * 16)
 			p.setPen(pen2)
-			p.drawText(x + d/2 - w/2, d/2 + h/4, self.text)
 		else:
 			angle = max_angle * (self.value() - self.minimum()) / (self.maximum() - self.minimum())
 			p.setPen(pen0)
@@ -191,13 +251,14 @@ class Dial(QDial):
 			p.setPen(pen1)
 			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, angle * 16)
 			p.setPen(pen2)
-			p.drawText(x + d/2 - w/2, d/2 + h/4, self.text)
+
+		p.drawText(o/2 + s.width()/2 - tw/2, s.height()/2, self.text)
 
 class Knob(TrackControl):
 	def __init__(self, name):
 		self.slider = Dial()
 		TrackControl.__init__(self, name)
-		self.header = NameLabel(self.slider.name.split('.')[-1])
+		self.header = NameLabel(self.slider.name.split('.')[-1].replace('_',' '))
 		self.setup_layout()
 		self.slider.scale_factor = 0.5
 
@@ -223,6 +284,8 @@ class VolSlider(TrackControl):
 		slider.setSingleStep(1)
 		slider.setMinimum(-71)
 		slider.setMaximum(12)
+		slider.sizePolicy().setVerticalStretch(0)
+		slider.sizePolicy().setHorizontalStretch(0)
 		slider.setFocusPolicy(Qt.NoFocus)
 		slider.setTracking(False)
 		self.slider = slider
@@ -231,17 +294,20 @@ class VolSlider(TrackControl):
 		self.setup_layout()
 
 	def minimumSizeHint(self):
-		return QSize(15, 120)
+		return QSize(15, 180)
+
 
 class ControlFactory():
 	bools = list(ValueFactory.classes.keys())[list(ValueFactory.classes.values()).index(Bool)]
 	def get_class(control):
 		classes = {
 			ControlFactory.bools: ToggleButton,
+			('reverb.type',): Option,
+			('.reverb_return',): VolSlider,
 			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre_delay',): Knob,
 			('.volume',): VolSlider,
 			('.attenuation',): VolSlider,
-			('patchbay.','reverb.type',): Option,
+			('patchbay.',): RadioGroup,
 		}
 		for parts, cls in classes.items():
 			for part in parts:
@@ -301,6 +367,8 @@ class MainWindow(QMainWindow):
 		self.pages = { page: Widget() for page in self.mixer.pages }
 		for page_name in self.mixer.pages.keys():
 			widget = Widget()
+			widget.sizePolicy().setVerticalStretch(0)
+			widget.sizePolicy().setHorizontalStretch(0)
 			widget.page_name = page_name
 			widget.setLayout(self.layouts[page_name])
 			self.pages[page_name] = widget
@@ -324,33 +392,41 @@ class MainWindow(QMainWindow):
 		page = self.mixer.pages[page_name]
 		controls = page.get_controls()
 		grid = QGridLayout()
+		grid.setSpacing(0)
 		cw = self.connect_widget
 		max_columns = max([len(row) for row in controls])
+		final_row = len(controls) -1
 		for j, header in enumerate(page.get_header()):
-			widget = QLabel(header)
+			widget = GridLabel(header)
 			widget.sizePolicy().setVerticalStretch(0)
 			widget.sizePolicy().setHorizontalStretch(0)
-			align = None
+			align = Qt.AlignTop
 			if j < max_columns:
-				align = Qt.AlignHCenter | Qt.AlignTop
-			grid.addWidget(widget, 0, j, alignment=align or Qt.AlignTop)
+				align |= Qt.AlignHCenter
+			grid.addWidget(widget, 0, j, alignment=align)
 		sliders = False
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
 				#if control is None:
 				widget = cw(ControlFactory.make(control)) if control else Space()
-				if len(row) <= max_columns/ 2:
-					grid.addWidget(widget, i+1, j*2, 1, 2, alignment=Qt.AlignHCenter)
+				align = Qt.AlignHCenter
+				rowspan, colspan = 1, 1
+				#if control and '.reverb_return' in control:
+				#	rowspan = final_row - i
+				if len(row) <= max_columns / 2:
+					colspan = 2
+					grid.addWidget(widget, i+1, j*2, rowspan, colspan, alignment=align)
 				else:
-					grid.addWidget(widget, i+1, j, alignment=Qt.AlignHCenter)
+					#if i == final_row: align |= Qt.AlignTop
+					grid.addWidget(widget, i+1, j, rowspan, colspan, alignment=align)
 				self.controls[page_name][control] = widget
 				if type(widget) is VolSlider:
 					sliders = True
 
-		if not sliders:
+		if True: #not sliders:
 			grid.setRowStretch(i+2, 1)
 		for i, label in enumerate(page.get_labels()):
-			widget = QLabel(label)
+			widget = GridLabel(label)
 			grid.addWidget(widget, i+1, max_columns, alignment=Qt.AlignLeft)
 			if max_columns <= 4:
 				grid.setColumnStretch(max_columns, 1)
@@ -383,7 +459,7 @@ class MainWindow(QMainWindow):
 
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
-		self.controller.app.debug("%s = %s" % (control, value))
+		self.controller.app.debug("%s = %s" % (control, v.format()))
 
 	def tab_change(self):
 		self.controller.call_app('set_page', self.current_page_name())
