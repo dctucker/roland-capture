@@ -43,7 +43,7 @@ QTabBar::tab:selected {
 	color: #ccc;
 }
 
-PushButton, QRadioButton {
+PushButton, QRadioButton, QPushButton {
 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
 		stop:0 #747474,
 		stop:0.3 #616161,
@@ -53,7 +53,7 @@ PushButton, QRadioButton {
 	border: 1px solid #222222;
 	color: #eee;
 }
-PushButton:checked {
+PushButton:checked, QPushButton:checked {
 	background-color: #6cbde8
 }
 PushButton[name~=".bypass"]:checked {
@@ -142,9 +142,7 @@ RadioGroup QRadioButton {
 	margin-left: 20px;
 	margin-right: 20px;
 }
-QRadioButton::checked {
-	background-color: #6cbde8
-}
-QRadioButton::indicator {
-	image: none;
+VRadioGroup QPushButton {
+	margin-bottom: 20px;
+	margin-top: 20px;
 }

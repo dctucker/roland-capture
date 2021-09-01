@@ -112,32 +112,56 @@ class Option(QComboBox, Control):
 	def value(self):
 		return self.currentIndex()
 
-class RadioGroup(QGroupBox, Control):
-	valueChanged = pyqtSignal(object)
+class RadioGroup(Control):
+	valueChanged = pyqtSignal(int)
 	first_row = {}
 	def __init__(self, name):
+		self.group = QButtonGroup()
 		Control.__init__(self, name)
 		self.label = None
 		self.header = None
-		self.layout = QHBoxLayout()
-		#self.group = QGroupBox()
+		self.layout = self.outer_layout()
 		self.setLayout(self.layout)
+		self.group.idClicked.connect(self.valueChanged)
 
 	def populate(self, value):
 		first_row = None
 		for i,v in enumerate(value.values):
 			value.value = i
-			box = QVBoxLayout()
-			button = QRadioButton()
+			box = self.inner_layout()
+			button = PushButton()
+			button.setCheckable(True)
+			#button.setFixedSize(30, 30)
 			label = NameLabel('\n'.join(value.format().split(' ')))
 			t = type(value)
 			if t not in self.first_row.keys():
-				box.addWidget(label)
+				box.addWidget(label, alignment=Qt.AlignTop)
 				first_row = False
 			box.addWidget(button, alignment=Qt.AlignHCenter)
 			self.layout.addLayout(box)
+			self.group.addButton(button, i)
 		if first_row is not None:
 			RadioGroup.first_row[type(value)] = first_row
+
+	def widget_layout(self):
+		raise Exception("Not implemented")
+	def outer_layout(self):
+		raise Exception("Not implemented")
+
+	def value(self):
+		return self.group.checkedId()
+
+class VRadioGroup(RadioGroup):
+	def outer_layout(self):
+		return QVBoxLayout()
+	def inner_layout(self):
+		return QHBoxLayout()
+
+class HRadioGroup(RadioGroup):
+	def outer_layout(self):
+		return QHBoxLayout()
+	def inner_layout(self):
+		return QVBoxLayout()
 
 class TrackControl(Control):
 	def __init__(self, name):
@@ -302,12 +326,12 @@ class ControlFactory():
 	def get_class(control):
 		classes = {
 			ControlFactory.bools: ToggleButton,
-			('reverb.type',): Option,
+			('reverb.type',): VRadioGroup,
 			('.reverb_return',): VolSlider,
 			('.reverb','.pan','.sens','.gate','.attack','.release','.knee','.gain','.threshold','.ratio','.time','.pre_delay',): Knob,
 			('.volume',): VolSlider,
-			('.attenuation',): VolSlider,
-			('patchbay.',): RadioGroup,
+			('.attenuation',): VRadioGroup,
+			('patchbay.',): HRadioGroup,
 		}
 		for parts, cls in classes.items():
 			for part in parts:
@@ -413,6 +437,8 @@ class MainWindow(QMainWindow):
 				rowspan, colspan = 1, 1
 				#if control and '.reverb_return' in control:
 				#	rowspan = final_row - i
+				if control and 'reverb.type' in control:
+					rowspan = 6
 				if len(row) <= max_columns / 2:
 					colspan = 2
 					grid.addWidget(widget, i+1, j*2, rowspan, colspan, alignment=align)
@@ -459,7 +485,7 @@ class MainWindow(QMainWindow):
 
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
-		self.controller.app.debug("%s = %s" % (control, v.format()))
+		self.controller.app.debug("%s = %s (%d)" % (control, v.format(), value))
 
 	def tab_change(self):
 		self.controller.call_app('set_page', self.current_page_name())
