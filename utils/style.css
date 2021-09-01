@@ -42,18 +42,24 @@ QTabBar::tab:selected {
 	border-bottom: 3px solid #3b3b3b;
 	color: #ccc;
 }
-QPushButton {
+
+PushButton, QRadioButton {
 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
 		stop:0 #747474,
 		stop:0.3 #616161,
 		stop:0.6 #555555,
 		stop:1.0 #333333
 	);
-	border: 1px solid #222222
+	border: 1px solid #222222;
+	color: #eee;
 }
-QPushButton:checked {
+PushButton:checked {
 	background-color: #6cbde8
 }
+PushButton[name~=".bypass"]:checked {
+	background-color: #fb9931
+}
+
 QSlider::groove:vertical {
 	border: 1px solid #333333;
 	width: 2px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
@@ -107,18 +113,38 @@ QComboBox::drop-down {
 	border:none;
 }
 
+GridLabel {
+	padding-left : 1em;
+	padding-right: 1em;
+}
 ToggleButton {
 	font-variant: small-caps;
 }
 NameLabel {
-	font-size: 8pt;
 	font-weight: thin;
 	margin-bottom: 0;
 	font-variant: small-caps;
+	font-size: 10px;
+}
+ValueLabel, Dial {
+	font-size: 9px;
+	text-align: center;
 }
 Knob {
-	margin: 0
+	padding: 10px
 }
-ValueLabel {
-	font-weight: bold;
+
+RadioGroup {
+	background-color: transparent;
+	border: none;
+}
+RadioGroup QRadioButton {
+	margin-left: 20px;
+	margin-right: 20px;
+}
+QRadioButton::checked {
+	background-color: #6cbde8
+}
+QRadioButton::indicator {
+	image: none;
 }

@@ -111,11 +111,11 @@ class PreampPage(Page):
 		return [str(ch+1) for ch in range(0,12)]
 
 class ReverbPage(Page):
-	spacing = 14
+	spacing = 15
 	def get_controls(self):
 		page = "reverb"
 		controls = [
-			['reverb.type', None, None, 'master.direct_monitor.a.reverb_return']
+			['reverb.type', None, None]
 		]
 		for verb in 'echo', 'room', 'small_hall', 'large_hall', 'plate':
 			row = [None]
@@ -123,19 +123,20 @@ class ReverbPage(Page):
 				row += [
 					'reverb.%s.%s' % (verb, control),
 				]
-			row += [None]
+			#row += [None]
 			controls += [row]
+		controls += [[None, None, 'master.direct_monitor.a.reverb_return']]
 		return controls
 
 	def get_labels(self):
-		labels = ['','Echo','Room','Small Hall','Large Hall','Plate']
+		labels = ['','Echo','Room','Small Hall','Large Hall','Plate', 'Return Volume']
 		verb = self.mixer.get_memory_value("reverb.type")
 		v = verb.value if verb and verb.value else 0
 		labels[v] = "*%s" % labels[v]
 		return labels
 
 	def get_header(self):
-		return ["Type", "Pre delay [ms]", "Time [s]", "Return"]
+		return ["Type", "Pre delay [ms]", "Time [s]"]
 
 class LinePage(Page):
 	spacing = 7
@@ -168,7 +169,7 @@ class Patchbay(Page):
 		return ['Source', 'Output']
 
 class ChannelPage(Page):
-	spacing = 14
+	spacing = 7
 	def __init__(self, mixer, channel):
 		Page.__init__(self, mixer)
 		self.channel = channel
@@ -178,14 +179,22 @@ class ChannelPage(Page):
 		input_controls = InputPage.controls
 		ch = self.channel
 
+		#controls = [
+		#	[None, "bypass", "gate", "threshold", "ratio",],
+		#	[None, "attack", "release", "knee", "gain",],
+		#	["+48",],
+		#	["hi-z" if ch <= 2 else None,],
+		#	["lo-cut",],
+		#	["phase",],
+		#	["sens",],
+		#]
+		hi_z = "hi-z" if ch <= 2 else None
 		controls = [
-			[None, "bypass", "gate", "threshold", "ratio",],
-			[None, "attack", "release", "knee", "gain",],
-			["+48",],
-			["hi-z" if ch <= 2 else None,],
-			["lo-cut",],
-			["phase",],
-			["sens",],
+			[ hi_z,   "lo-cut", None,   "bypass", None,      None,      None],
+			[ "+48",  "phase",  None,   None,     None,      None,      None],
+			[ "sens", None,     None,   "ratio",  "attack",  "threshold", None],
+			[ None,   None,     "gate", "knee",   "release", "gain",    None],
+			[ None,   None,     None,   None,     None,      None,      None],
 		]
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
@@ -196,14 +205,12 @@ class ChannelPage(Page):
 			row = []
 			for mon in ['a','b','c','d']:
 				row += ["input_monitor.%s.channel.%d.%s" % (mon, ch, control)]
-			controls[i+2] += row
+			controls[i] += row
 		return controls
 	def get_header(self):
-		return ['A','B','C','D']
+		return ['Preamp','','','Compressor','','','','A','B','C','D']
 	def get_labels(self):
 		return [
-			'Compressor',
-			'Timing',
 			'Mute','Solo','Reverb','Pan','Volume',
 		]
 
