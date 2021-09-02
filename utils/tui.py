@@ -160,5 +160,5 @@ class TerminalMixer(Mixer):
 		return (legend.find(self.page_name[0]),)
 
 	def legend(self):
-		return 'i o [abcd] l p r y'
+		return 'i o [abcd] k l p r y'
 

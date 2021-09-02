@@ -22,6 +22,7 @@ class BaseController():
 			('=','+'):      ('increment',),
 			('0',):         ('zero',),
 			('p','\033[Z'): ('preamp',),
+			('s','k'):      ('compressor',),
 			('l',):         ('line',),
 			('i',):         ('inputs',),
 			('o',):         ('outputs',),
@@ -84,6 +85,8 @@ class Controller(BaseController):
 		app.set_mixer_value(addr, data)
 	def preamp(app):
 		app.set_page("preamp")
+	def compressor(app):
+		app.set_page("compressor")
 	def line(app):
 		app.set_page("line")
 	def set_page(app, page):
