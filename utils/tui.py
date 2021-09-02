@@ -157,8 +157,12 @@ class TerminalMixer(Mixer):
 			return (o, m)
 		if 'patchbay' in self.page_name:
 			return (legend.find('y'),)
+		if 'channel.' in self.page_name:
+			return (legend.find('n'),)
+		if 'compressor' in self.page_name:
+			return (legend.find('k'),)
 		return (legend.find(self.page_name[0]),)
 
 	def legend(self):
-		return 'i o [abcd] k l p r y'
+		return 'i o [abcd] k l n p r y'
 

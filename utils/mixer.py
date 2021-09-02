@@ -208,18 +208,29 @@ class ChannelPage(Page):
 		#	["phase",],
 		#	["sens",],
 		#]
-		hi_z = "hi-z" if ch <= 2 else None
-		controls = [
-			[ hi_z,   "lo-cut", None,   "bypass", None,      None,      None],
-			[ "+48",  "phase",  None,   None,     None,      None,      None],
-			[ "sens", None,     None,   "ratio",  "attack",  "threshold", None],
-			[ None,   None,     "gate", "knee",   "release", "gain",    None],
-			[ None,   None,     None,   None,     None,      None,      None],
-		]
+		if ch > 12:
+			prefix = "line"
+			controls = [
+				[ None,   None, None,   None, None,      None,      None],
+				[ None,  None,  None,   None,     None,      None,      None],
+				[ None, None,     None,   None,  None,  None, None],
+				[ None,   None,     None, None,   None, None,    None],
+				[ "attenuation",   None,     None,   None,     None,      None,      None],
+			]
+		else:
+			prefix = "preamp"
+			hi_z = "hi-z" if ch <= 2 else None
+			controls = [
+				[ hi_z,   "lo-cut", None,   "bypass", None,      None,      None],
+				[ "+48",  "phase",  None,   None,     None,      None,      None],
+				[ "sens", None,     None,   "ratio",  "attack",  "threshold", None],
+				[ None,   None,     "gate", "knee",   "release", "gain",    None],
+				[ None,   None,     None,   None,     None,      None,      None],
+			]
 		for i, row in enumerate(controls):
 			for j, control in enumerate(row):
 				if control:
-					controls[i][j] = "preamp.channel.%d.%s" % (ch, control)
+					controls[i][j] = "%s.channel.%d.%s" % (prefix, ch, control)
 		
 		for i, control in enumerate(input_controls):
 			row = []
@@ -242,6 +253,7 @@ class Mixer(object):
 		self.setup_pages()
 		self.setup_name_table()
 		self.monitor = 'a'
+		self.channel = 1
 		self.set_page('input_monitor.' + self.monitor)
 
 	def setup_pages(self):
@@ -259,8 +271,9 @@ class Mixer(object):
 			"line"          : LinePage(self),
 			"reverb"        : ReverbPage(self),
 			"patchbay"      : Patchbay(self),
-			"channel.1"     : ChannelPage(self, 1),
 		}
+		for ch in range(0, 16):
+			self.pages |= { "channel.%d" % (ch+1) : ChannelPage(self, ch+1) }
 
 	def setup_controls(self):
 		self.page = self.pages[self.page_name]
@@ -296,7 +309,11 @@ class Mixer(object):
 			print(self.page_name)
 
 	def set_channel(self, ch):
-		self.set_page("channel.%d" % ch)
+		self.channel = ch
+		if 'channel.' in self.page_name:
+			self.set_page("channel.%d" % ch)
+		else:
+			print(self.page_name)
 
 	def cursor_down(self):
 		w = self.width()
