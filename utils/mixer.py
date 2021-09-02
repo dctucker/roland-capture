@@ -86,7 +86,7 @@ class OutputPage(Page):
 		return controls
 
 class PreampPage(Page):
-	controls = "+48","lo-cut","phase","sens","bypass","gate","threshold","ratio","attack","release","gain","knee"
+	controls = "+48","lo-cut","phase","sens","bypass","gate"
 	spacing = 7
 	def get_controls(self):
 		page = "preamp"
@@ -105,7 +105,28 @@ class PreampPage(Page):
 		return controls
 
 	def get_labels(self):
-		return ['Stereo','Impedance','Phantom','Low Cut','Polarity','Sensitivity','Compressor','Gate','Threshold','Ratio','Attack','Release','Gain','Knee']
+		return ['Stereo','Impedance','Phantom','Low Cut','Polarity','Sensitivity']
+
+	def get_header(self):
+		return [str(ch+1) for ch in range(0,12)]
+
+class CompressorPage(Page):
+	controls = "bypass","gate","threshold","ratio","attack","release","gain","knee"
+	spacing = 7
+	def get_controls(self):
+		page = "preamp"
+		controls = []
+		row = []
+		for control in self.controls:
+			row = []
+			for ch in range(0, 12):
+				desc = "%s.channel.%d.%s" % (page, ch+1, control)
+				row += [desc]
+			controls += [row]
+		return controls
+
+	def get_labels(self):
+		return ['Compressor','Gate','Threshold','Ratio','Attack','Release','Gain','Knee']
 
 	def get_header(self):
 		return [str(ch+1) for ch in range(0,12)]
@@ -234,6 +255,7 @@ class Mixer(object):
 			"daw_monitor.c" : OutputPage(self, 'c'),
 			"daw_monitor.d" : OutputPage(self, 'd'),
 			"preamp"        : PreampPage(self),
+			"compressor"    : CompressorPage(self),
 			"line"          : LinePage(self),
 			"reverb"        : ReverbPage(self),
 			"patchbay"      : Patchbay(self),
