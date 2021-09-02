@@ -49,6 +49,7 @@ class MainGraphical(QApplication):
 
 	def present(self):
 		self.window.show()
+		self.window.set_current_page(self.mixer.page_name)
 		self.refresh()
 		self.update()
 		return self.exec_()
@@ -73,8 +74,7 @@ class MainGraphical(QApplication):
 		selected = self.mixer.page_name
 		shown = self.window.current_page_name()
 		if shown != selected:
-			widget = self.window.pages[selected]
-			self.window.tab.setCurrentWidget(widget)
+			self.window.set_current_page(selected)
 
 	def update(self):
 		self.window.update_focus()

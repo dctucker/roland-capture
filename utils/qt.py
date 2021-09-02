@@ -433,11 +433,14 @@ class MainWindow(QMainWindow):
 		self.mixer = mixer
 		self.controls = { page: {} for page in self.mixer.pages }
 		self.layouts = { page: self.setup_page_layout(page) for page in self.mixer.pages }
+		self.top_tab_names = ['inputs','outputs','channel','preamp','compressor','line','reverb','patchbay']
 		self.previous_cursor = None
 
 		tab_layout = self.setup_tabs()
 		self.center()
-		self.setCentralWidget(self.tab)
+		widget = Widget()
+		widget.setLayout(tab_layout)
+		self.setCentralWidget(widget)
 		self.setStyleSheet(css)
 		self.installEventFilter(self)
 
@@ -453,9 +456,10 @@ class MainWindow(QMainWindow):
 		return super(MainWindow, self).eventFilter(obj, event)
 		
 	def setup_tabs(self):
-		self.tab = QTabWidget()
-		self.tab.setTabBar(TabBar())
-		self.tab.setFocusPolicy(Qt.NoFocus)
+		self.tab_bar = TabBar()
+		self.tab_bar.setFocusPolicy(Qt.NoFocus)
+
+		self.stack = QStackedWidget()
 
 		self.pages = { page: Widget() for page in self.mixer.pages }
 		for page_name in self.mixer.pages.keys():
@@ -466,20 +470,86 @@ class MainWindow(QMainWindow):
 			widget.setLayout(self.layouts[page_name])
 			self.pages[page_name] = widget
 			title = self.mixer.page_title(page_name)
-			self.tab.addTab(widget, title)
+			self.stack.addWidget(widget)
 
-		self.tab.insertTab(8, Widget(), "")
-		self.tab.setTabEnabled(8, False)
-		self.tab.insertTab(4, Widget(), "")
-		self.tab.setTabEnabled(4, False)
-		self.tab.currentChanged.connect(self.tab_change)
+		#prefixes = { k.split('.')[0]: k for k in reversed(self.pages.keys()) }
+		for i,action in enumerate(self.top_tab_names):
+			self.tab_bar.addTab(action.title())
+			self.tab_bar.setTabData(i, action)
+
+		self.tab_bar.currentChanged.connect(self.top_tab_change)
+
+		self.channel_bar = TabBar()
+		for ch in range(0, 16):
+			self.channel_bar.addTab("%d" % (ch+1))
+			self.channel_bar.setTabData(ch, str(ch+1))
+		self.channel_bar.currentChanged.connect(self.channel_change)
+
+		self.monitor_bar = TabBar()
+		for m,mon in enumerate(['a','b','c','d']):
+			self.monitor_bar.addTab(mon.upper())
+			self.monitor_bar.setTabData(m, mon)
+		self.monitor_bar.currentChanged.connect(self.monitor_change)
+
+		self.subtab = QStackedWidget()
+		self.subtab.addWidget(Widget())
+		self.subtab.addWidget(self.monitor_bar)
+		self.subtab.addWidget(self.channel_bar)
 
 		tab_layout = QVBoxLayout()
-		tab_layout.addWidget(self.tab)
+		tab_layout.addWidget(self.tab_bar)
+		tab_layout.addWidget(self.subtab)
+		tab_layout.addWidget(self.stack)
 		return tab_layout
 
+	def hide_subtab_bar(self):
+		self.subtab.setCurrentIndex(0)
+	def show_monitor_bar(self):
+		self.subtab.setCurrentIndex(1)
+	def show_channel_bar(self):
+		self.subtab.setCurrentIndex(2)
+
+	def top_tab_change(self, index):
+		action = self.tab_bar.tabData(index)
+		self.controller.call_app(action)
+
+	def monitor_change(self, index):
+		action = self.tab_bar.tabData(index)
+		self.controller.call_app('monitor', chr(97+index))
+
+	def channel_change(self, index):
+		action = self.tab_bar.tabData(index)
+		self.controller.call_app('channel', index+1)
+
+	def tab_change(self):
+		self.controller.app.debug("tab_change")
+		self.controller.call_app('set_page', self.current_page_name())
+
+	def set_current_page(self, selected):
+		names = selected.split('.')
+		top_name = names[0]
+		sub_name = names[1] if len(names) > 1 else ""
+		widget = self.pages[selected]
+		self.stack.setCurrentWidget(widget)
+		
+		if top_name == "daw_monitor":
+			top_name = "outputs"
+		elif top_name == "input_monitor":
+			top_name = "inputs"
+		top_index = self.top_tab_names.index(top_name)
+		self.tab_bar.setCurrentIndex(top_index)
+
+		if '_monitor' in selected:
+			self.monitor_bar.setCurrentIndex(ord(sub_name)-97)
+			self.show_monitor_bar()
+		elif 'channel.' in selected:
+			self.channel_bar.setCurrentIndex(int(sub_name)-1)
+			self.show_channel_bar()
+		else:
+			self.hide_subtab_bar()
+
 	def current_page_name(self):
-		return self.tab.currentWidget().page_name
+		return self.stack.currentWidget().page_name
 
 	def setup_page_layout(self, page_name):
 		page = self.mixer.pages[page_name]
@@ -574,10 +644,6 @@ class MainWindow(QMainWindow):
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
 		self.controller.app.debug("control_change %s = %s (%s)" % (control, v.format(), str(value)))
-
-	def tab_change(self):
-		self.controller.app.debug("tab_change")
-		self.controller.call_app('set_page', self.current_page_name())
 
 	def get_cursor_widget(self, cursor=None):
 		if cursor is None:

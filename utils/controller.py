@@ -20,19 +20,35 @@ class BaseController():
 			('d',):         ('monitor', 'd',),
 			('-','_'):      ('decrement',),
 			('=','+'):      ('increment',),
-			('0',):         ('zero',),
+			('z',):         ('zero',),
 			('p','\033[Z'): ('preamp',),
 			('s','k'):      ('compressor',),
 			('l',):         ('line',),
 			('i',):         ('inputs',),
 			('o',):         ('outputs',),
 			('\t',):        ('toggle_inputs_outputs',),
-			('[',):         ('previous_monitor',),
-			(']',):         ('next_monitor',),
+			('[',):         ('previous_subpage',),
+			(']',):         ('next_subpage',),
 			('r','v',):     ('reverb',),
 			('y','P',):     ('patchbay',),
 			('q',):         ('quit',),
-			('1',):         ('channel', 1),
+			('n',):         ('channel',),
+			('1',):         ('channel',1),
+			('2',):         ('channel',2),
+			('3',):         ('channel',3),
+			('4',):         ('channel',4),
+			('5',):         ('channel',5),
+			('6',):         ('channel',6),
+			('7',):         ('channel',7),
+			('8',):         ('channel',8),
+			('9',):         ('channel',9),
+			('0',):         ('channel',10),
+			('!',):         ('channel',11),
+			('@',):         ('channel',12),
+			('#',):         ('channel',13),
+			('$',):         ('channel',14),
+			('%',):         ('channel',15),
+			('^',):         ('channel',16),
 		}
 
 	def on_keyboard(self, pressed):
@@ -92,25 +108,36 @@ class Controller(BaseController):
 	def set_page(app, page):
 		app.set_page(page)
 	def inputs(app):
-		app.set_page("input_monitor." + app.mixer.monitor)
+		app.set_page("input_monitor.%s" % app.mixer.monitor)
 	def outputs(app):
-		app.set_page("daw_monitor." + app.mixer.monitor)
+		app.set_page("daw_monitor.%s" % app.mixer.monitor)
 	def toggle_inputs_outputs(app):
 		if 'input' in app.mixer.page_name:
-			app.set_page("daw_monitor." + app.mixer.monitor)
+			app.set_page("daw_monitor.%s" % app.mixer.monitor)
 		else:
-			app.set_page("input_monitor." + app.mixer.monitor)
-	def previous_monitor(app):
-		if app.mixer.monitor > 'a':
-			app.set_monitor(chr(ord(app.mixer.monitor)-1))
-	def next_monitor(app):
-		if app.mixer.monitor < 'd':
-			app.set_monitor(chr(ord(app.mixer.monitor)+1))
+			app.set_page("input_monitor.%s" % app.mixer.monitor)
+	def previous_subpage(app):
+		if '_monitor.' in app.mixer.page_name:
+			if app.mixer.monitor > 'a':
+				app.set_monitor(chr(ord(app.mixer.monitor)-1))
+		elif 'channel.' in app.mixer.page_name:
+			if app.mixer.channel > 1:
+				app.set_channel(app.mixer.channel - 1)
+	def next_subpage(app):
+		if '_monitor.' in app.mixer.page_name:
+			if app.mixer.monitor < 'd':
+				app.set_monitor(chr(ord(app.mixer.monitor)+1))
+		elif 'channel.' in app.mixer.page_name:
+			if app.mixer.channel < 16:
+				app.set_channel(app.mixer.channel + 1)
 	def reverb(app):
 		app.set_page('reverb')
 	def patchbay(app):
 		app.set_page('patchbay')
-	def channel(app, ch):
-		app.set_channel(ch)
+	def channel(app, ch=None):
+		if ch is None:
+			app.set_page("channel.%d" % app.mixer.channel)
+		else:
+			app.set_channel(ch)
 	def quit(app):
 		app.quit()
