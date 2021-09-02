@@ -138,10 +138,6 @@ RadioGroup {
 	background-color: transparent;
 	border: none;
 }
-RadioGroup QRadioButton {
-	margin-left: 20px;
-	margin-right: 20px;
-}
 VRadioGroup QPushButton {
 	margin-bottom: 20px;
 	margin-top: 20px;
@@ -151,4 +147,10 @@ RadioButton::indicator {
 }
 RadioButton:checked {
 	background-color: #6cbde8
+}
+RadioGroup {
+	padding: 20px
+}
+HRadioGroup ValueLabel {
+	padding: 0 10px;
 }

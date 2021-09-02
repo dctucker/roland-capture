@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QPalette, QColor, QKeyEvent, QPainter, QPen, QColor, QFont, QFontMetrics, QIcon
 from PyQt5.QtCore import Qt, QSize, QEvent, pyqtSignal
 from PyQt5.QtWidgets import *
-from roland import ValueFactory, Bool, Capture, Volume, Enum, Sens, Scaled, Pan
+from roland import ValueFactory, Bool, Capture, Volume, Enum, Scaled, Pan
 from math import inf, log10
 
 with open('style.css') as file:
@@ -25,6 +25,7 @@ class Control(Widget):
 	def __init__(self, name):
 		Widget.__init__(self)
 		self.set_name(name)
+		self.blocked = False
 	def set_name(self, control):
 		self.name = control
 		self.setAccessibleName(self.name)
@@ -33,6 +34,9 @@ class Control(Widget):
 	def set_value(self, value):
 		raise Exception("set_value not implemented for %s" % value.__class__)
 
+	def value(self):
+		raise Exception("value not implemented for %s" % self.value.__class__)
+
 	def set_range(self, min_, max_):
 		pass
 
@@ -40,6 +44,11 @@ class Control(Widget):
 		pass
 	def populate(self, value):
 		pass
+
+	def block(self):
+		self.blocked = True
+	def unblock(self):
+		self.blocked = False
 
 class Space(QLabel, Control):
 	def __init__(self):
@@ -94,7 +103,9 @@ class ToggleButton(Control):
 		self.setLayout(layout)
 
 	def set_value(self, value):
+		self.button.blockSignals(True)
 		self.button.setChecked(value.value)
+		self.button.blockSignals(False)
 	def value(self):
 		return self.button.isChecked()
 
@@ -114,24 +125,28 @@ class Option(QComboBox, Control):
 
 class RadioButton(QRadioButton):
 	def minimumSizeHint(self):
-		return QSize(30, 30)
+		return QSize(20, 20)
 
 class RadioGroup(Control):
 	valueChanged = pyqtSignal(int)
 	first_row = {}
 	def __init__(self, name):
-		self.group = QButtonGroup()
 		Control.__init__(self, name)
+		self.group = QButtonGroup()
+		self.group.setExclusive(True)
+		self.group.idClicked.connect(self.valueChanged)
+
 		self.label = None
 		self.header = None
-		self.group.idClicked.connect(self.valueChanged)
 		self.buttons = []
-		self.layout = self.outer_layout()
-		self.sizePolicy().setVerticalStretch(1)
-		self.sizePolicy().setHorizontalStretch(1)
-		self.layout.setSpacing(0)
-		self.layout.setContentsMargins(0,0,0,0)
-		self.layout.addStretch()
+
+		self.layout = QGridLayout()
+		#self.layout.setSpacing(0)
+		self.layout.setContentsMargins(1,1,1,1)
+
+		#self.sizePolicy().setVerticalStretch(1)
+		#self.sizePolicy().setHorizontalStretch(1)
+		#self.setSizePolicy(QSizePolicy.Expanding)
 
 	def populate(self, value):
 		#for i,v in enumerate(value.values):
@@ -141,27 +156,28 @@ class RadioGroup(Control):
 		#	self.group.addButton(button, i)
 		#	print("added %d" % i)
 		#	self.buttons += [button]
-		#self.group.setExclusive(True)
 
 		first_row = None
 		for i,v in enumerate(value.values):
 			value.value = i
-			box = self.inner_layout()
-			box.setContentsMargins(1,1,1,1)
 			button = RadioButton()
+			button.setFocusPolicy(Qt.NoFocus)
 			self.group.addButton(button, i)
+			self.buttons += [button]
+			self.add_widget(button, i+1, 1)
 
 			t = type(value)
-			if t not in self.first_row.keys():
-				label = NameLabel('\n'.join(value.format().split(' ')))
-				label.setFixedSize(50, 50)
-				label.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-				box.addWidget(label, alignment=Qt.AlignVCenter)
+			label = ValueLabel(' '.join(value.format().split(' ')))
+			if t in self.first_row.keys():
+				label.setStyleSheet("color:transparent");
+			else:
 				first_row = False
-			box.addWidget(button, alignment=Qt.AlignHCenter)
-			self.layout.addLayout(box)
+			self.add_widget(label, i+1,0)
+			self.add_widget(label, i+1,2)
+
 		if first_row is not None:
 			RadioGroup.first_row[type(value)] = first_row
+
 		self.setLayout(self.layout)
 
 	def widget_layout(self):
@@ -172,23 +188,32 @@ class RadioGroup(Control):
 	def value(self):
 		return self.group.checkedId()
 
+	def set_value(self, value):
+		v = value.value
+		self.group.blockSignals(True)
+		self.buttons[v].blockSignals(True)
+		self.buttons[v].setChecked(True)
+		self.buttons[v].blockSignals(False)
+		self.group.blockSignals(False)
+
+
 class VRadioGroup(RadioGroup):
 	def outer_layout(self):
 		return QVBoxLayout()
 	def inner_layout(self):
 		return QHBoxLayout()
-	def add_to_grid(self, grid, i, j):
-		for k,button in enumerate(self.buttons):
-			grid.addWidget(button, i+k, j)
+	def add_widget(self, widget, i, j):
+		self.layout.addWidget(widget, i, j, alignment=Qt.AlignVCenter)
+		self.layout.setRowStretch(i, 1)
 
 class HRadioGroup(RadioGroup):
 	def outer_layout(self):
 		return QHBoxLayout()
 	def inner_layout(self):
 		return QVBoxLayout()
-	def add_to_grid(self, grid, i, j):
-		for k,button in enumerate(self.buttons):
-			grid.addWidget(button, i, j+k)
+	def add_widget(self, widget, i, j):
+		self.layout.addWidget(widget, j, i, alignment=Qt.AlignHCenter)
+		self.layout.setColumnStretch(i, 1)
 
 class TrackControl(Control):
 	def __init__(self, name):
@@ -213,12 +238,20 @@ class TrackControl(Control):
 		self.slider.name = name
 
 	def set_value(self, value):
+		self.slider.blockSignals(True)
 		self.slider.setTracking(False)
 		if value.value == -inf:
-			self.slider.setSliderPosition(-71)
+			position = -71
 		else:
-			self.slider.setSliderPosition(value.value)
+			position = value.value
+
+		if isinstance(value, Scaled):
+			position /= value.step
+
+		self.slider.setSliderPosition(position)
+
 		self.slider.setTracking(True)
+		self.slider.blockSignals(False)
 		self.text = value.format()
 
 	def setRange(self, min_, max_):
@@ -309,7 +342,10 @@ class Knob(TrackControl):
 	def __init__(self, name):
 		self.slider = Dial()
 		TrackControl.__init__(self, name)
-		self.header = NameLabel(self.slider.name.split('.')[-1].replace('_',' '))
+		title = self.slider.name.split('.')[-1].replace('_',' ')
+		if len(title) > 9:
+			title = title.replace(' ','\n')
+		self.header = NameLabel(title)
 		self.setup_layout()
 		self.slider.scale_factor = 0.5
 
@@ -392,6 +428,7 @@ class TabBar(QTabBar):
 class MainWindow(QMainWindow):
 	def __init__(self, controller, mixer):
 		QMainWindow.__init__(self)
+		self.blocked = False
 		self.controller = controller
 		self.mixer = mixer
 		self.controls = { page: {} for page in self.mixer.pages }
@@ -403,6 +440,11 @@ class MainWindow(QMainWindow):
 		self.setCentralWidget(self.tab)
 		self.setStyleSheet(css)
 		self.installEventFilter(self)
+
+	def block(self):
+		self.blocked = True
+	def unblock(self):
+		self.blocked = False
 	
 	def eventFilter(self, obj, event):
 		if event.type() is QEvent.KeyPress:
@@ -466,33 +508,36 @@ class MainWindow(QMainWindow):
 				else:
 					widget = cw(ControlFactory.make(control))
 
-				#if isinstance(widget, RadioGroup):
-				#	widget.add_to_grid(grid, i+1, j)
-				#	self.controls[page_name][control] = widget
-				#	continue
-
 				align = Qt.AlignHCenter
 				rowspan, colspan = 1, 1
 				#if control and '.reverb_return' in control:
 				#	rowspan = final_row - i
+
 				if control and 'reverb.type' in control:
 					rowspan = 6
-				if len(row) <= max_columns / 2:
+					#align |= Qt.AlignVCenter
+					#widget.layout.setVerticalSpacing(27)
+					align = None
+
+				if align is None:
+					grid.addWidget(widget, i+1, j, rowspan, colspan)
+				elif len(row) <= max_columns / 2:
 					colspan = 2
 					grid.addWidget(widget, i+1, j*2, rowspan, colspan, alignment=align)
 				else:
 					#if i == final_row: align |= Qt.AlignTop
 					grid.addWidget(widget, i+1, j, rowspan, colspan, alignment=align)
+
 				self.controls[page_name][control] = widget
 				if type(widget) is VolSlider:
 					sliders = True
 
 		grid.setRowStretch(i+2, 1)
 
-		j = grid.columnCount()
+		j = max_columns #grid.columnCount()
 		for i, label in enumerate(page.get_labels()):
 			widget = GridLabel(label)
-			grid.addWidget(widget, i+1, j, alignment=Qt.AlignLeft)
+			grid.addWidget(widget, i+1, j, alignment=Qt.AlignLeft | Qt.AlignVCenter)
 			if max_columns <= 4:
 				grid.setColumnStretch(j, 1)
 		return grid
@@ -505,13 +550,16 @@ class MainWindow(QMainWindow):
 		return self.controls[page_name][control]
 
 	def control_change(self):
+		if self.blocked: return
+
 		sender = self.sender()
 		value = sender.value()
 		control = sender.name
 
 		widget = self.get_control(control)
-		print(control)
-		if not widget: return
+		#print(control)
+		if not widget or widget.blocked: return
+
 		widget.setFocus()
 
 		v = ValueFactory.get_class(control)()
@@ -525,9 +573,10 @@ class MainWindow(QMainWindow):
 
 		widget.update_label(v.format())
 		self.controller.call_app('assign', (control, v))
-		self.controller.app.debug("%s = %s (%s)" % (control, v.format(), str(value)))
+		self.controller.app.debug("control_change %s = %s (%s)" % (control, v.format(), str(value)))
 
 	def tab_change(self):
+		self.controller.app.debug("tab_change")
 		self.controller.call_app('set_page', self.current_page_name())
 
 	def get_cursor_widget(self, cursor=None):
