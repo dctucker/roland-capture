@@ -43,6 +43,51 @@ QTabBar::tab:selected {
 	color: #ccc;
 }
 
+QTabBar::tab#topbar {
+	border: 1px outset #333;
+	border-radius: 2px;
+	height: 1.2em;
+	margin-bottom: 8px;
+}
+
+QTabBar::tab#topbar {
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+		stop:0 #747474,
+		stop:0.3 #616161,
+		stop:0.6 #555555,
+		stop:1.0 #333333
+	);
+	color: #eee;
+}
+QTabBar::tab:selected#topbar {
+	background-color: #6cbde8;
+	color: #222;
+	border: 1px inset #333;
+}
+TabBar::tab {
+	min-width: 25px;
+}
+
+QStackedWidget QTabBar::tab {
+	margin: 0;
+	height: 1em;
+}
+
+QStackedWidget#mixer {
+	background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+		stop:0 #3b3b3b,
+		stop:1 #212325
+	);
+	border-left: 1px solid #888;
+	border-right: 1px solid #888;
+	border-bottom: 1px solid #888;
+}
+#blank_bar {
+	background: #3b3b3b;
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+}
+
 PushButton, QRadioButton, QPushButton {
 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
 		stop:0 #747474,
@@ -50,7 +95,7 @@ PushButton, QRadioButton, QPushButton {
 		stop:0.6 #555555,
 		stop:1.0 #333333
 	);
-	border: 1px solid #222222;
+	border: 1px outset #222222;
 	color: #eee;
 }
 PushButton:checked, QPushButton:checked {
@@ -61,9 +106,9 @@ PushButton[name~=".bypass"]:checked {
 }
 
 QSlider::groove:vertical {
-	border: 1px solid #333333;
-	width: 2px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-	background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #616161, stop:1 #747474);
+	border: 2px inset #222;
+	width: 1px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #616161, stop:1 #747474);
 	margin: 0 2px;
 }
 

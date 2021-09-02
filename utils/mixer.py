@@ -49,13 +49,13 @@ class InputPage(Page):
 
 
 class OutputPage(Page):
-	controls = "mute", "solo", "pan", "volume"
+	controls = "mute", "solo", None, "pan", "volume"
 	def __init__(self, mixer, monitor):
 		Page.__init__(self, mixer)
 		self.monitor = monitor
 
 	def get_labels(self):
-		return ['Stereo'] + [ control.capitalize() for control in self.controls ]
+		return ['Stereo'] + [ control.capitalize() if control else None for control in self.controls ]
 
 	def get_header(self):
 		return [str(ch+1) for ch in range(0,10)] + ["INL","INR","DAWL","DAWR"]
@@ -71,7 +71,10 @@ class OutputPage(Page):
 		for control in self.controls:
 			row = []
 			for ch in range(0, 10):
-				desc = "%s.channel.%d.%s" % (page, ch+1, control)
+				if control is None:
+					desc = None
+				else:
+					desc = "%s.channel.%d.%s" % (page, ch+1, control)
 				row += [desc]
 			if control == 'volume':
 				row += [
@@ -83,6 +86,7 @@ class OutputPage(Page):
 			else:
 				row += [None, None, None, None]
 			controls += [row]
+		controls[3][11] = "master.direct_monitor.a.reverb_return"
 		return controls
 
 class PreampPage(Page):
@@ -175,6 +179,7 @@ class Patchbay(Page):
 	spacing = 14
 	def get_controls(self):
 		return [
+			[None],
 			["patchbay.1-2"],
 			["patchbay.3-4"],
 			["patchbay.5-6"],
@@ -183,10 +188,10 @@ class Patchbay(Page):
 		]
 
 	def get_labels(self):
-		return [ "1-2", "3-4", "5-6", "7-8", "9-10" ]
+		return [ "Output", "1-2", "3-4", "5-6", "7-8", "9-10" ]
 
 	def get_header(self):
-		return ['Source', 'Output']
+		return ['Source']
 
 class ChannelPage(Page):
 	spacing = 7

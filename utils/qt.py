@@ -371,8 +371,8 @@ class VolSlider(TrackControl):
 		slider.setSingleStep(1)
 		slider.setMinimum(-71)
 		slider.setMaximum(12)
-		slider.sizePolicy().setVerticalStretch(0)
-		slider.sizePolicy().setHorizontalStretch(0)
+		#slider.sizePolicy().setVerticalStretch(0)
+		#slider.sizePolicy().setHorizontalStretch(0)
 		slider.setFocusPolicy(Qt.NoFocus)
 		slider.setTracking(False)
 		self.slider = slider
@@ -422,6 +422,9 @@ class ControlFactory():
 		return widget
 
 class TabBar(QTabBar):
+	def __init__(self):
+		QTabBar.__init__(self)
+		self.setFocusPolicy(Qt.NoFocus)
 	def wheelEvent(self, event):
 		event.ignore()
 
@@ -436,6 +439,9 @@ class MainWindow(QMainWindow):
 		self.top_tab_names = ['inputs','outputs','channel','preamp','compressor','line','reverb','patchbay']
 		self.previous_cursor = None
 
+		self.setup_menu()
+		self.setWindowTitle("Roland STUDIO-CAPTURE mixer")
+
 		tab_layout = self.setup_tabs()
 		self.center()
 		widget = Widget()
@@ -443,6 +449,61 @@ class MainWindow(QMainWindow):
 		self.setCentralWidget(widget)
 		self.setStyleSheet(css)
 		self.installEventFilter(self)
+
+	def setup_menu(self):
+		self._menubar = QMenuBar()
+		self.setMenuBar(self._menubar)
+		self.driver_menu = self._menubar.addMenu("Driver")
+		self.driver_menu.addAction("Driver Settings...")
+		self.driver_menu.addAction("Always on top")
+		self.driver_menu.addAction("Show README")
+		self.driver_menu.addSeparator()
+		self.driver_menu.addAction("Exit")
+
+		self.device_menu = self._menubar.addMenu("Device")
+		self.device_menu.addAction("Device Settings...")
+		self.device_menu.addSeparator()
+		self.device_menu.addAction("Load settings...")
+		self.device_menu.addAction("Save settings...")
+		self.device_menu.addSeparator()
+		self.device_menu.addAction("Open the Patchbay...")
+		self.device_menu.addSeparator()
+		self.device_menu.addAction("Directly Output the inputs")
+		submenu = self.device_menu.addMenu("Initialize...")
+		submenu.addAction("All")
+		submenu.addAction("MIC PRE")
+		submenu.addAction("MONITOR MIX")
+		submenu.addAction("REVERB")
+		submenu.addAction("PATCHBAY")
+		self.device_menu.addSeparator()
+		self.device_menu.addAction("Show the signal flow")
+
+		"""
+		Driver
+			Driver Settings...
+			Always on top
+			Show README
+			About Driver & Control Panel...
+			-
+			Exit ^q
+		Device
+			Device Settings...
+			-
+			Save settings... ^s
+			Load settings... ^o
+			-
+			Open the Patchbay... ^p
+			-
+			Directly Output the inputs
+			Initialize... >
+				All
+				MIC PRE
+				MONITOR MIX
+				REVERB
+				PATCHBAY
+			-
+			Show the signal flow
+		"""
 
 	def block(self):
 		self.blocked = True
@@ -457,9 +518,11 @@ class MainWindow(QMainWindow):
 		
 	def setup_tabs(self):
 		self.tab_bar = TabBar()
-		self.tab_bar.setFocusPolicy(Qt.NoFocus)
+		self.tab_bar.setObjectName("topbar")
+		self.tab_bar.setExpanding(False)
 
 		self.stack = QStackedWidget()
+		self.stack.setObjectName("mixer")
 
 		self.pages = { page: Widget() for page in self.mixer.pages }
 		for page_name in self.mixer.pages.keys():
@@ -487,18 +550,24 @@ class MainWindow(QMainWindow):
 
 		self.monitor_bar = TabBar()
 		for m,mon in enumerate(['a','b','c','d']):
-			self.monitor_bar.addTab(mon.upper())
+			self.monitor_bar.addTab("Mix " + mon.upper())
 			self.monitor_bar.setTabData(m, mon)
 		self.monitor_bar.currentChanged.connect(self.monitor_change)
 
+		self.blank_bar = TabBar()
+		self.blank_bar.setObjectName("blank_bar")
+		self.blank_bar.addTab("    ")
+
 		self.subtab = QStackedWidget()
-		self.subtab.addWidget(Widget())
+		self.subtab.addWidget(self.blank_bar)
 		self.subtab.addWidget(self.monitor_bar)
 		self.subtab.addWidget(self.channel_bar)
 
 		tab_layout = QVBoxLayout()
-		tab_layout.addWidget(self.tab_bar)
-		tab_layout.addWidget(self.subtab)
+		tab_layout.setSpacing(0)
+		tab_layout.setContentsMargins(0,0,0,0)
+		tab_layout.addWidget(self.tab_bar, alignment=Qt.AlignLeft)
+		tab_layout.addWidget(self.subtab, alignment=Qt.AlignLeft | Qt.AlignBottom)
 		tab_layout.addWidget(self.stack)
 		return tab_layout
 
@@ -511,6 +580,7 @@ class MainWindow(QMainWindow):
 
 	def top_tab_change(self, index):
 		action = self.tab_bar.tabData(index)
+		self.blank_bar.setTabText(0, action.title())
 		self.controller.call_app(action)
 
 	def monitor_change(self, index):
@@ -602,7 +672,7 @@ class MainWindow(QMainWindow):
 				if type(widget) is VolSlider:
 					sliders = True
 
-		grid.setRowStretch(i+2, 1)
+		if not sliders: grid.setRowStretch(i+2, 1)
 
 		j = max_columns #grid.columnCount()
 		for i, label in enumerate(page.get_labels()):
