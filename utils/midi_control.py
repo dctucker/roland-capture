@@ -16,7 +16,8 @@ Roland STUDIO-CAPTURE control
   -g, --graphical       launches in graphical mode
   -l, --list            lists the available MIDI ports
   -p, --port port_name  uses port_name instead of the default
-  -t, --terminal        launches in terminal mode""" % sys.argv[0]
+  -t, --terminal        launches in terminal mode
+  -v, --verbose         increase debug output""" % sys.argv[0]
 
 def get_mixer_port(api, port_name):
 	found = None
@@ -33,13 +34,13 @@ class Listener(object):
 
 	def __call__(self, event, data=None):
 		message, deltatime = event
-		#self.app.debug("< " + render_bytes(message))
+		#self.app.debug("RECV " + render_bytes(message))
 
 		addr, data = Roland.parse_sysex(message)
 		self.app.mixer.memory.set(addr, data)
 		name = self.app.capture_view.lookup_name(addr)
 		value = self.app.mixer.memory.get_formatted(addr)
-		self.app.debug("0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
+		self.app.debug("listener hears 0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
 
 		self.app.mixer.memory.set(addr, data)
 		self.dispatch(addr, value)
@@ -82,7 +83,7 @@ class App(object):
 
 	def send(self, message):
 		if self.midi_out:
-			self.debug("> " + render_bytes(message))
+			self.debug("SEND " + render_bytes(message))
 			self.midi_out.send_message(message)
 			return message
 
@@ -200,7 +201,9 @@ class App(object):
 		return self.interface.on_keyboard(key)
 
 	def set_page(self, page):
+		self.interface.block()
 		self.mixer.set_page(page)
+		self.interface.unblock()
 		self.load_mixer_values()
 		self.interface.refresh()
 

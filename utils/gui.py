@@ -54,10 +54,12 @@ class MainGraphical(QApplication):
 		return self.exec_()
 
 	def block(self):
+		self.window.block()
 		self.window.setEnabled(False)
 
 	def unblock(self):
 		self.window.setEnabled(True)
+		self.window.unblock()
 
 	def on_keyboard(self, event):
 		if self.controller.on_keyboard((event.text(), event.key())):
@@ -84,8 +86,10 @@ class MainGraphical(QApplication):
 		addr = Capture.get_addr(control)
 		value = self.mixer.memory.get_value(addr)
 
-		self.debug("setting " + control + " to " + value.format())
+		self.debug("notify_control " + control + " to " + value.format())
+		widget.block()
 		widget.set_value(value)
+		widget.unblock()
 		widget.update_label(value.format())
 
 	def quit(self):
