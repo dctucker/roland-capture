@@ -100,6 +100,7 @@ class App(object):
 		self.interface.unblock()
 
 	def setup_midi(self):
+		assert(self.listener)
 		if self.port is None:
 			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
 
@@ -188,8 +189,13 @@ class App(object):
 			print(control)
 
 	def get(self, control):
+		self.setup_interface()
+		self.listener = Listener(self)
 		self.setup_midi()
+
 		self.get_mixer_value(control)
+		value = self.interface.wait_for_value(control)
+		print(value.format())
 		self.cleanup()
 
 	def cleanup(self):
