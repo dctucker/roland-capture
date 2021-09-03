@@ -1,4 +1,4 @@
-from roland import Capture, CaptureView, Memory, Bool
+from lib.roland import Capture, CaptureView, Memory, Bool
 
 class Cursor(object):
 	def __init__(self):

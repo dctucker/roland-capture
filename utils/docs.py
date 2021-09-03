@@ -2,7 +2,7 @@
 
 import jinja2
 from jinja2 import Template, Environment
-from roland import Capture, ReverbType
+from lib.roland import Capture, ReverbType
 from struct import Struct
 from math import log, ceil
 

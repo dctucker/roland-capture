@@ -1,6 +1,6 @@
 import time
-from term import Term
-from roland import Capture, ValueFactory, Bool
+from interface.term import Term
+from lib.roland import Capture, ValueFactory, Bool
 
 class MainCli():
 	def __init__(self, controller, mixer):
