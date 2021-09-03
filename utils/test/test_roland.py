@@ -1,6 +1,5 @@
 import unittest
 from lib.roland import Capture
-from lib.mixer import Mixer
 
 class TestCapture(unittest.TestCase):
 	def test_memory_lookup(self):
@@ -18,10 +17,8 @@ class TestCapture(unittest.TestCase):
 		self.assertEqual(0x00040000, Capture.get_addr("reverb.type"))
 		self.assertEqual(0x00040101, Capture.get_addr("reverb.echo.pre_delay"))
 
-	def test_mixer(self):
-		Mixer()
-
 	def test_all_memory(self):
 		names = Capture.memory_names()
 		self.assertIsInstance(names, list)
 		{ name:Capture.get_addr(name) for name in names }
+
