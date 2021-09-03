@@ -198,6 +198,22 @@ class App(object):
 		print(value.format())
 		self.cleanup()
 
+	def set(self, control, new_value):
+		self.setup_interface()
+		self.listener = Listener(self)
+		self.setup_midi()
+
+		addr = Capture.get_addr(control)
+		value = self.interface.parse_value(control, new_value)
+		if value is None:
+			print("Unrecognized value for %s: %s" % (control.split('.')[-1], new_value))
+		else:
+			self.set_mixer_value(addr, value.pack())
+			value = self.interface.wait_for_value(control)
+			print(value.format())
+		self.cleanup()
+
+
 	def cleanup(self):
 		if self.midi_in : self.midi_in.close_port()
 		if self.midi_out: self.midi_out.close_port()
@@ -227,41 +243,50 @@ class App(object):
 		if self.verbose:
 			self.interface.debug(message, end)
 
+
 def main(argv):
-	if '-h' in argv:
-		print(usage)
-		return
+	import argparse
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-g', '--graphical', action="store_true",                help='launch in graphical mode')
+	parser.add_argument('-t', '--terminal',  action="store_true",                help='launch in terminal mode')
+	parser.add_argument('-l', '--list',      action="store_true",                help='list the available MIDI ports')
+	parser.add_argument('-c', '--controls',  action="store_true",                help='list the controllable parameter names')
+	parser.add_argument('-p', '--port',      type=str,                           help='uses port_name instead of the default')
+	parser.add_argument('-v', '--verbose',   action="store_true", default=False, help='increase debug output')
+	parser.add_argument('control',           default=None, type=str, nargs='?',  help='control name')
+	parser.add_argument('value',             default=None,           nargs='?',  help='value to set')
+	args = parser.parse_args()
 
 	app = App()
 
-	if '-g' in argv:
+	if args.graphical:
 		app.graphical = True
 		app.interactive = True
-	if '-t' in argv:
+	if args.terminal:
 		app.interactive = True
 		app.graphical = False
 	if app.interactive and app.graphical is None:
 		app.graphical = len(os.environ.get('DISPLAY', "")) > 0
 	
-	if '-l' in argv:
+	if args.list:
 		app.interactive = False
 		return app.list_midi()
 
-	if '-c' in argv:
+	if args.controls:
 		return app.list_controls()
 
-	if '-p' in argv:
-		_p = argv.index('-p')
-		if _p and _p + 1 < len(argv):
-			app.port = argv[_p+1]
-			
-	if '-v' in argv:
-		app.verbose = True
+	app.port = args.port
+	app.verbose = args.verbose
 
-	if argv[-1] in Capture.memory_names():
+	if args.control:
 		app.interactive = False
-		control = argv[-1]
-		return app.get(control)
+		if args.control not in Capture.memory_names():
+			print("Unknown control name: %s" % args.control)
+			sys.exit(3)
+		if args.value:
+			return app.set(args.control, args.value)
+		else:
+			return app.get(args.control)
 
 	app.main()
 
