@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, QSize, QEvent, pyqtSignal
 from PyQt5.QtWidgets import *
 from lib.roland import ValueFactory, Bool, Capture, Volume, Enum, Scaled, Pan
 
-with open('style.css') as file:
+with open('assets/style.css') as file:
 	css = file.read()
 
 class Label(QLabel):

@@ -26,7 +26,7 @@ class MainGraphical(QApplication):
 	def __init__(self, controller, mixer):
 		QApplication.__init__(self, sys.argv)
 		self.setApplicationName("Roland STUDIO-CAPTURE mixer")
-		self.setWindowIcon(QIcon('./appicon.png'))
+		self.setWindowIcon(QIcon('assets/appicon.png'))
 		self.controller = controller
 		self.controller.cursors = (
 			(Qt.Key_Up,),
