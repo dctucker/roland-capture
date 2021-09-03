@@ -8,16 +8,7 @@ from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		get_compiled_api)
 from rtmidi.midiutil import open_midiinput, open_midioutput
 from lib.roland import render_bytes, Roland, Capture, CaptureView, Memory
-from controller import Controller
-
-usage = """Usage: %s [-l|-p <port_name>] [-g|-t]
-Roland STUDIO-CAPTURE control
-
-  -g, --graphical       launches in graphical mode
-  -l, --list            lists the available MIDI ports
-  -p, --port port_name  uses port_name instead of the default
-  -t, --terminal        launches in terminal mode
-  -v, --verbose         increase debug output""" % sys.argv[0]
+from app.controller import Controller
 
 def get_mixer_port(api, port_name):
 	found = None
@@ -253,6 +244,7 @@ def main(argv):
 	parser.add_argument('-c', '--controls',  action="store_true",                help='list the controllable parameter names')
 	parser.add_argument('-p', '--port',      type=str,                           help='uses port_name instead of the default')
 	parser.add_argument('-v', '--verbose',   action="store_true", default=False, help='increase debug output')
+	parser.add_argument('-M', '--memory-map',action="store_true", default=False, help='list the memory addresses')
 	parser.add_argument('control',           default=None, type=str, nargs='?',  help='control name')
 	parser.add_argument('value',             default=None,           nargs='?',  help='value to set')
 	args = parser.parse_args()
@@ -274,6 +266,10 @@ def main(argv):
 
 	if args.controls:
 		return app.list_controls()
+
+	if args.memory_map:
+		from app import docs
+		return
 
 	app.port = args.port
 	app.verbose = args.verbose
