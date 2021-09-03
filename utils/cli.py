@@ -1,6 +1,6 @@
 import time
 from term import Term
-from roland import Capture
+from roland import Capture, ValueFactory, Bool
 
 class MainCli():
 	def __init__(self, controller, mixer):
@@ -32,6 +32,19 @@ class MainCli():
 
 	def block(self): pass
 	def unblock(self): pass
+
+	def parse_value(self, name, new_value):
+		value = ValueFactory.get_class(name)(new_value)
+		if isinstance(value, Bool):
+			if new_value.lower() in ('on','1','true'):
+				value.value = True
+			elif new_value.lower() in ('off','0','false'):
+				value.value = False
+			else:
+				return None
+		else:
+			value.value = int(new_value)
+		return value
 
 	def wait_for_value(self, control):
 		timeout = 10
