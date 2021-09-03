@@ -1,6 +1,6 @@
-from term import Term
-from mixer import Mixer
-from roland import Capture, Bool
+from lib.roland import Capture, Bool
+from interface.term import Term
+from lib.mixer import Mixer
 import sys
 import time
 
@@ -126,10 +126,11 @@ class TerminalMixer(Mixer):
 			ret += "\033[0m"
 			if labels is not None and r < len(labels):
 				label = labels[r]
-				if len(label) > 0 and label[0] == "*":
-					ret += " \033[0;4m%s\033[24m" % label[1:]
-				else:
-					ret += " \033[1;30m%s\033[0m" % label
+				if label is not None:
+					if len(label) > 0 and label[0] == "*":
+						ret += " \033[0;4m%s\033[24m" % label[1:]
+					else:
+						ret += " \033[1;30m%s\033[0m" % label
 			ret += "\n\033[2K"
 
 		ret += "\n\033[2K%s\n" % (selected_control or '')

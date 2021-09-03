@@ -7,7 +7,7 @@ from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
 		API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
 		get_compiled_api)
 from rtmidi.midiutil import open_midiinput, open_midioutput
-from roland import render_bytes, Roland, Capture, CaptureView, Memory
+from lib.roland import render_bytes, Roland, Capture, CaptureView, Memory
 from controller import Controller
 
 usage = """Usage: %s [-l|-p <port_name>] [-g|-t]
@@ -141,7 +141,7 @@ class App(object):
 		if self.interactive:
 			if self.graphical:
 				try:
-					from gui import GraphicalMixer, MainGraphical
+					from interface.gui import GraphicalMixer, MainGraphical
 				except:
 					self.debug("Unable to setup graphical interface, falling back to terminal")
 					self.graphical = False
@@ -149,12 +149,12 @@ class App(object):
 				self.mixer = GraphicalMixer()
 				self.interface = MainGraphical(self.controller, self.mixer)
 			else:
-				from tui import TerminalMixer,  MainTerminal
+				from interface.tui import TerminalMixer,  MainTerminal
 				self.mixer = TerminalMixer()
 				self.interface = MainTerminal(self.controller, self.mixer)
 		else: # cli
-			from cli import MainCli
-			from mixer import Mixer
+			from interface.cli import MainCli
+			from lib.mixer import Mixer
 			self.mixer = Mixer()
 			self.interface = MainCli(self.controller, self.mixer)
 		return True

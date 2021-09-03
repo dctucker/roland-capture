@@ -1,8 +1,8 @@
+from math import inf, log10
 from PyQt5.QtGui import QPalette, QColor, QKeyEvent, QPainter, QPen, QColor, QFont, QFontMetrics, QIcon
 from PyQt5.QtCore import Qt, QSize, QEvent, pyqtSignal
 from PyQt5.QtWidgets import *
-from roland import ValueFactory, Bool, Capture, Volume, Enum, Scaled, Pan
-from math import inf, log10
+from lib.roland import ValueFactory, Bool, Capture, Volume, Enum, Scaled, Pan
 
 with open('style.css') as file:
 	css = file.read()

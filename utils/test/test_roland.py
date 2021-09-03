@@ -1,6 +1,6 @@
 import unittest
-from roland import Capture
-from mixer import Mixer
+from lib.roland import Capture
+from lib.mixer import Mixer
 
 class TestCapture(unittest.TestCase):
 	def test_memory_lookup(self):

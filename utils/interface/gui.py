@@ -2,9 +2,9 @@
 
 import sys
 
-from mixer import Mixer
-from roland import ValueFactory, Bool, Capture, Volume, Enum
-from qt import *
+from lib.roland import ValueFactory, Bool, Capture, Volume, Enum
+from lib.mixer import Mixer
+from interface.qt import *
 
 class GraphicalMixer(Mixer):
 	page_titles = {
