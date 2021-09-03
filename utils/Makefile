@@ -1,7 +1,8 @@
 .PHONY: test
 
-dist/roland-capture: lib/*.py interface/*.py app/*.py midi_control.py assets/*
-	pyinstaller --onefile --name="roland-capture" --windowed midi_control.py
+dist/roland-capture: assets/* app/*.py lib/*.py ui/*.py midi_control.py
+	pyinstaller --name="roland-capture" --windowed midi_control.py
+	# --onefile
 
 test: test/*.py
 	python3 -m unittest test/test_*.py
