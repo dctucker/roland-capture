@@ -1,6 +1,7 @@
-from lib.roland import Capture, Bool
-from interface.term import Term
+from lib.roland import Capture
+from lib.types import Bool
 from lib.mixer import Mixer
+from ui.term import Term
 import sys
 import time
 
@@ -112,7 +113,7 @@ class TerminalMixer(Mixer):
 				else:
 					addr = Capture.get_addr(control)
 					value = self.memory.get_value(addr)
-					if type(value) is Bool and value.value:
+					if isinstance(value, Bool) and value.value:
 						active = True
 					formatted = self.memory.get_formatted(addr)
 				if self.cursor.x == c and self.cursor.y == r:
