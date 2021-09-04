@@ -39,8 +39,8 @@ MemMap * lookup_map(MemMap *map, char *part)
 		//debug(map[i].name);
 		return &map[i];
 	}
+	return NULL;
 }
-
 
 u32 name_addr(const char *desc)
 {
@@ -51,7 +51,7 @@ u32 name_addr(const char *desc)
 	while( tok != NULL )
 	{
 		map = lookup_map(map, tok);
-		if( map == NULL )
+		if( map == NULL ) //|| map == (void *)None )
 		{
 			return None;
 		}
@@ -77,6 +77,8 @@ void fail()
 	exit(1);
 }
 
+#define TEST(x) if( !(x) ) fail()
+
 int main(int argc, char *argv[])
 {
 	/*
@@ -97,9 +99,13 @@ int main(int argc, char *argv[])
 
 	//char prefix[256];
 	//print_map(memory_map, prefix, 0);
-
-	bool b = test_name_addr(0x01071208, "daw_monitor.b.channel.3.volume");
-	if( ! b ) fail();
+	printf("\nTesting C library...\n");
+	bool b;
+	TEST( test_name_addr(0x00071208, "daw_monitor.b.channel.3.volume") );
+	TEST( test_name_addr(0x0006230e, "input_monitor.c.channel.4.reverb") );
+	TEST( test_name_addr(None, "daw_monitor.d.channel.5.reverb") );
+	TEST( test_name_addr(None, "daw_monitor.e.reverb") );
+	printf("Done.\n\n");
 	return 0;
 }
 

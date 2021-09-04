@@ -1,9 +1,9 @@
 
 test: bin/runtest
-	bin/runtest
+	gdb -q bin/runtest -ex r -ex quit
 
 bin/runtest: test/test.c lib/*.h
-	gcc -I. test/test.c -o bin/runtest
+	gcc -g -I. test/test.c -o bin/runtest
 
 .PHONY: clean
 clean:
