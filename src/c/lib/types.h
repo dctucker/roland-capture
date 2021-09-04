@@ -1,5 +1,6 @@
 typedef uint8_t u8;
 typedef uint32_t u32;
+typedef uint32_t Addr;
 typedef struct Boolean {
 	u8 value;
 } Boolean;

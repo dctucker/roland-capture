@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "lib/capture.h"
 
-void print_map(struct memory_area *map, char *prefix, u32 old_offset)
+void print_map(struct memory_area *map, char *prefix, Addr old_offset)
 {
-	for(int i = 0; map[i].offset != 0xffffffff; i++ ){
+	for(int i = 0; map[i].offset != 0xffffffff; i++ )
+	{
 		if( map[i].name == NULL ) continue;
 		u32 offset = map[i].offset;
 		const char *name = map[i].name;
@@ -20,8 +22,44 @@ void print_map(struct memory_area *map, char *prefix, u32 old_offset)
 			continue;
 		}
 
-		print_map((struct memory_area *)(map[i].area), new_prefix, old_offset + offset);
+		print_map((MemMap *)(map[i].area), new_prefix, old_offset + offset);
 	}
+}
+
+#define debug(X) printf("%s\n", X);
+MemMap * lookup_map(MemMap *map, char *part)
+{
+	for(int i = 0; map[i].offset != None; i++ )
+	{
+		if( map[i].name == NULL ) continue;
+		if( strcmp(map[i].name, part) != 0 ) continue;
+
+		debug(map[i].name);
+		return &map[i];
+	}
+}
+
+
+u32 name_addr(const char *desc)
+{
+	Addr ret = 0;
+	MemMap *map = memory_map_area.area;
+	char *desc_ = strdup(desc);
+	char *tok = strtok(desc_, ".");
+	while( tok != NULL )
+	{
+		map = lookup_map(map, tok);
+		if( map == NULL )
+		{
+			return None;
+		}
+		ret += map->offset;
+		printf("0x%08x\n", ret);
+		tok = strtok(NULL, ".");
+		map = map->area;
+	}
+	free(desc_);
+	return ret;
 }
 
 int main(int argc, char *argv[])
@@ -42,7 +80,11 @@ int main(int argc, char *argv[])
 	printf("hello\n");
 	*/
 
-	char prefix[256];
-	print_map(memory_map, prefix, 0);
+	//char prefix[256];
+	//print_map(memory_map, prefix, 0);
+
+	const char *desc = "daw_monitor.b.channel.3.volume";
+	Addr addr = name_addr(desc);
+	printf("%s -> 0x%08x\n", desc, addr);
 	return 0;
 }
