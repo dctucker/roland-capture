@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "lib/capture.h"
+
+#define debug(X) printf("%s\n", X);
 
 void print_map(struct memory_area *map, char *prefix, Addr old_offset)
 {
@@ -26,7 +29,6 @@ void print_map(struct memory_area *map, char *prefix, Addr old_offset)
 	}
 }
 
-#define debug(X) printf("%s\n", X);
 MemMap * lookup_map(MemMap *map, char *part)
 {
 	for(int i = 0; map[i].offset != None; i++ )
@@ -34,7 +36,7 @@ MemMap * lookup_map(MemMap *map, char *part)
 		if( map[i].name == NULL ) continue;
 		if( strcmp(map[i].name, part) != 0 ) continue;
 
-		debug(map[i].name);
+		//debug(map[i].name);
 		return &map[i];
 	}
 }
@@ -43,7 +45,7 @@ MemMap * lookup_map(MemMap *map, char *part)
 u32 name_addr(const char *desc)
 {
 	Addr ret = 0;
-	MemMap *map = memory_map_area.area;
+	MemMap *map = (MemMap *)(memory_map);
 	char *desc_ = strdup(desc);
 	char *tok = strtok(desc_, ".");
 	while( tok != NULL )
@@ -54,12 +56,25 @@ u32 name_addr(const char *desc)
 			return None;
 		}
 		ret += map->offset;
-		printf("0x%08x\n", ret);
+		//printf("0x%08x\n", ret);
 		tok = strtok(NULL, ".");
-		map = map->area;
+		map = (MemMap *)(map->area);
 	}
 	free(desc_);
 	return ret;
+}
+
+bool test_name_addr(Addr expected, const char *desc)
+{
+	Addr addr = name_addr(desc);
+	printf("%s -> 0x%08x\n", desc, addr);
+	return addr == expected;
+}
+
+void fail()
+{
+	printf("FAIL\n");
+	exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -83,8 +98,8 @@ int main(int argc, char *argv[])
 	//char prefix[256];
 	//print_map(memory_map, prefix, 0);
 
-	const char *desc = "daw_monitor.b.channel.3.volume";
-	Addr addr = name_addr(desc);
-	printf("%s -> 0x%08x\n", desc, addr);
+	bool b = test_name_addr(0x01071208, "daw_monitor.b.channel.3.volume");
+	if( ! b ) fail();
 	return 0;
 }
+
