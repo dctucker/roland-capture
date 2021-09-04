@@ -2,17 +2,20 @@
 #include <inttypes.h>
 #include "types.h"
 
-#define DEF_MEMAREA(NAME) struct memory_area NAME ## _area[]
-#define MEMAREA(NAME) .area=(struct memory_area **)& NAME ## _area
+#define DEF_MEMAREA(NAME) MemMap NAME ## _area[]
+#define MEMAREA(NAME) .area=(MemMap **)& NAME ## _area
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
-#define ENDA { .offset=0xffffffff }
+#define None (0xffffffff)
+#define ENDA { .offset=None }
 #define MEMNODE(OFFSET, NAME) [OFFSET] = { .name = #NAME, .offset = OFFSET }
 
-struct memory_area {
-	u32 offset;
+typedef struct memory_area {
+	Addr offset;
 	const char *name;
 	struct memory_area **area;
-} memory_area;
+} MemMap;
+
+MemMap memory_area;
 
 DEF_MEMAREA(patchbay_output) = {
 	MEMNODE(0x0, output),
@@ -34,11 +37,11 @@ DEF_MEMAREA(reverb_params) = {
 };
 DEF_MEMAREA(reverb) = {
 	MEMNODE(0x0, type),
-	[0x1] = { .offset = 0x0100, .name = "echo",       MEMAREA(reverb_params) },
-	[0x2] = { .offset = 0x0200, .name = "room",       MEMAREA(reverb_params) },
-	[0x3] = { .offset = 0x0300, .name = "small_hall", MEMAREA(reverb_params) },
-	[0x4] = { .offset = 0x0400, .name = "large_hall", MEMAREA(reverb_params) },
-	[0x5] = { .offset = 0x0500, .name = "plate",      MEMAREA(reverb_params) },
+	[0x1] = { .offset=0x0100, .name="echo",       MEMAREA(reverb_params) },
+	[0x2] = { .offset=0x0200, .name="room",       MEMAREA(reverb_params) },
+	[0x3] = { .offset=0x0300, .name="small_hall", MEMAREA(reverb_params) },
+	[0x4] = { .offset=0x0400, .name="large_hall", MEMAREA(reverb_params) },
+	[0x5] = { .offset=0x0500, .name="plate",      MEMAREA(reverb_params) },
 	ENDA
 };
 
@@ -179,45 +182,45 @@ DEF_MEMAREA(master_params) = {
 	ENDA
 };
 DEF_MEMAREA(direct_monitor_a) = {
-	{ .offset=0x0000, .name = "left"         ,  MEMAREA(master_params) },
-	{ .offset=0x0100, .name = "right"        ,  MEMAREA(master_params) },
-	{ .offset=0x0007, .name = "reverb_return" },
-	{ .offset=0x000d, .name = "link"          },
+	{ .offset=0x0000, .name="left"  , MEMAREA(master_params) },
+	{ .offset=0x0100, .name="right" , MEMAREA(master_params) },
+	{ .offset=0x0007, .name="reverb_return" },
+	{ .offset=0x000d, .name="link"          },
 	ENDA
 };
 DEF_MEMAREA(direct_monitor) = {
-	{ .offset=0x0000, .name = "left" ,  MEMAREA(master_params) },
-	{ .offset=0x0100, .name = "right",  MEMAREA(master_params) },
-	{ .offset=0x000d, .name = "link" },
+	{ .offset=0x0000, .name="left" ,  MEMAREA(master_params) },
+	{ .offset=0x0100, .name="right",  MEMAREA(master_params) },
+	{ .offset=0x000d, .name="link" },
 	ENDA
 };
 DEF_MEMAREA(master_direct_monitors) = {
-	[0] = { .offset=0x0000, .name="a", MEMAREA(direct_monitor_a) },
-	[1] = { .offset=0x1000, .name="b", MEMAREA(direct_monitor) },
-	[2] = { .offset=0x2000, .name="c", MEMAREA(direct_monitor) },
-	[3] = { .offset=0x3000, .name="d", MEMAREA(direct_monitor) },
+	[0x0] = { .offset=0x0000, .name="a", MEMAREA(direct_monitor_a) },
+	[0x1] = { .offset=0x1000, .name="b", MEMAREA(direct_monitor) },
+	[0x2] = { .offset=0x2000, .name="c", MEMAREA(direct_monitor) },
+	[0x3] = { .offset=0x3000, .name="d", MEMAREA(direct_monitor) },
 	ENDA
 };
 DEF_MEMAREA(daw_monitor_lr) = {
-	{ .name = "left",  .offset=0x0000, MEMAREA(master_params) },
-	{ .name = "right", .offset=0x0100, MEMAREA(master_params) },
+	[0x0] = { .offset=0x0000, .name = "left",  MEMAREA(master_params) },
+	[0x1] = { .offset=0x0100, .name = "right", MEMAREA(master_params) },
 	ENDA
 };
 DEF_MEMAREA(master_daw_monitors) = {
-	[0] = { .offset=0x0000, .name="a", MEMAREA(daw_monitor_lr) },
-	[1] = { .offset=0x1000, .name="b", MEMAREA(daw_monitor_lr) },
-	[2] = { .offset=0x2000, .name="c", MEMAREA(daw_monitor_lr) },
-	[3] = { .offset=0x3000, .name="d", MEMAREA(daw_monitor_lr) },
+	[0x0] = { .offset=0x0000, .name="a", MEMAREA(daw_monitor_lr) },
+	[0x1] = { .offset=0x1000, .name="b", MEMAREA(daw_monitor_lr) },
+	[0x2] = { .offset=0x2000, .name="c", MEMAREA(daw_monitor_lr) },
+	[0x3] = { .offset=0x3000, .name="d", MEMAREA(daw_monitor_lr) },
 	ENDA
 };
 
 DEF_MEMAREA(master) = {
-	{ .offset=0x00000000, .name="direct_monitor", MEMAREA(master_direct_monitors) },
-	{ .offset=0x00010000, .name="daw_monitor",    MEMAREA(master_daw_monitors) },
+	[0x0] = { .offset=0x00000000, .name="direct_monitor", MEMAREA(master_direct_monitors) },
+	[0x1] = { .offset=0x00010000, .name="daw_monitor",    MEMAREA(master_daw_monitors) },
 	ENDA
 };
 
-struct memory_area memory_map[] = {
+MemMap memory_map[] = {
 	[0x0] = { .offset = 0x00000002, .name = "initial_setting" },
 	[0x3] = OFFSET_AREA(0x00030000, patchbay),
 	[0x4] = OFFSET_AREA(0x00040000, reverb),
@@ -231,3 +234,4 @@ struct memory_area memory_map[] = {
 	ENDA
 };
 
+MemMap memory_map_area = { .area = (MemMap **)&memory_map };
