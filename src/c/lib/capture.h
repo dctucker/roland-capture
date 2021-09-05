@@ -14,7 +14,7 @@ typedef struct memory_area {
 	struct memory_area **area;
 } MemMap;
 
-void print_map(struct memory_area *map, char *prefix, Addr old_offset);
-MemMap * lookup_map(MemMap *map, char *part);
-u32 name_addr(const char *desc);
-void addr_name(Addr addr, char *desc);
+void      print_map(struct memory_area *map, char *prefix, Addr old_offset);
+MemMap *  lookup_map(MemMap *map, char *part);
+u32       name_addr(const char *desc);
+void      addr_name(Addr addr, char *desc);
