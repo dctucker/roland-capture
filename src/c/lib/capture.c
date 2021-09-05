@@ -285,6 +285,7 @@ Addr name_addr(const char *desc)
 // daw_monitor.b.channel.3.volume -> 0x0006120e
 void addr_name(Addr addr, char *desc)
 {
+	*desc = '\0';
 	int section;
 	if( addr >> 15 == 0x51 )
 		section = LINE;

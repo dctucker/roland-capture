@@ -3,7 +3,7 @@
 
 u8 capture_sysex[] = { 0xf0,0x41,0x10,0x00,0x00,0x6b };
 
-u8 checksum(u8 *data, int len)
+u8 checksum(u8 *data, size_t len)
 {
 	u8 sum = 0;
 	for(int i=0; i < len; i++)
@@ -13,7 +13,7 @@ u8 checksum(u8 *data, int len)
 	return (0x80 - (sum % 0x80)) & 0x7f;
 }
 
-void make_sysex(u8 *buffer, u8 cmd, u8 *data, int len)
+void make_sysex(u8 *buffer, u8 cmd, u8 *data, size_t len)
 {
 	int i;
 	for(i=0; i < sizeof(capture_sysex); i++)
@@ -35,7 +35,7 @@ void make_receive_sysex(u8 *buffer, Addr addr, Addr size)
 	make_sysex(buffer, 0x11, data, sizeof(data));
 }
 
-void make_send_sysex(u8 *buffer, Addr addr, u8 *values, int len)
+void make_send_sysex(u8 *buffer, Addr addr, u8 *values, size_t len)
 {
 	int i,j;
 	u8 *data = malloc(4+len);
@@ -51,7 +51,7 @@ void make_send_sysex(u8 *buffer, Addr addr, u8 *values, int len)
 }
 
 //#include <stdio.h>
-RolandSysex * parse_sysex(u8 *buffer, int len)
+RolandSysex * parse_sysex(u8 *buffer, size_t len)
 {
 	RolandSysex *sysex = (RolandSysex *)buffer;
 

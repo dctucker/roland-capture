@@ -1,5 +1,10 @@
-#include <alsa/asoundlib.h>
+#pragma once
 
-void setup_midi();
-void read_midi();
+#include <alsa/asoundlib.h>
+#include "lib/types.h"
+
+int setup_midi();
+int read_midi();
 void cleanup_midi();
+
+extern void listener(u8 *, size_t);
