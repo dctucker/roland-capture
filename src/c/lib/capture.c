@@ -4,26 +4,22 @@
 #include <stdbool.h>
 #include "capture.h"
 
-DEF_MEMAREA(patchbay_output) = {
-	MEMNODE(0x0, output),
-	ENDA
-};
 DEF_MEMAREA(patchbay) = {
-	MEMNODE(0x0, 1-2),
-	MEMNODE(0x1, 3-4),
-	MEMNODE(0x2, 5-6),
-	MEMNODE(0x3, 7-8),
-	MEMNODE(0x4, 9-10),
+	MEMNODE(0x0, Patch, 1-2),
+	MEMNODE(0x1, Patch, 3-4),
+	MEMNODE(0x2, Patch, 5-6),
+	MEMNODE(0x3, Patch, 7-8),
+	MEMNODE(0x4, Patch, 9-10),
 	ENDA
 };
 
 DEF_MEMAREA(reverb_params) = {
-	MEMNODE(0x1, pre_delay),
-	MEMNODE(0x2, time),
+	MEMNODE(0x1, PreDelay, pre_delay),
+	MEMNODE(0x2, ReverbTime, time),
 	ENDA
 };
 DEF_MEMAREA(reverb) = {
-	MEMNODE(0x0, type),
+	MEMNODE(0x0, ReverbType, type),
 	[0x1] = { .offset=0x0100, .name="echo",       MEMAREA(reverb_params) },
 	[0x2] = { .offset=0x0200, .name="room",       MEMAREA(reverb_params) },
 	[0x3] = { .offset=0x0300, .name="small_hall", MEMAREA(reverb_params) },
@@ -33,36 +29,36 @@ DEF_MEMAREA(reverb) = {
 };
 
 DEF_MEMAREA(mic_preamp_params) = {
-	MEMNODE(0x0, +48      ),
-	MEMNODE(0x1, lo-cut   ),
-	MEMNODE(0x2, phase    ),
-	MEMNODE(0x3, hi-z     ),
-	MEMNODE(0x4, sens     ),
-	MEMNODE(0x5, stereo   ),
-	MEMNODE(0x6, bypass   ),
-	MEMNODE(0x7, gate     ),
-	MEMNODE(0x8, attack   ),
-	MEMNODE(0x9, release  ),
-	MEMNODE(0xa, threshold),
-	MEMNODE(0xb, ratio    ),
-	MEMNODE(0xc, gain     ),
-	MEMNODE(0xd, knee     ),
+	MEMNODE(0x0, Boolean   , +48       ),
+	MEMNODE(0x1, Boolean   , lo-cut    ),
+	MEMNODE(0x2, Boolean   , phase     ),
+	MEMNODE(0x3, Boolean   , hi-z      ),
+	MEMNODE(0x4, Sens      , sens      ),
+	MEMNODE(0x5, Boolean   , stereo    ),
+	MEMNODE(0x6, Boolean   , bypass    ),
+	MEMNODE(0x7, Gate      , gate      ),
+	MEMNODE(0x8, Attack    , attack    ),
+	MEMNODE(0x9, Release   , release   ),
+	MEMNODE(0xa, Threshold , threshold ),
+	MEMNODE(0xb, Ratio     , ratio     ),
+	MEMNODE(0xc, Gain      , gain      ),
+	MEMNODE(0xd, Knee      , knee      ),
 	ENDA
 };
 DEF_MEMAREA(preamp_params) = {
-	MEMNODE(0x0, +48      ),
-	MEMNODE(0x1, lo-cut   ),
-	MEMNODE(0x2, phase    ),
-	MEMNODE(0x4, sens     ),
-	MEMNODE(0x5, stereo   ),
-	MEMNODE(0x6, bypass   ),
-	MEMNODE(0x7, gate     ),
-	MEMNODE(0x8, attack   ),
-	MEMNODE(0x9, release  ),
-	MEMNODE(0xa, threshold),
-	MEMNODE(0xb, ratio    ),
-	MEMNODE(0xc, gain     ),
-	MEMNODE(0xd, knee     ),
+	MEMNODE(0x0, Boolean   , +48       ),
+	MEMNODE(0x1, Boolean   , lo-cut    ),
+	MEMNODE(0x2, Boolean   , phase     ),
+	MEMNODE(0x4, Sens      , sens      ),
+	MEMNODE(0x5, Boolean   , stereo    ),
+	MEMNODE(0x6, Boolean   , bypass    ),
+	MEMNODE(0x7, Gate      , gate      ),
+	MEMNODE(0x8, Attack    , attack    ),
+	MEMNODE(0x9, Release   , release   ),
+	MEMNODE(0xa, Threshold , threshold ),
+	MEMNODE(0xb, Ratio     , ratio     ),
+	MEMNODE(0xc, Gain      , gain      ),
+	MEMNODE(0xd, Knee      , knee      ),
 	ENDA
 };
 DEF_MEMAREA(preamp_channels) = {
@@ -83,8 +79,8 @@ DEF_MEMAREA(preamp_channels) = {
 DEF_MEMAREA(preamp) = { { .name="channel", MEMAREA(preamp_channels) }, ENDA };
 
 DEF_MEMAREA(line_params) = {
-	MEMNODE(0x0, stereo),
-	MEMNODE(0x1, attenuation),
+	MEMNODE(0x0, Boolean    , stereo),
+	MEMNODE(0x1, Attenuation, attenuation),
 	ENDA
 };
 DEF_MEMAREA(line_channels) = {
@@ -97,12 +93,12 @@ DEF_MEMAREA(line_channels) = {
 DEF_MEMAREA(line) = { { .name="channel", MEMAREA(line_channels) }, ENDA };
 
 DEF_MEMAREA(input) = {
-	MEMNODE(0x0, stereo),
-	MEMNODE(0x2, solo),
-	MEMNODE(0x3, mute),
-	MEMNODE(0x4, pan),
-	MEMNODE(0x8, volume),
-	MEMNODE(0xe, reverb),
+	MEMNODE(0x0, Boolean, stereo),
+	MEMNODE(0x2, Boolean, solo),
+	MEMNODE(0x3, Boolean, mute),
+	MEMNODE(0x4, Pan    , pan),
+	MEMNODE(0x8, Volume , volume),
+	MEMNODE(0xe, Volume , reverb),
 	ENDA
 };
 DEF_MEMAREA(input_channels) = {
@@ -134,11 +130,11 @@ DEF_MEMAREA(input_monitor) = {
 };
 
 DEF_MEMAREA(daw) = {
-	MEMNODE(0x0, stereo),
-	MEMNODE(0x2, solo),
-	MEMNODE(0x3, mute),
-	MEMNODE(0x4, pan),
-	MEMNODE(0x8, volume),
+	MEMNODE(0x0, Boolean, stereo),
+	MEMNODE(0x2, Boolean, solo),
+	MEMNODE(0x3, Boolean, mute),
+	MEMNODE(0x4, Pan    , pan),
+	MEMNODE(0x8, Volume , volume),
 	ENDA
 };
 DEF_MEMAREA(daw_channels) = {
@@ -164,8 +160,8 @@ DEF_MEMAREA(daw_monitor) = {
 };
 
 DEF_MEMAREA(master_params) = {
-	MEMNODE(0x0, stereo),
-	MEMNODE(0x1, volume),
+	MEMNODE(0x0, Boolean, stereo),
+	MEMNODE(0x1, Boolean, volume),
 	ENDA
 };
 DEF_MEMAREA(direct_monitor_a) = {

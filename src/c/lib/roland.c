@@ -67,12 +67,3 @@ RolandSysex * parse_sysex(u8 *buffer, size_t len)
 	return sysex;
 }
 
-/*
-def parse_sysex(message):
-	if message[0:6] != Roland.capture_sysex:
-		return None, None
-	if message[6] == 0x12:
-		addr = bytes_to_long(message[7:11])
-		data = message[11:-2]
-	return addr, data
-*/

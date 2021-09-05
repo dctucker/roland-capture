@@ -2,9 +2,21 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "lib/types.h"
 #include "lib/capture.h"
 
 #define debug(X) printf("%s\n", X);
+
+void fail()
+{
+	printf("\033[u\033[31m✘\033[0m\n");
+	exit(1);
+}
+
+void pass()
+{
+	printf("\033[u\033[32m✔\033[0m\n");
+}
 
 bool test_name_addr(Addr expected, const char *desc)
 {
@@ -19,17 +31,6 @@ bool test_addr_name(const char *expected, Addr addr)
 	addr_name(addr, actual);
 	printf("0x%08x -> %s", addr, actual);
 	return strcmp(actual, expected) == 0;
-}
-
-void fail()
-{
-	printf("\033[u\033[31m✘\033[0m\n");
-	exit(1);
-}
-
-void pass()
-{
-	printf("\033[u\033[32m✔\033[0m\n");
 }
 
 #define TEST(x) printf("\033[s  "); if( !(x) ) fail(); else pass()
@@ -53,6 +54,35 @@ printf("hello\n");
 }
 */
 
+bool test_type(const char *expected, ValueType type, u8 *bytes)
+{
+	char str[256];
+	Value val = { .as_value = bytes };
+	fixed fx = fixed_from_packed(type, bytes);
+	Unpacked unpacked = unpack_type(type, val);
+	format_value(type, val, str);
+	printf("typed value 0x%x -> %s, expected %s", fx, str, expected);
+	return strcmp(str, expected) == 0;
+}
+
+bool test_volume_format(const char *expected, int fixed)
+{
+	char buf[6];
+	to_nibbles(fixed, 6, buf);
+	Value val = { .as_value = buf };
+	return test_type(expected, TVolume, val.as_value);
+
+	/*
+	char str[256];
+	Volume vol;
+	to_nibbles(fixed, 6, vol.value);
+	Value val = { .as_volume = &vol };
+	format_volume(val, str);
+	printf("volume 0x%x -> %s, expected %s", fixed, str, expected);
+	return strcmp(str, expected) == 0;
+	*/
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -65,6 +95,13 @@ int main(int argc, char *argv[])
 	TEST( test_name_addr(None, "daw_monitor.e.reverb") );
 	TEST( test_addr_name("input_monitor.b.channel.3.reverb", 0x0006120e) );
 
+	TEST( test_volume_format("+12", 0x800000) );
+	TEST( test_volume_format("+0", 0x200000) );
+	TEST( test_volume_format("-6", 0x100000) );
+	TEST( test_volume_format("-inf", 0x000000) );
+
+	char buf[] = {2,0,0,0,0,0};
+	TEST( test_type("+0", TVolume, buf ));
 	printf("Done.\n\n");
 	return 0;
 }

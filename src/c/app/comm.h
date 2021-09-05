@@ -1,6 +1,5 @@
 #pragma once
 
-#include <alsa/asoundlib.h>
 #include "lib/types.h"
 
 int setup_midi();

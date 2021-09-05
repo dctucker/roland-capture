@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "lib/types.h"
 #include "lib/roland.h"
 #include "lib/capture.h"

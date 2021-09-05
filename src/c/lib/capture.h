@@ -6,11 +6,12 @@
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 #define None (0xffffffff)
 #define ENDA { .offset=None }
-#define MEMNODE(OFFSET, NAME) [OFFSET] = { .name = #NAME, .offset = OFFSET }
+#define MEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = #NAME, .offset = OFFSET, .type = T##TYPE }
 
 typedef struct memory_area {
 	Addr offset;
 	const char *name;
+	ValueType type;
 	struct memory_area **area;
 } MemMap;
 
