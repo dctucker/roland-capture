@@ -3,7 +3,6 @@
 #include "types.h"
 #define N_MEMSECTION 32
 #define N_MEMBUF   2048
-#define Unset 0xff
 
 typedef struct memory {
 	struct memory_section {
