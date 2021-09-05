@@ -34,34 +34,37 @@ void pass()
 
 #define TEST(x) printf("\033[s  "); if( !(x) ) fail(); else pass()
 
+/*
+void test_input_channel()
+{
+input_channel in1 = {
+	.stereo = 1,
+	.solo = 1,
+	.mute = 1,
+	.pan = { 2,0,0,0 },
+	.volume = { .value = {2,0,0,0,0,0} },
+	.reverb = { .value = {1,0,0,0,0,0} }
+};
+for(int i=0; i < 20; i++)
+{
+	printf("%02x ", in1.bytes[i]);
+}
+printf("hello\n");
+}
+*/
+
 int main(int argc, char *argv[])
 {
-	/*
-	input_channel in1 = {
-		.stereo = 1,
-		.solo = 1,
-		.mute = 1,
-		.pan = { 2,0,0,0 },
-		.volume = { .value = {2,0,0,0,0,0} },
-		.reverb = { .value = {1,0,0,0,0,0} }
-	};
-	for(int i=0; i < 20; i++)
-	{
-		printf("%02x ", in1.bytes[i]);
-	}
-	printf("hello\n");
-	*/
 
-	//char prefix[256];
-	//print_map(memory_map, prefix, 0);
-
-	printf("\nTesting C library...\n");
 	bool b;
+	printf("\nTesting C library...\n");
+
 	TEST( test_name_addr(0x00071208, "daw_monitor.b.channel.3.volume") );
 	TEST( test_name_addr(0x0006230e, "input_monitor.c.channel.4.reverb") );
 	TEST( test_name_addr(None, "daw_monitor.d.channel.5.reverb") );
 	TEST( test_name_addr(None, "daw_monitor.e.reverb") );
 	TEST( test_addr_name("input_monitor.b.channel.3.reverb", 0x0006120e) );
+
 	printf("Done.\n\n");
 	return 0;
 }

@@ -1,5 +1,4 @@
 #include <stddef.h>
-#include <inttypes.h>
 #include "types.h"
 
 #define DEF_MEMAREA(NAME) MemMap NAME ## _area[]
