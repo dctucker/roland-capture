@@ -1,16 +1,24 @@
+IDIR = .
+ODIR = obj
+CFLAGS=-I$(IDIR) -g -fcommon
+LIBS=-lasound
 
-test: bin/runtest
+OBJ = app/main.o app/comm.o lib/capture.o lib/roland.o
+
+all: bin/main bin/test
+
+%.o: %.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+bin/main: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+bin/test: test/test.o lib/capture.o
+	$(CC) -o $@ $^ $(CFLAGS)
+
+test: bin/test
 	gdb -q bin/runtest -ex r -ex quit
 
-lib/capture.o: lib/capture.c
-	gcc -g -I. -o lib/capture.o -c lib/capture.c
-
-test/test.o: test/test.c
-	gcc -g -I. -o test/test.o -c test/test.c
-
-bin/runtest: test/test.o lib/capture.o
-	gcc -g -I. -o bin/runtest lib/capture.o test/test.o
-
-.PHONY: clean
+.phony: clean
 clean:
-	rm -f bin/* lib/*.o test/*.o
+	rm -f bin/* **/*.o
