@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <math.h>
 #include "types.h"
 
 int type_sizes[] = {
@@ -113,8 +112,7 @@ UNPACK(volume)
 }
 FORMAT(volume)
 {
-	Unpacked db = unpack_volume(value);
-	sprintf(str, "%+1.0f", db.as_float);
+	sprintf(str, "%+1.0f", unpacked.as_float);
 }
 PACK(volume)
 {
@@ -128,21 +126,21 @@ PACK(volume)
 
 FORMAT(byte)
 {
-	if( value == Unset )
+	if( unpacked.as_int == Unset )
 		sprintf(str, "?");
 	else
-		sprintf(str, "0x%02x", value);
+		sprintf(str, "0x%02x", unpacked.as_int);
 }
 
 FORMAT(boolean)
 {
-	if( value )
+	if( unpacked.as_int )
 		sprintf(str, "ON");
 	else
 		sprintf(str, "off");
 }
 
-void (*formatters[])(fixed, char *) = {
+void (*formatters[])(Unpacked, char *) = {
 	[TValue]  = format_byte,
 	[TByte]   = format_byte,
 	[TVolume] = format_volume,
@@ -154,12 +152,19 @@ void (*packers[])(Unpacked, u8 *) = {
 	[TVolume] = pack_volume,
 };
 
+void format_unpacked(ValueType type, Unpacked unpacked, char *str)
+{
+	formatters[type](unpacked, str);
+}
+
 void format_value(ValueType type, Value value, char *str)
 {
 	int len = type_sizes[type];
-	int fx = nibbles_to_fixed(value.as_value, len);
-	formatters[type](fx, str);
+	fixed fx = nibbles_to_fixed(value.as_value, len);
+	Unpacked unpacked = unpack_volume(fx);
+	formatters[type](unpacked, str);
 }
+
 
 fixed fixed_from_packed(ValueType type, u8 *data)
 {
@@ -172,4 +177,19 @@ Unpacked unpack_type(ValueType type, Value value)
 {
 	fixed fx = fixed_from_packed(type, value.as_value);
 	return unpackers[type](fx);
+}
+
+void pack_type(ValueType type, Unpacked unpacked, u8 *buf)
+{
+	packers[type](unpacked, buf);
+}
+
+int type_size(ValueType type)
+{
+	return type_sizes[type];
+}
+
+const char * type_name(ValueType type)
+{
+	return type_names[type];
 }

@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <stddef.h>
+#include <math.h>
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -102,11 +103,15 @@ typedef union unpacked
 } Unpacked;
 
 #define UNPACK(NAME) Unpacked unpack_##NAME(fixed value)
-#define FORMAT(NAME) void format_##NAME(fixed value, char *str)
+#define FORMAT(NAME) void format_##NAME(Unpacked unpacked, char *str)
 #define PACK(NAME)   void pack_##NAME(Unpacked unpacked, u8 *buf)
 
-void      format_value(ValueType type, Value value, char *str);
-fixed     nibbles_to_fixed(u8 *buf, int len);
-void      to_nibbles(fixed val, int n, u8 *buf);
-fixed     fixed_from_packed(ValueType, u8 *);
-Unpacked  unpack_type(ValueType, Value);
+void          format_unpacked(ValueType type, Unpacked unpacked, char *str);
+void          format_value(ValueType type, Value value, char *str);
+fixed         nibbles_to_fixed(u8 *buf, int len);
+void          to_nibbles(fixed val, int n, u8 *buf);
+fixed         fixed_from_packed(ValueType, u8 *);
+Unpacked      unpack_type(ValueType, Value);
+void          pack_type(ValueType, Unpacked, u8 *);
+int           type_size(ValueType);
+const char *  type_name(ValueType);

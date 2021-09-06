@@ -60,9 +60,25 @@ bool test_type(const char *expected, ValueType type, u8 *bytes)
 	Value val = { .as_value = bytes };
 	fixed fx = fixed_from_packed(type, bytes);
 	Unpacked unpacked = unpack_type(type, val);
-	format_value(type, val, str);
+	format_unpacked(type, unpacked, str);
 	printf("typed value 0x%x -> %s, expected %s", fx, str, expected);
 	return strcmp(str, expected) == 0;
+}
+
+bool test_pack(const u8 *expected, ValueType type, Unpacked unpacked)
+{
+	char str[256];
+	char buf[6];
+	pack_type(type, unpacked, buf);
+	format_unpacked(type, unpacked, str);
+	printf("unpacked %s %s -> ", type_name(type), str);
+	int size = type_size(type);
+	for(int i=0; i < size; i++)
+		printf("0x%02x ", buf[i]);
+	printf(", expected ");
+	for(int i=0; i < size; i++)
+		printf("0x%02x ", expected[i]);
+	return memcmp(buf, expected, size) == 0;
 }
 
 bool test_volume_format(const char *expected, int fixed)
@@ -71,16 +87,6 @@ bool test_volume_format(const char *expected, int fixed)
 	to_nibbles(fixed, 6, buf);
 	Value val = { .as_value = buf };
 	return test_type(expected, TVolume, val.as_value);
-
-	/*
-	char str[256];
-	Volume vol;
-	to_nibbles(fixed, 6, vol.value);
-	Value val = { .as_volume = &vol };
-	format_volume(val, str);
-	printf("volume 0x%x -> %s, expected %s", fixed, str, expected);
-	return strcmp(str, expected) == 0;
-	*/
 }
 
 int main(int argc, char *argv[])
@@ -100,9 +106,13 @@ int main(int argc, char *argv[])
 	TEST( test_volume_format("-6", 0x100000) );
 	TEST( test_volume_format("-inf", 0x000000) );
 
-	char buf[] = {2,0,0,0,0,0};
-	TEST( test_type("+0", TVolume, buf ));
-	printf("Done.\n\n");
-	return 0;
+	char buf_zero[] = {2,0,0,0,0,0};
+	char buf_min[] = {0,0,0,0,0,0};
+	TEST( test_type("+0", TVolume, buf_zero ));
+
+	TEST( test_pack(buf_zero, TVolume, (Unpacked){ .as_float = 0.0 }) );
+	TEST( test_pack(buf_min, TVolume, (Unpacked){ .as_float = -inf }) );
+
+	printf("Done.\n\n"); return 0;
 }
 
