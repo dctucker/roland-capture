@@ -102,6 +102,12 @@ typedef struct NameTable {
 	const char **names;
 } NameTable;
 
+typedef struct ScaledType {
+	f32 min;
+	f32 max;
+	f32 step;
+} ScaledType;
+
 #define UnpackedFloat(F) (Unpacked){ .as_float = F }
 #define UnpackedInt(I) (Unpacked){ .as_int = I }
 typedef union unpacked

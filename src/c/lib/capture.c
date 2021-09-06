@@ -167,8 +167,8 @@ DEF_MEMAREA(master_params) = {
 DEF_MEMAREA(direct_monitor_a) = {
 	{ .offset=0x0000, .name="left"  , MEMAREA(master_params) },
 	{ .offset=0x0100, .name="right" , MEMAREA(master_params) },
-	{ .offset=0x0007, .name="reverb_return" },
-	{ .offset=0x000d, .name="link"          },
+	{ .offset=0x0007, .name="reverb_return", .type=TVolume },
+	{ .offset=0x000d, .name="link"         , .type=TBoolean },
 	ENDA
 };
 DEF_MEMAREA(direct_monitor) = {
@@ -217,8 +217,6 @@ MemMap memory_map[] = {
 	[0xf] = { .offset = 0x01000000, .name = "load_settings" },
 	ENDA
 };
-
-//MemMap memory_map_area = { .area = (MemMap **)&memory_map };
 
 void print_map(struct memory_area *map, char *prefix, Addr old_offset)
 {
@@ -278,7 +276,7 @@ Addr name_addr(const char *desc)
 	return ret;
 }
 
-// daw_monitor.b.channel.3.volume -> 0x0006120e
+// 0x0006120e -> daw_monitor.b.channel.3.volume
 void addr_name(Addr addr, char *desc)
 {
 	*desc = '\0';
@@ -322,4 +320,53 @@ void addr_name(Addr addr, char *desc)
 		countdown -= candidate->offset; // 0x120e
 		map = (MemMap *)(candidate->area);
 	}
+	if( map != NULL && map->name != NULL )
+	{
+		strcat(desc, ".");
+		strcat(desc, map->name);
+	}
+}
+
+ValueType addr_type(Addr addr)
+{
+	int section;
+	if( addr >> 15 == 0x51 )
+		section = LINE;
+	else
+		section = addr >> 16;
+
+	Addr countdown = addr;
+	MemMap *map = (MemMap *)(memory_map[section].area);
+	countdown -= memory_map[section].offset;
+
+	ValueType type;
+	while( countdown != 0 )
+	{
+		MemMap *candidate = NULL;
+
+		//printf("%x %s\n", countdown, desc);
+
+		Addr min_offset = None;
+		for( int i = 0; map[i].offset != None; i++ )
+		{
+			if( map[i].name == NULL ) continue;
+
+			//printf("  checking map %s %x\n", map[i].name, map[i].offset);
+			if( map[i].offset <= countdown)
+			{
+				if( countdown - map[i].offset < min_offset )
+				{
+					min_offset = countdown - map[i].offset;
+					candidate = &(map[i]);
+				}
+			}
+		}
+		
+		if( candidate == NULL ) return TValue;
+
+		countdown -= candidate->offset; // 0x120e
+		type = candidate->type;
+		map = (MemMap *)(candidate->area);
+	}
+	return type;
 }
