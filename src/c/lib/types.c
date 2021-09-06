@@ -105,10 +105,52 @@ f32 fixed_to_db(u32 fixed)
 	return 20.*log10(ratio);
 }
 
+f32 fixed_to_pan(fixed f)
+{
+	return round(100. * (f - 16384) / 16384.);
+}
+
+fixed pan_to_fixed(f32 pan)
+{
+	return (int)(16384. + (16384. * (pan / 100.))) & 0xffff;
+}
+
+UNPACK(byte)
+{
+	return UnpackedInt(value & 0x7f);
+}
+FORMAT(byte)
+{
+	if( unpacked.as_int == Unset )
+		sprintf(str, "?");
+	else
+		sprintf(str, "0x%02x", unpacked.as_int);
+}
+PACK(byte)
+{
+	buf[0] = unpacked.as_int;
+}
+
+UNPACK(boolean)
+{
+	return UnpackedInt(value == 0 ? 0 : 1);
+}
+FORMAT(boolean)
+{
+	if( unpacked.as_int )
+		sprintf(str, "ON");
+	else
+		sprintf(str, "off");
+}
+PACK(boolean)
+{
+	buf[0] = unpacked.as_int == 0 ? 0 : 1;
+}
+
 UNPACK(volume)
 {
 	f32 db = fixed_to_db(value);
-	return (Unpacked){ .as_float = db };
+	return UnpackedFloat(db);
 }
 FORMAT(volume)
 {
@@ -124,47 +166,47 @@ PACK(volume)
 	to_nibbles(fx, 6, buf);
 }
 
-FORMAT(byte)
+UNPACK(pan)
 {
-	if( unpacked.as_int == Unset )
-		sprintf(str, "?");
-	else
-		sprintf(str, "0x%02x", unpacked.as_int);
+	f32 db = fixed_to_pan(value);
+	return UnpackedFloat(db);
 }
-
-FORMAT(boolean)
+FORMAT(pan)
 {
-	if( unpacked.as_int )
-		sprintf(str, "ON");
+	f32 pan = unpacked.as_float;
+	if( pan < 0 )
+		sprintf(str, "L%1f", -pan);
+	else if( pan > 0 )
+		sprintf(str, "R%1f", pan);
 	else
-		sprintf(str, "off");
+		sprintf(str, "C");
+}
+PACK(pan)
+{
+	f32 value = unpacked.as_float;
+	fixed fx = pan_to_fixed(value);
+	to_nibbles(fx, 4, buf);
 }
 
 void (*formatters[])(Unpacked, char *) = {
-	[TValue]  = format_byte,
-	[TByte]   = format_byte,
-	[TVolume] = format_volume,
+	[TValue]   = format_byte, //
+	[TByte]    = format_byte,
+	[TBoolean] = format_boolean,
+	[TVolume]  = format_volume,
+	[TPan]     = format_pan,
 };
 Unpacked (*unpackers[])(fixed) = {
-	[TVolume] = unpack_volume,
+	[TByte]    = unpack_byte,
+	[TBoolean] = unpack_boolean,
+	[TVolume]  = unpack_volume,
+	[TPan]     = unpack_pan,
 };
 void (*packers[])(Unpacked, u8 *) = {
-	[TVolume] = pack_volume,
+	[TByte]    = pack_byte,
+	[TBoolean] = pack_boolean,
+	[TVolume]  = pack_volume,
+	[TPan]     = pack_pan,
 };
-
-void format_unpacked(ValueType type, Unpacked unpacked, char *str)
-{
-	formatters[type](unpacked, str);
-}
-
-void format_value(ValueType type, Value value, char *str)
-{
-	int len = type_sizes[type];
-	fixed fx = nibbles_to_fixed(value.as_value, len);
-	Unpacked unpacked = unpack_volume(fx);
-	formatters[type](unpacked, str);
-}
-
 
 fixed fixed_from_packed(ValueType type, u8 *data)
 {
@@ -173,14 +215,39 @@ fixed fixed_from_packed(ValueType type, u8 *data)
 	return fx;
 }
 
+void format_unpacked(ValueType type, Unpacked unpacked, char *str)
+{
+	if( formatters[type] == NULL )
+	{
+		*str = '\0';
+		return;
+	}
+	formatters[type](unpacked, str);
+}
+
+void format_value(ValueType type, Value value, char *str)
+{
+	int len = type_sizes[type];
+	fixed fx = nibbles_to_fixed(value.as_value, len);
+	Unpacked unpacked = unpack_volume(fx);
+	format_unpacked(type, unpacked, str);
+}
+
 Unpacked unpack_type(ValueType type, Value value)
 {
+	if( unpackers[type] == NULL )
+		return UnpackedInt(Unset);
 	fixed fx = fixed_from_packed(type, value.as_value);
 	return unpackers[type](fx);
 }
 
 void pack_type(ValueType type, Unpacked unpacked, u8 *buf)
 {
+	if( packers[type] == NULL )
+	{
+		*buf = Unset;
+		return;
+	}
 	packers[type](unpacked, buf);
 }
 
