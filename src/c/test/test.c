@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "lib/types.h"
 #include "lib/capture.h"
+#include "lib/mixer.h"
 
 #define debug(X) printf("%s\n", X);
 
@@ -68,9 +69,8 @@ bool test_addr_type(ValueType expected, Addr addr)
 bool test_type(const char *expected, ValueType type, u8 *bytes)
 {
 	char str[256];
-	Value val = { .as_value = bytes };
 	fixed fx = fixed_from_packed(type, bytes);
-	Unpacked unpacked = unpack_type(type, val);
+	Unpacked unpacked = unpack_type(type, bytes);
 	format_unpacked(type, unpacked, str);
 	printf("typed value 0x%x -> %s  expected %s", fx, str, expected);
 	return strcmp(str, expected) == 0;
@@ -104,13 +104,21 @@ bool test_volume_format(const char *expected, int fixed)
 {
 	char buf[6];
 	to_nibbles(fixed, 6, buf);
-	Value val = { .as_value = buf };
-	return test_type(expected, TVolume, val.as_value);
+	return test_type(expected, TVolume, buf);
+}
+
+bool test_mixer()
+{
+	init_mixer_pages();
+	printf("init_mixer_pages");
+	//char *control = input_pages[0].controls[0][1];
+	//printf("%s ", );
+	//print_page(&mixer_pages[PPreamp]);
+	return 1;
 }
 
 int main(int argc, char *argv[])
 {
-
 	bool b;
 	printf("\nTesting C library...\n");
 
@@ -156,6 +164,7 @@ int main(int argc, char *argv[])
 	TEST( test_format("?", TRatio, UnpackedInt(120)) );
 
 	TEST( test_addr_type(TVolume, 0x00062108) );
+	TEST( test_mixer() );
 
 	printf("Done.\n\n"); return exit_code;
 }

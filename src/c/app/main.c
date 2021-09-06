@@ -24,7 +24,7 @@ void listener(u8 *msgbuf, size_t msglen)
 	char value[256];
 	ValueType type = addr_type(addr);
 	printf("%s ", type_name(type));
-	Unpacked unpacked = unpack_type(type, (Value){ .as_value = sysex->data});
+	Unpacked unpacked = unpack_type(type, sysex->data);
 	format_unpacked(type, unpacked, value);
 	printf("%s ", value);
 
