@@ -23,7 +23,7 @@ int type_sizes[] = {
 	[TReverbTime]  = 1,
 };
 
-ValueType type_parent[] = {
+ValueType type_parents[] = {
 	[TByte       ] = TValue   ,
 	[TBoolean    ] = TByte    ,
 	[TVolume     ] = TValue   ,
@@ -128,7 +128,7 @@ FORMAT(byte)
 }
 PACK(byte)
 {
-	buf[0] = unpacked.as_int;
+	buf[0] = unpacked.as_int & 0x7f;
 }
 
 UNPACK(boolean)
@@ -188,25 +188,88 @@ PACK(pan)
 	to_nibbles(fx, 4, buf);
 }
 
-void (*formatters[])(Unpacked, char *) = {
-	[TValue]   = format_byte, //
+NameTable enum_names[] = {
+	[TRatio] = (NameTable) { .size = 14, .names = (const char *[]){
+		"1", "1.12", "1.25", "1.4", "1.6", "1.8", "2", "2.5", "3.2", "4", "5.6", "8", "16", "inf",
+	}},
+	[TAttack] = (NameTable) { .size = 125, .names = (const char *[]){
+		 "0.0",  "0.1",  "0.2",  "0.3",  "0.4",  "0.5",  "0.6",  "0.7",  "0.8",  "0.9",
+		 "1.0",  "1.1",  "1.2",  "1.3",  "1.4",  "1.5",  "1.6",  "1.7",  "1.8",  "1.9",
+		 "2.0",  "2.1",  "2.2",  "2.4",  "2.5",  "2.7",  "2.8",  "3.0",  "3.2",  "3.3",  "3.6",  "3.8",
+		 "4.0",  "4.2",  "4.5",  "4.7",  "5.0",  "5.3",  "5.6",  "6.0",  "6.3",  "6.7",  "7.1",  "7.5",
+		 "8.0",  "8.4",  "9.0",  "9.4", "10.0", "10.6", "11.2", "12.0", "12.5", "13.3", "14.0",
+		"15.0", "16.0", "17.0", "18.0", "19.0", "20.0", "21.0", "22.4", "23.7", "25.0", "26.6", "28.0",
+		"30.0", "31.5", "33.5", "35.5", "37.6", "40.0", "42.2", "45.0", "47.3", "50.0", "53.0", "56.0",
+		"60.0", "63.0", "67.0", "71.0", "75.0", "80.0", "84.0", "90.0", "94.4", "100",  "106",  "112",
+		"120",  "125",  "133",  "140",  "150",  "160",  "170",  "180",  "190",  "200",  "210",  "224",
+		"237",  "250",  "266",  "280",  "300",  "315",  "335",  "355",  "376",  "400",  "422",  "450",
+		"473",  "500",  "530",  "560",  "600",  "630",  "670",  "710",  "750",  "800",
+	}},
+	[TRelease] = (NameTable) { .size = 125, .names = (const char *[]){
+		 "0",  "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",
+		 "10",  "11",  "12",  "13",  "14",  "15",  "16",  "17",  "18",  "19",
+		 "20",  "21",  "22",  "24",  "25",  "27",  "28",  "30",  "32",  "33",  "36",  "38",
+		 "40",  "42",  "45",  "47",  "50",  "53",  "56",  "60",  "63",  "67",  "71",  "75",
+		 "80",  "84",  "90",  "94", "100", "106", "112", "120", "125", "133", "140",
+		"150", "160", "170", "180", "190", "200", "210", "224", "237", "250", "266", "280",
+		"300", "315", "335", "355", "376", "400", "422", "450", "473", "500", "530", "560",
+		"600", "630", "670", "710", "750", "800", "840", "900", "944", "1000",  "1060",  "1120",
+		"1200",  "1250",  "1330",  "1400",  "1500",  "1600",  "1700",  "1800",  "1900",  "2000",  "2100",  "2240",
+		"2370",  "2500",  "2660",  "2800",  "3000",  "3150",  "3350",  "3550",  "3760",  "4000",  "4220",  "4500",
+		"4730",  "5000",  "5300",  "5600",  "6000",  "6300",  "6700",  "7100",  "7500",  "8000",
+	}},
+	[TKnee] = (NameTable) { .size = 10, .names = (const char *[]){
+		"HARD", "SOFT1", "SOFT2", "SOFT3", "SOFT4", "SOFT5", "SOFT6", "SOFT7", "SOFT8", "SOFT9",
+	}},
+	[TAttenuation] = (NameTable) { .size = 3, .names = (const char *[]){
+		"-20","-10","+4",
+	}},
+	[TReverbType] = (NameTable) { .size = 6, .names = (const char *[]){
+		"off", "echo", "room", "small_hall", "large_hall", "plate",
+	}},
+	[TPreDelay] = (NameTable) { .size = 13, .names = (const char *[]){
+		"0.0", "0.1", "0.2", "0.4", "0.8", "1.6", "3.2", "6.4", "10", "20", "40", "80", "160",
+	}},
+	[TPatch] = (NameTable) { .size = 9, .names = (const char *[]){
+		"MIX A", "MIX B", "MIX C", "MIX D",
+		"WAVE 1/2", "WAVE 3/4", "WAVE 5/6", "WAVE 7/8", "WAVE 9/10",
+	}},
+};
+//UNPACK(enum) // unpack_byte
+FORMAT(enum)
+{
+	u32 v = unpacked.as_int;
+	NameTable *names = &enum_names[type];
+	if( v >= names->size )
+	{
+		sprintf(str, "?");
+		return;
+	}
+	const char *name = names->names[v];
+	sprintf(str, "%s", name);
+}
+//PACK(enum) // pack_byte
+
+void (*formatters[NTypes])(ValueType, Unpacked, char *) = {
 	[TByte]    = format_byte,
 	[TBoolean] = format_boolean,
 	[TVolume]  = format_volume,
 	[TPan]     = format_pan,
+	[TEnum]    = format_enum,
 };
-Unpacked (*unpackers[])(fixed) = {
+Unpacked (*unpackers[NTypes])(ValueType, fixed) = {
 	[TByte]    = unpack_byte,
 	[TBoolean] = unpack_boolean,
 	[TVolume]  = unpack_volume,
 	[TPan]     = unpack_pan,
 };
-void (*packers[])(Unpacked, u8 *) = {
+void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
 	[TByte]    = pack_byte,
 	[TBoolean] = pack_boolean,
 	[TVolume]  = pack_volume,
 	[TPan]     = pack_pan,
 };
+
 
 fixed fixed_from_packed(ValueType type, u8 *data)
 {
@@ -217,38 +280,60 @@ fixed fixed_from_packed(ValueType type, u8 *data)
 
 void format_unpacked(ValueType type, Unpacked unpacked, char *str)
 {
-	if( formatters[type] == NULL )
+	ValueType t = type;
+	void (*formatter)(ValueType, Unpacked, char*) = formatters[t];
+	while( formatter == NULL )
 	{
-		*str = '\0';
-		return;
+		t = type_parents[t];
+		if( t == TValue )
+		{
+			*str = '\0';
+			return;
+		}
+		formatter = formatters[t];
 	}
-	formatters[type](unpacked, str);
+	formatter(type, unpacked, str);
 }
-
 void format_value(ValueType type, Value value, char *str)
 {
 	int len = type_sizes[type];
 	fixed fx = nibbles_to_fixed(value.as_value, len);
-	Unpacked unpacked = unpack_volume(fx);
+	Unpacked unpacked = unpack_volume(type, fx);
 	format_unpacked(type, unpacked, str);
 }
 
 Unpacked unpack_type(ValueType type, Value value)
 {
-	if( unpackers[type] == NULL )
-		return UnpackedInt(Unset);
+	ValueType t = type;
+	Unpacked (*unpacker)(ValueType, fixed) = unpackers[t];
+	while( unpacker == NULL )
+	{
+		t = type_parents[t];
+		if( type == TValue )
+		{
+			return UnpackedInt(Unset);
+		}
+		unpacker = unpackers[type];
+	}
 	fixed fx = fixed_from_packed(type, value.as_value);
-	return unpackers[type](fx);
+	return unpacker(type, fx);
 }
 
 void pack_type(ValueType type, Unpacked unpacked, u8 *buf)
 {
-	if( packers[type] == NULL )
+	ValueType t = type;
+	void (*packer)(ValueType, Unpacked, u8 *) = packers[t];
+	while( packer == NULL )
 	{
-		*buf = Unset;
-		return;
+		t = type_parents[t];
+		if( type == TValue )
+		{
+			*buf = Unset;
+			return;
+		}
+		packer = packers[t];
 	}
-	packers[type](unpacked, buf);
+	packer(type, unpacked, buf);
 }
 
 int type_size(ValueType type)

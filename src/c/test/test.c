@@ -65,6 +65,14 @@ bool test_type(const char *expected, ValueType type, u8 *bytes)
 	return strcmp(str, expected) == 0;
 }
 
+bool test_format(const char *expected, ValueType type, Unpacked unpacked)
+{
+	char str[256];
+	format_unpacked(type, unpacked, str);
+	printf("format %s 0x%x -> %s, expected %s", type_name(type), unpacked.as_int, str, expected);
+	return strcmp(str, expected) == 0;
+}
+
 bool test_pack(const u8 *expected, ValueType type, Unpacked unpacked)
 {
 	char str[256];
@@ -101,9 +109,9 @@ int main(int argc, char *argv[])
 	TEST( test_name_addr(None, "daw_monitor.e.reverb") );
 	TEST( test_addr_name("input_monitor.b.channel.3.reverb", 0x0006120e) );
 
-	TEST( test_volume_format("+12", 0x800000) );
-	TEST( test_volume_format("+0", 0x200000) );
-	TEST( test_volume_format("-6", 0x100000) );
+	TEST( test_volume_format("+12",  0x800000) );
+	TEST( test_volume_format("+0",   0x200000) );
+	TEST( test_volume_format("-6",   0x100000) );
 	TEST( test_volume_format("-inf", 0x000000) );
 
 	char buf_zero[] = {2,0,0,0,0,0};
@@ -121,6 +129,17 @@ int main(int argc, char *argv[])
 	TEST( test_pack(buf_min, TPan, UnpackedFloat(-100.)) );
 	TEST( test_pack(pan_zero, TPan, UnpackedFloat(0.)) );
 	TEST( test_pack(pan_max, TPan, UnpackedFloat(100.)) );
+
+	char bool_true[] = { 1 };
+	char bool_false[] = { 0 };
+	TEST( test_pack(bool_true, TBoolean, UnpackedInt(1)) );
+	TEST( test_pack(bool_false, TBoolean, UnpackedInt(0)) );
+
+	char ratio_2_5[] = { 7 };
+	TEST( test_pack(ratio_2_5, TRatio, UnpackedInt(7)) );
+
+	TEST( test_format("2.5", TRatio, UnpackedInt(7)) );
+	TEST( test_format("?", TRatio, UnpackedInt(120)) );
 
 	printf("Done.\n\n"); return 0;
 }
