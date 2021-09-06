@@ -18,12 +18,17 @@ void listener(u8 *msgbuf, size_t msglen)
 
 	memory_set(addr, sysex->data, datalen); //self.app.mixer.memory.set(addr, data)
 	char name[256];
-	addr_name(addr, name);
-	printf("%s ", name);
+	addr_name(addr, name); //name = self.mixer.memory.addr_name(addr)
+	printf("name=%s ", name);
 
-	printf("\n");
+	char value[256];
+	ValueType type = addr_type(addr);
+	printf("%s ", type_name(type));
+	Unpacked unpacked = unpack_type(type, (Value){ .as_value = sysex->data});
+	format_unpacked(type, unpacked, value);
+	printf("%s ", value);
+
 	/*
-	name = self.mixer.memory.addr_name(addr)
 	value = self.app.mixer.memory.get_formatted(addr)
 	self.app.debug("listener hears 0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
 
@@ -31,6 +36,7 @@ void listener(u8 *msgbuf, size_t msglen)
 	self.dispatch(addr, value)
 	self.app.interface.notify_control(name)
 	*/
+	printf("\n");
 }
 
 int main(int argc, const char **argv)

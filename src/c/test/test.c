@@ -7,10 +7,12 @@
 
 #define debug(X) printf("%s\n", X);
 
+int exit_code = 0;
+
 void fail()
 {
 	printf("\033[u\033[31m✘\033[0m\n");
-	exit(1);
+	exit_code = 1;
 }
 
 void pass()
@@ -21,7 +23,7 @@ void pass()
 bool test_name_addr(Addr expected, const char *desc)
 {
 	Addr actual = name_addr(desc);
-	printf("%s -> 0x%08x", desc, actual);
+	printf("%s -> 0x%08x  expected 0x%08x", desc, actual, expected);
 	return actual == expected;
 }
 
@@ -29,7 +31,7 @@ bool test_addr_name(const char *expected, Addr addr)
 {
 	char actual[256];
 	addr_name(addr, actual);
-	printf("0x%08x -> %s", addr, actual);
+	printf("0x%08x -> %s  expected %s", addr, actual, expected);
 	return strcmp(actual, expected) == 0;
 }
 
@@ -54,6 +56,15 @@ printf("hello\n");
 }
 */
 
+bool test_addr_type(ValueType expected, Addr addr)
+{
+	ValueType type = addr_type(addr);
+	const char *name = type_name(type);
+	const char *expected_name = type_name(expected);
+	printf("addr_type %08x -> %s  expected %s", addr, name, expected_name);
+	return type == expected;
+}
+
 bool test_type(const char *expected, ValueType type, u8 *bytes)
 {
 	char str[256];
@@ -61,7 +72,7 @@ bool test_type(const char *expected, ValueType type, u8 *bytes)
 	fixed fx = fixed_from_packed(type, bytes);
 	Unpacked unpacked = unpack_type(type, val);
 	format_unpacked(type, unpacked, str);
-	printf("typed value 0x%x -> %s, expected %s", fx, str, expected);
+	printf("typed value 0x%x -> %s  expected %s", fx, str, expected);
 	return strcmp(str, expected) == 0;
 }
 
@@ -69,7 +80,7 @@ bool test_format(const char *expected, ValueType type, Unpacked unpacked)
 {
 	char str[256];
 	format_unpacked(type, unpacked, str);
-	printf("format %s 0x%x -> %s, expected %s", type_name(type), unpacked.as_int, str, expected);
+	printf("format %s 0x%x -> %s  expected %s", type_name(type), unpacked.as_int, str, expected);
 	return strcmp(str, expected) == 0;
 }
 
@@ -83,7 +94,7 @@ bool test_pack(const u8 *expected, ValueType type, Unpacked unpacked)
 	int size = type_size(type);
 	for(int i=0; i < size; i++)
 		printf("0x%02x ", buf[i]);
-	printf(", expected ");
+	printf("  expected ");
 	for(int i=0; i < size; i++)
 		printf("0x%02x ", expected[i]);
 	return memcmp(buf, expected, size) == 0;
@@ -102,6 +113,9 @@ int main(int argc, char *argv[])
 
 	bool b;
 	printf("\nTesting C library...\n");
+
+	TEST( test_name_addr(0x00040000, "reverb.type") );
+	TEST( test_addr_name("reverb.type", 0x00040000) );
 
 	TEST( test_name_addr(0x00071208, "daw_monitor.b.channel.3.volume") );
 	TEST( test_name_addr(0x0006230e, "input_monitor.c.channel.4.reverb") );
@@ -141,6 +155,8 @@ int main(int argc, char *argv[])
 	TEST( test_format("2.5", TRatio, UnpackedInt(7)) );
 	TEST( test_format("?", TRatio, UnpackedInt(120)) );
 
-	printf("Done.\n\n"); return 0;
+	TEST( test_addr_type(TVolume, 0x00062108) );
+
+	printf("Done.\n\n"); return exit_code;
 }
 

@@ -42,7 +42,7 @@ ValueType type_parents[] = {
 	[TReverbType ] = TEnum    ,
 	[TPreDelay   ] = TEnum    ,
 	[TPatch      ] = TEnum    ,
-	[TReverbTime ] = TValue   ,
+	[TReverbTime ] = TScaled  ,
 };
 
 #define TYPE_NAME(NAME) [ T##NAME ] = #NAME
@@ -107,7 +107,7 @@ f32 fixed_to_db(u32 fixed)
 
 f32 fixed_to_pan(fixed f)
 {
-	return round(100. * (f - 16384) / 16384.);
+	return round(100. * (f - 16384.) / 16384.);
 }
 
 fixed pan_to_fixed(f32 pan)
@@ -175,9 +175,9 @@ FORMAT(pan)
 {
 	f32 pan = unpacked.as_float;
 	if( pan < 0 )
-		sprintf(str, "L%1f", -pan);
+		sprintf(str, "L%1.0f", fabs(pan));
 	else if( pan > 0 )
-		sprintf(str, "R%1f", pan);
+		sprintf(str, "R%1.0f", pan);
 	else
 		sprintf(str, "C");
 }
@@ -186,6 +186,33 @@ PACK(pan)
 	f32 value = unpacked.as_float;
 	fixed fx = pan_to_fixed(value);
 	to_nibbles(fx, 4, buf);
+}
+
+ScaledType scaled_types[] = {
+	[TSens]      = (ScaledType){ .min =   0. , .max =  58. , .step = 0.5 },
+	[TThreshold] = (ScaledType){ .min = -40. , .max =   0. , .step = 1. },
+	[TGain]      = (ScaledType){ .min = -40. , .max =  40. , .step = 1. },
+	[TGate]      = (ScaledType){ .min = -70. , .max = -20. , .step = 1. },
+	[TReverbTime]= (ScaledType){ .min =  0.1 , .max =  5.  , .step = 0.1 },
+};
+UNPACK(scaled)
+{
+	ScaledType *scale = &scaled_types[type];
+	return UnpackedFloat(scale->min + scale->step * value);
+}
+FORMAT(scaled)
+{
+	ScaledType *scale = &scaled_types[type];
+	if( scale->step == 1. )
+		sprintf(str, "%1.0f", unpacked.as_float);
+	else
+		sprintf(str, "%1.1f", unpacked.as_float);
+}
+PACK(scaled)
+{
+	ScaledType *scale = &scaled_types[type];
+	u8 value = (unpacked.as_float - scale->min) / scale->step;
+	*buf = value;
 }
 
 NameTable enum_names[] = {
@@ -256,27 +283,22 @@ void (*formatters[NTypes])(ValueType, Unpacked, char *) = {
 	[TVolume]  = format_volume,
 	[TPan]     = format_pan,
 	[TEnum]    = format_enum,
+	[TScaled]  = format_scaled,
 };
 Unpacked (*unpackers[NTypes])(ValueType, fixed) = {
 	[TByte]    = unpack_byte,
 	[TBoolean] = unpack_boolean,
 	[TVolume]  = unpack_volume,
 	[TPan]     = unpack_pan,
+	[TScaled]  = unpack_scaled,
 };
 void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
 	[TByte]    = pack_byte,
 	[TBoolean] = pack_boolean,
 	[TVolume]  = pack_volume,
 	[TPan]     = pack_pan,
+	[TScaled]  = pack_scaled,
 };
-
-
-fixed fixed_from_packed(ValueType type, u8 *data)
-{
-	int len = type_sizes[type];
-	int fx = nibbles_to_fixed(data, len);
-	return fx;
-}
 
 void format_unpacked(ValueType type, Unpacked unpacked, char *str)
 {
@@ -302,6 +324,12 @@ void format_value(ValueType type, Value value, char *str)
 	format_unpacked(type, unpacked, str);
 }
 
+fixed fixed_from_packed(ValueType type, u8 *data)
+{
+	int len = type_sizes[type];
+	int fx = nibbles_to_fixed(data, len);
+	return fx;
+}
 Unpacked unpack_type(ValueType type, Value value)
 {
 	ValueType t = type;
@@ -313,7 +341,7 @@ Unpacked unpack_type(ValueType type, Value value)
 		{
 			return UnpackedInt(Unset);
 		}
-		unpacker = unpackers[type];
+		unpacker = unpackers[t];
 	}
 	fixed fx = fixed_from_packed(type, value.as_value);
 	return unpacker(type, fx);
