@@ -1,3 +1,8 @@
+#pragma once
+
+#include "lib/types.h"
+#include "lib/capture.h"
+
 #define CCA(members...) (const char *[]){ members, 0 }
 
 typedef struct mixer_page {
@@ -6,7 +11,7 @@ typedef struct mixer_page {
 	const char *name;
 	const char **headers;
 	const char **labels;
-	char controls[8][16][256];
+	Addr controls[8][16];
 } MixerPage;
 
 enum mixer_pages {
