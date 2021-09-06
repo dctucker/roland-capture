@@ -205,16 +205,16 @@ DEF_MEMAREA(master) = {
 
 #define LINE 0xe
 MemMap memory_map[] = {
-	[0x0] = { .offset = 0x00000002, .name = "initial_setting" },
-	[0x3] = OFFSET_AREA(0x00030000, patchbay),
-	[0x4] = OFFSET_AREA(0x00040000, reverb),
-	[0x5] = OFFSET_AREA(0x00050000, preamp),
-	[LINE]= OFFSET_AREA(0x00051000, line), // this is upsetting
-	[0x6] = OFFSET_AREA(0x00060000, input_monitor),
-	[0x7] = OFFSET_AREA(0x00070000, daw_monitor),
-	[0x8] = OFFSET_AREA(0x00080000, master),
-	[0xa] = { .offset = 0x000a0000, .name = "meters_active" },
-	[0xf] = { .offset = 0x01000000, .name = "load_settings" },
+	[0x0] = { .offset = 0x00000002 , .name = "initial_setting" },
+	[0x3] = OFFSET_AREA(O_PATCHBAY , patchbay),
+	[0x4] = OFFSET_AREA(O_REVERB   , reverb),
+	[0x5] = OFFSET_AREA(O_PREAMP   , preamp),
+	[LINE]= OFFSET_AREA(O_LINE     , line), // this is upsetting
+	[0x6] = OFFSET_AREA(O_INPUT_MON, input_monitor),
+	[0x7] = OFFSET_AREA(O_DAW_MON  , daw_monitor),
+	[0x8] = OFFSET_AREA(O_MASTER   , master),
+	[0xa] = { .offset = 0x000a0000 , .name = "meters_active" },
+	[0xf] = { .offset = 0x01000000 , .name = "load_settings" },
 	ENDA
 };
 

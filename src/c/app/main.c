@@ -25,13 +25,10 @@ void listener(u8 *msgbuf, size_t msglen)
 	ValueType type = addr_type(addr);
 	printf("%s ", type_name(type));
 	Unpacked unpacked = unpack_type(type, sysex->data);
-	format_unpacked(type, unpacked, value);
+	format_unpacked(type, unpacked, value); // value = self.app.mixer.memory.get_formatted(addr)
 	printf("%s ", value);
 
 	/*
-	value = self.app.mixer.memory.get_formatted(addr)
-	self.app.debug("listener hears 0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
-
 	self.app.mixer.memory.set(addr, data)
 	self.dispatch(addr, value)
 	self.app.interface.notify_control(name)

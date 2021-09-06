@@ -14,7 +14,7 @@ all: bin/main bin/test
 bin/main: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-bin/test: test/test.o lib/capture.o lib/roland.o lib/memory.o lib/types.o lib/mixer.o
+bin/test/%: test/%.o lib/capture.o lib/roland.o lib/memory.o lib/types.o lib/mixer.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 test: bin/test
