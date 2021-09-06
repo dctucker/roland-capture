@@ -110,8 +110,17 @@ int main(int argc, char *argv[])
 	char buf_min[] = {0,0,0,0,0,0};
 	TEST( test_type("+0", TVolume, buf_zero ));
 
-	TEST( test_pack(buf_zero, TVolume, (Unpacked){ .as_float = 0.0 }) );
-	TEST( test_pack(buf_min, TVolume, (Unpacked){ .as_float = -inf }) );
+	TEST( test_pack(buf_zero, TVolume, UnpackedFloat(0.0)) );
+	TEST( test_pack(buf_min, TVolume, UnpackedFloat(-inf)) );
+
+	TEST( test_pack(buf_min, TByte, UnpackedInt(0)) );
+	TEST( test_pack(buf_zero, TByte, UnpackedInt(2)) );
+
+	char pan_max[] = { 8,0,0,0 };
+	char pan_zero[] = { 4,0,0,0 };
+	TEST( test_pack(buf_min, TPan, UnpackedFloat(-100.)) );
+	TEST( test_pack(pan_zero, TPan, UnpackedFloat(0.)) );
+	TEST( test_pack(pan_max, TPan, UnpackedFloat(100.)) );
 
 	printf("Done.\n\n"); return 0;
 }

@@ -96,6 +96,8 @@ typedef union Value {
 	ReverbTime  *as_reverb_time;
 } Value;
 
+#define UnpackedFloat(F) (Unpacked){ .as_float = F }
+#define UnpackedInt(I) (Unpacked){ .as_int = I }
 typedef union unpacked
 {
 	u32 as_int;
@@ -103,8 +105,8 @@ typedef union unpacked
 } Unpacked;
 
 #define UNPACK(NAME) Unpacked unpack_##NAME(fixed value)
-#define FORMAT(NAME) void format_##NAME(Unpacked unpacked, char *str)
-#define PACK(NAME)   void pack_##NAME(Unpacked unpacked, u8 *buf)
+#define FORMAT(NAME) void     format_##NAME(Unpacked unpacked, char *str)
+#define PACK(NAME)   void     pack_##NAME  (Unpacked unpacked, u8 *buf)
 
 void          format_unpacked(ValueType type, Unpacked unpacked, char *str);
 void          format_value(ValueType type, Value value, char *str);
