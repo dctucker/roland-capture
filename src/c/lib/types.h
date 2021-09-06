@@ -74,29 +74,6 @@ typedef enum ValueType {
 	NTypes, // dummy
 } ValueType;
 
-typedef union Value {
-	u8          *as_value;
-	Byte        *as_byte;
-	Boolean     *as_boolean;
-	Volume      *as_volume;
-	Pan         *as_pan;
-	Scaled      *as_scaled;
-	Sens        *as_sens;
-	Threshold   *as_threshold;
-	Gain        *as_gain;
-	Gate        *as_gate;
-	Enum        *as_enum;
-	Ratio       *as_ratio;
-	Attack      *as_attack;
-	Release     *as_release;
-	Knee        *as_knee;
-	Attenuation *as_attenuation;
-	ReverbType  *as_reverb_type;
-	PreDelay    *as_pre_delay;
-	Patch       *as_patch;
-	ReverbTime  *as_reverb_time;
-} Value;
-
 typedef struct NameTable {
 	int size;
 	const char **names;
@@ -120,12 +97,12 @@ typedef union unpacked
 #define FORMAT(NAME) void     format_##NAME(ValueType type, Unpacked unpacked, char *str)
 #define PACK(NAME)   void     pack_##NAME  (ValueType type, Unpacked unpacked, u8 *buf)
 
-void          format_unpacked(ValueType type, Unpacked unpacked, char *str);
-void          format_value(ValueType type, Value value, char *str);
-fixed         nibbles_to_fixed(u8 *buf, int len);
-void          to_nibbles(fixed val, int n, u8 *buf);
+void          format_unpacked(ValueType, Unpacked, char *);
+void          format_value(ValueType, u8 *, char *);
+fixed         nibbles_to_fixed(u8 *, int );
+void          to_nibbles(fixed, int, u8 *);
 fixed         fixed_from_packed(ValueType, u8 *);
-Unpacked      unpack_type(ValueType, Value);
+Unpacked      unpack_type(ValueType, u8 *);
 void          pack_type(ValueType, Unpacked, u8 *);
 int           type_size(ValueType);
 const char *  type_name(ValueType);
