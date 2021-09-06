@@ -15,7 +15,7 @@ class Listener(object):
 
 		addr, data = Roland.parse_sysex(message)
 		self.app.mixer.memory.set(addr, data)
-		name = self.mixer.memory.addr_name(addr)
+		name = self.app.mixer.memory.addr_name(addr)
 		value = self.app.mixer.memory.get_formatted(addr)
 		self.app.debug("listener hears 0x%08x=%s; %s %s" % (addr, render_bytes(data), name, value))
 
@@ -80,6 +80,7 @@ class App(object):
 			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
 
 		midi = MIDI(self.port)
+		midi.listener = self.listener
 		port_name = midi.setup_output()
 		if port_name:
 			self.debug("Opened %s for output" % port_name)
