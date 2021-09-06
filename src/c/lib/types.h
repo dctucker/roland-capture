@@ -51,7 +51,7 @@ typedef union input_channel {
 } input_channel;
 
 typedef enum ValueType {
-	TValue,
+	TValue = 0,
 	TByte,        // TValue
 	TBoolean,     // TByte
 	TVolume,      // TValue
@@ -71,6 +71,7 @@ typedef enum ValueType {
 	TPreDelay,    // TEnum
 	TPatch,       // TEnum
 	TReverbTime,  // TValue?
+	NTypes, // dummy
 } ValueType;
 
 typedef union Value {
@@ -96,6 +97,11 @@ typedef union Value {
 	ReverbTime  *as_reverb_time;
 } Value;
 
+typedef struct NameTable {
+	int size;
+	const char **names;
+} NameTable;
+
 #define UnpackedFloat(F) (Unpacked){ .as_float = F }
 #define UnpackedInt(I) (Unpacked){ .as_int = I }
 typedef union unpacked
@@ -104,9 +110,9 @@ typedef union unpacked
 	f32 as_float;
 } Unpacked;
 
-#define UNPACK(NAME) Unpacked unpack_##NAME(fixed value)
-#define FORMAT(NAME) void     format_##NAME(Unpacked unpacked, char *str)
-#define PACK(NAME)   void     pack_##NAME  (Unpacked unpacked, u8 *buf)
+#define UNPACK(NAME) Unpacked unpack_##NAME(ValueType type, fixed value)
+#define FORMAT(NAME) void     format_##NAME(ValueType type, Unpacked unpacked, char *str)
+#define PACK(NAME)   void     pack_##NAME  (ValueType type, Unpacked unpacked, u8 *buf)
 
 void          format_unpacked(ValueType type, Unpacked unpacked, char *str);
 void          format_value(ValueType type, Value value, char *str);
