@@ -49,6 +49,16 @@ bool test_addr_type(ValueType expected, Addr addr)
 	return type == expected;
 }
 
+bool test_parse(Unpacked expected, ValueType type, const char *str)
+{
+	const char *name = type_name(type);
+	printf("parse_type %s %s -> ", name, str);
+	Unpacked unpacked = parse_type(type, str);
+	printf("0x%x / %f", unpacked.as_int, unpacked.as_float);
+	printf("  expected 0x%x", expected.as_int );
+	return expected.as_int == unpacked.as_int || expected.as_float == unpacked.as_float;
+}
+
 bool test_type(const char *expected, ValueType type, u8 *bytes)
 {
 	char str[256];
@@ -88,6 +98,12 @@ bool test_volume_format(const char *expected, int fixed)
 	char buf[6];
 	to_nibbles(fixed, 6, buf);
 	return test_type(expected, TVolume, buf);
+}
+
+bool test_true(bool pass, const char *message)
+{
+	printf("%s", message);
+	return pass;
 }
 
 int main(int argc, char *argv[])
@@ -137,6 +153,14 @@ int main(int argc, char *argv[])
 	TEST( test_format("?", TRatio, UnpackedInt(120)) );
 
 	TEST( test_addr_type(TVolume, 0x00062108) );
+
+	TEST( test_parse(UnpackedFloat(1.0), TVolume, "+1.0") );
+	TEST( test_parse(UnpackedFloat(0.0), TVolume, "0") );
+	TEST( test_parse(UnpackedFloat(50.0), TPan, "R50") );
+	TEST( test_parse(UnpackedFloat(-50.0), TPan, "L50") );
+	TEST( test_parse(UnpackedFloat(0), TPan, "C") );
+	TEST( test_parse(UnpackedInt(Unset), TPan, "30") );
+	TEST( test_true(UnpackedInt(Unset).as_float != UnpackedFloat(0.0).as_float, "UnpackedInt(Unset) != UnpackedFloat(0.0)") );
 
 	printf("Done.\n\n"); return exit_code;
 }

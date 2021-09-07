@@ -96,9 +96,11 @@ typedef union unpacked
 } Unpacked;
 
 #define UNPACK(NAME) Unpacked unpack_##NAME(ValueType type, fixed value)
+#define PARSE(NAME)  Unpacked parse_##NAME (ValueType type, const char *str)
 #define FORMAT(NAME) void     format_##NAME(ValueType type, Unpacked unpacked, char *str)
 #define PACK(NAME)   void     pack_##NAME  (ValueType type, Unpacked unpacked, u8 *buf)
 
+Unpacked      parse_type(ValueType, const char *);
 void          format_unpacked(ValueType, Unpacked, char *);
 void          format_value(ValueType, u8 *, char *);
 fixed         nibbles_to_fixed(u8 *, int );

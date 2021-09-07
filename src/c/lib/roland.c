@@ -34,10 +34,10 @@ int make_receive_sysex(u8 *buffer, Addr addr, Addr size)
 	int i,j;
 
 	int start=7;
-	for(j=0; j < 8; i++, j++)
-		buffer[start+i] = data[j];
+	for(j=0; j < 8; j++)
+		buffer[start+j] = data[j];
 
-	return make_sysex(buffer, 0x11, i);
+	return make_sysex(buffer, 0x11, 8);
 }
 
 int make_send_sysex(u8 *buffer, Addr addr, u8 *data, int data_len)

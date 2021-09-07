@@ -58,24 +58,32 @@ int main(int argc, const char **argv)
 	const char *arg0 = argv[a++];
 	if( argc > 1 ) control = argv[a++];
 	if( argc > 2 ) value   = argv[a++];
-	printf("control=%s value=%s\n", control, value);
+	//printf("args: control=%s value=%s\n", control, value);
 
 	if( strlen(control) > 0 ) // non-interactive
 	{
-		int ok = setup_midi();
+		Addr addr = name_addr(control);
+		if( addr == None )
+		{
+			fprintf(stderr, "Unknown control: %s\n", control);
+			return 1;
+		}
+		ValueType type = addr_type(addr);
+		int type_len = type_size(type);
+
 		u8 sysex_buf[16];
 		if( strlen(value) == 0 ) // get
 		{
-			Addr addr = 0x00060008; // TODO
-			int type_len = 1;       // TODO
 			int sysex_len = make_receive_sysex(sysex_buf, addr, type_len);
-			send_midi(sysex_buf, sysex_len);
+
 			for(int i=0; i < sysex_len; i++)
 				printf("0x%02x ", sysex_buf[i]);
 			printf("\n");
 
-			int i = 0;
+			int ok = setup_midi(); if( ! ok ) return 2;
+			send_midi(sysex_buf, sysex_len);
 
+			int i = 0;
 			do
 			{
 				read_midi();
@@ -88,10 +96,18 @@ int main(int argc, const char **argv)
 		}
 		else // set
 		{
-			Addr addr = 0x00063003;         // TODO
-			char values[] = { 0x01, 0x00 }; // TODO
-			int type_len = 1;               // TODO
-			int sysex_len = make_send_sysex(sysex_buf, addr, values, type_len);
+			Unpacked unpacked = parse_type(type, value);
+			if( unpacked.as_int == Unset )
+			{
+				fprintf(stderr, "Unable to parse value: %s\n", value);
+				return 1;
+			}
+			char data[8];
+			pack_type(type, unpacked, data);
+
+			int sysex_len = make_send_sysex(sysex_buf, addr, data, type_len);
+
+			int ok = setup_midi(); if( ! ok ) return 2;
 			send_midi(sysex_buf, sysex_len);
 			read_midi();
 		}
@@ -106,6 +122,4 @@ int main(int argc, const char **argv)
 		cleanup_midi();
 		return 0;
 	}
-
 }
-
