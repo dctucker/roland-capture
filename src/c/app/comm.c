@@ -40,6 +40,16 @@ int read_midi()
 	msglen += err;
 }
 
+int send_midi(u8 *data, int len)
+{
+	int err;
+	if( (err = snd_rawmidi_write(midi_out, data, len)) < 0 )
+	{
+		fprintf(stderr, "cannot send data: %s", snd_strerror(err));
+		return 0;
+	}
+}
+
 void cleanup_midi()
 {
 	if( midi_in )  snd_rawmidi_close(midi_in);

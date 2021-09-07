@@ -9,6 +9,8 @@ typedef struct roland_sysex {
 	u8 data[];
 } RolandSysex;
 
-void           make_sysex(u8 *buffer, u8 cmd, u8 *data, size_t len);
-RolandSysex *  parse_sysex(u8 *buffer, size_t len);
+size_t         make_receive_sysex(u8 *, Addr , Addr );
+size_t         make_send_sysex(u8 *, Addr, u8 *, size_t );
+size_t         make_sysex(u8 *, u8, size_t);
+RolandSysex *  parse_sysex(u8 *, size_t );
 

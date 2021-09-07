@@ -13,7 +13,7 @@ bool test_mixer(MixerPage *mixer_page)
 
 bool test_mixers()
 {
-	for(int i = 0; i < N_Pages; i++)
+	for(int i = 0; i < N_Pages-1; i++)
 	{
 		MixerPage *mixer_page = &mixer_pages[i];
 		TEST( test_mixer(mixer_page) );
