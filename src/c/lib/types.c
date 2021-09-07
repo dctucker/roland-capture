@@ -290,6 +290,7 @@ Unpacked (*unpackers[NTypes])(ValueType, fixed) = {
 	[TBoolean] = unpack_boolean,
 	[TVolume]  = unpack_volume,
 	[TPan]     = unpack_pan,
+	[TEnum]    = unpack_byte, //
 	[TScaled]  = unpack_scaled,
 };
 void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
@@ -297,6 +298,7 @@ void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
 	[TBoolean] = pack_boolean,
 	[TVolume]  = pack_volume,
 	[TPan]     = pack_pan,
+	[TEnum]    = pack_byte, //
 	[TScaled]  = pack_scaled,
 };
 

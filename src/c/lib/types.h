@@ -17,6 +17,7 @@ typedef u32 fixed;
 #define bytes_addr(ADDR) ((Addr)((ADDR[0] << 24) | (ADDR[1]<<16) | (ADDR[2]<<8) | ADDR[3]))
 typedef uint32_t Addr;
 
+/*
 typedef struct Byte         { u8 value;    } Byte;
 typedef struct Boolean      { u8 value;    } Boolean;
 typedef struct Volume       { u8 value[6]; } Volume;
@@ -49,6 +50,7 @@ typedef union input_channel {
 	};
 	u8 bytes[20];
 } input_channel;
+*/
 
 typedef enum ValueType {
 	TValue = 0,
@@ -85,8 +87,8 @@ typedef struct ScaledType {
 	f32 step;
 } ScaledType;
 
-#define UnpackedFloat(F) (Unpacked){ .as_float = F }
-#define UnpackedInt(I) (Unpacked){ .as_int = I }
+#define UnpackedFloat(F) (Unpacked){ .as_float = (F) }
+#define UnpackedInt(I) (Unpacked){ .as_int = (I) }
 typedef union unpacked
 {
 	u32 as_int;
