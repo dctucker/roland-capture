@@ -145,7 +145,7 @@ class ReverbPage(Page):
 		return controls
 
 	def get_labels(self):
-		labels = ['','Echo','Room','Small Hall','Large Hall','Plate', 'Return Volume']
+		labels = ['','Echo','Room','Small Hall','Large Hall','Plate']
 		verb = self.mixer.get_memory_value("reverb.type")
 		v = verb.value if verb and verb.value else 0
 		labels[v] = "*%s" % labels[v]
