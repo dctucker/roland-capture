@@ -23,10 +23,13 @@ void listener(u8 *msgbuf, size_t msglen)
 
 	char value[256];
 	ValueType type = addr_type(addr);
-	printf("%s ", type_name(type));
+	printf("type=%s ", type_name(type));
+	
 	Unpacked unpacked = unpack_type(type, sysex->data);
+	printf("unpacked=0x%x ", unpacked.as_int);
+
 	format_unpacked(type, unpacked, value); // value = self.app.mixer.memory.get_formatted(addr)
-	printf("%s ", value);
+	printf("value=%s ", value);
 
 	/*
 	self.app.mixer.memory.set(addr, data)

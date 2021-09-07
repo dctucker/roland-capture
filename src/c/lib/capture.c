@@ -368,5 +368,10 @@ ValueType addr_type(Addr addr)
 		type = candidate->type;
 		map = (MemMap *)(candidate->area);
 	}
+	if( map != NULL && map->name != NULL )
+	{
+		if( map->type != TValue )
+			type = map->type;
+	}
 	return type;
 }
