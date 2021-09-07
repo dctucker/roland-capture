@@ -6,13 +6,6 @@ char input_page_controls[6][16][256];
 const char *channel_headers[]     = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
 const char *input_labels[]      = CCA( "stereo","mute","solo","reverb","pan","volume" );
 const char *output_labels[]     = CCA( "stereo","mute","solo","","pan","volume" );
-const char *preamp_labels[]     = CCA( "stereo","hi-z","+48","lo-cut","phase","sens","bypass","gate" );
-const char *compressor_labels[] = CCA( "bypass","gate","threshold","ratio","attack","release","gain","knee" );
-
-const char *reverb_headers[]    = CCA( "Type", "Pre delay [ms]", "Time [s]" );
-const char *reverb_labels[]     = CCA( "","Echo","Room","Small Hall","Large Hall","Plate" );
-
-const char *line_labels[]       = CCA( "Stereo","Attenuation" );
 
 MixerPage mixer_pages[] = {
 	[PInputA] = {
@@ -131,7 +124,7 @@ MixerPage mixer_pages[] = {
 		.rows = 8, .cols = 12,
 		.name = "preamp",
 		.headers = (const char **) channel_headers,
-		.labels = (const char **) preamp_labels,
+		.labels = CCA( "stereo","hi-z","+48","lo-cut","phase","sens","bypass","gate" ),
 		.controls = {
 			{ 0x50005, 0x0    , 0x50205, 0x0    , 0x50405, 0x0    , 0x50605, 0x0    , 0x50805, 0x0    , 0x50a05, 0x0     }, // stereo
 			{ 0x50003, 0x50103, 0x0    , 0x0    , 0x0    , 0x0    , 0x0    , 0x0    , 0x0    , 0x0    , 0x0    , 0x0     }, // hi-z
@@ -147,7 +140,7 @@ MixerPage mixer_pages[] = {
 		.rows = 8, .cols = 12,
 		.name = "compressor",
 		.headers = (const char **) channel_headers,
-		.labels = (const char **) compressor_labels,
+		.labels = CCA( "bypass","gate","threshold","ratio","attack","release","gain","knee" ),
 		.controls = {
 			{ 0x50006, 0x50106, 0x50206, 0x50306, 0x50406, 0x50506, 0x50606, 0x50706, 0x50806, 0x50906, 0x50a06, 0x50b06 }, // bypass
 			{ 0x50007, 0x50107, 0x50207, 0x50307, 0x50407, 0x50507, 0x50607, 0x50707, 0x50807, 0x50907, 0x50a07, 0x50b07 }, // gate
@@ -163,7 +156,7 @@ MixerPage mixer_pages[] = {
 		.rows = 2, .cols = 4,
 		.name = "line",
 		.headers = (const char **) &(channel_headers[12]),
-		.labels = (const char **) line_labels,
+		.labels = CCA( "Stereo","Attenuation" ),
 		.controls = {
 			{ 0x51000, 0x0    , 0x51200, 0x0     }, // stereo
 			{ 0x51001, 0x51101, 0x51201, 0x51301 }, // attenuation
@@ -172,8 +165,8 @@ MixerPage mixer_pages[] = {
 	[PReverb] = {
 		.rows = 6, .cols = 3,
 		.name = "reverb",
-		.headers = (const char **) reverb_headers,
-		.labels = (const char **) reverb_labels,
+		.headers = CCA( "Type", "Pre delay [ms]", "Time [s]" ),
+		.labels = CCA( "","Echo","Room","Small Hall","Large Hall","Plate" ),
 		.controls = {
 			// type    time     pre_delay
 			{ 0x40000, 0x0    , 0x80007 }, // reverb type

@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 #include "lib/types.h"
 #include "lib/roland.h"
@@ -41,13 +42,47 @@ void listener(u8 *msgbuf, size_t msglen)
 
 int main(int argc, const char **argv)
 {
-	int ok = setup_midi();
-
-	while(ok)
+	/*
+	int opt;
+	while ((opt = getopt(argc, argv, "ilw")) != -1)
 	{
-		read_midi();
+		switch(opt)
+		{
+			case '
+		}
 	}
-	cleanup_midi();
-	return 0;
+	*/
+	const char *control =NULL, *value =NULL;
+	int a = 0;
+	if( argc > 1 ) control = argv[a++];
+	if( argc > 2 ) value   = argv[a++];
+
+	if( control != NULL ) // non-interactive
+	{
+		if( value == NULL ) // get
+		{
+			u8 sysex_buf[16];
+			Addr addr;         // TODO
+			int type_len = 1;  // TODO
+			int ok = setup_midi();
+			//int sysex_len = make_send_sysex(sysex_buf, addr, values, len);
+			int sysex_len = make_receive_sysex(sysex_buf, addr, type_len);
+			send_midi(sysex_buf, sysex_len);
+		}
+		else // set
+		{
+		}
+	}
+	else // interactive
+	{
+		int ok = setup_midi();
+		while(ok)
+		{
+			read_midi();
+		}
+		cleanup_midi();
+		return 0;
+	}
+
 }
 
