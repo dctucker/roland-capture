@@ -1,3 +1,4 @@
+#include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 #include "lib/types.h"
@@ -52,25 +53,47 @@ int main(int argc, const char **argv)
 		}
 	}
 	*/
-	const char *control =NULL, *value =NULL;
+	const char *control ="", *value ="";
 	int a = 0;
+	const char *arg0 = argv[a++];
 	if( argc > 1 ) control = argv[a++];
 	if( argc > 2 ) value   = argv[a++];
+	printf("control=%s value=%s\n", control, value);
 
-	if( control != NULL ) // non-interactive
+	if( strlen(control) > 0 ) // non-interactive
 	{
-		if( value == NULL ) // get
+		int ok = setup_midi();
+		u8 sysex_buf[16];
+		if( strlen(value) == 0 ) // get
 		{
-			u8 sysex_buf[16];
-			Addr addr;         // TODO
-			int type_len = 1;  // TODO
-			int ok = setup_midi();
-			//int sysex_len = make_send_sysex(sysex_buf, addr, values, len);
+			Addr addr = 0x00060008; // TODO
+			int type_len = 1;       // TODO
 			int sysex_len = make_receive_sysex(sysex_buf, addr, type_len);
 			send_midi(sysex_buf, sysex_len);
+			for(int i=0; i < sysex_len; i++)
+				printf("0x%02x ", sysex_buf[i]);
+			printf("\n");
+
+			int i = 0;
+
+			do
+			{
+				read_midi();
+				usleep(10000);
+			}
+			while( i++ < 50 );
+
+			cleanup_midi();
+			return 0;
 		}
 		else // set
 		{
+			Addr addr = 0x00063003;         // TODO
+			char values[] = { 0x01, 0x00 }; // TODO
+			int type_len = 1;               // TODO
+			int sysex_len = make_send_sysex(sysex_buf, addr, values, type_len);
+			send_midi(sysex_buf, sysex_len);
+			read_midi();
 		}
 	}
 	else // interactive

@@ -38,6 +38,7 @@ int read_midi()
 		}
 	}
 	msglen += err;
+	return err;
 }
 
 int send_midi(u8 *data, int len)
@@ -48,6 +49,7 @@ int send_midi(u8 *data, int len)
 		fprintf(stderr, "cannot send data: %s", snd_strerror(err));
 		return 0;
 	}
+	return err;
 }
 
 void cleanup_midi()
