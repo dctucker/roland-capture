@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "types.h"
 
 int type_sizes[] = {
@@ -119,6 +120,13 @@ UNPACK(byte)
 {
 	return UnpackedInt(value & 0x7f);
 }
+PARSE(byte)
+{
+	int value;
+	if( sscanf(str, "%d", &value) > 0 )
+		return UnpackedInt(value);
+	return UnpackedInt(Unset);
+}
 FORMAT(byte)
 {
 	if( unpacked.as_int == Unset )
@@ -134,6 +142,14 @@ PACK(byte)
 UNPACK(boolean)
 {
 	return UnpackedInt(value == 0 ? 0 : 1);
+}
+PARSE(boolean)
+{
+	if( strcmp(str,"1") || strcasecmp(str, "on") || strcasecmp(str,"true") )
+		return UnpackedInt(1);
+	else if( strcmp(str, "0") || strcasecmp(str, "off") || strcasecmp(str,"false") )
+		return UnpackedInt(0);
+	return UnpackedInt(Unset);
 }
 FORMAT(boolean)
 {
@@ -151,6 +167,13 @@ UNPACK(volume)
 {
 	f32 db = fixed_to_db(value);
 	return UnpackedFloat(db);
+}
+PARSE(volume)
+{
+	f32 value;
+	if( sscanf(str, "%f", &value) > 0 )
+		return UnpackedFloat(value);
+	return UnpackedInt(Unset);
 }
 FORMAT(volume)
 {
@@ -170,6 +193,22 @@ UNPACK(pan)
 {
 	f32 db = fixed_to_pan(value);
 	return UnpackedFloat(db);
+}
+PARSE(pan)
+{
+	char side;
+	f32 value;
+	if( sscanf(str, "%c%f", &side, &value) > 0 )
+	{
+		if( side == 'l' || side == 'L' )
+			return UnpackedFloat(-value);
+		else if( side == 'r' || side == 'R' )
+			return UnpackedFloat(fabs(value));
+		else if( side == 'c' || side == 'C' )
+			return UnpackedFloat(0);
+		return UnpackedInt(Unset);
+	}
+	return UnpackedInt(Unset);
 }
 FORMAT(pan)
 {
@@ -277,14 +316,6 @@ FORMAT(enum)
 }
 //PACK(enum) // pack_byte
 
-void (*formatters[NTypes])(ValueType, Unpacked, char *) = {
-	[TByte]    = format_byte,
-	[TBoolean] = format_boolean,
-	[TVolume]  = format_volume,
-	[TPan]     = format_pan,
-	[TEnum]    = format_enum,
-	[TScaled]  = format_scaled,
-};
 Unpacked (*unpackers[NTypes])(ValueType, fixed) = {
 	[TByte]    = unpack_byte,
 	[TBoolean] = unpack_boolean,
@@ -292,6 +323,20 @@ Unpacked (*unpackers[NTypes])(ValueType, fixed) = {
 	[TPan]     = unpack_pan,
 	[TEnum]    = unpack_byte, //
 	[TScaled]  = unpack_scaled,
+};
+Unpacked (*parsers[NTypes])(ValueType, const char *) = {
+	[TByte]    = parse_byte,
+	[TBoolean] = parse_boolean,
+	[TVolume]  = parse_volume,
+	[TPan]     = parse_pan,
+};
+void (*formatters[NTypes])(ValueType, Unpacked, char *) = {
+	[TByte]    = format_byte,
+	[TBoolean] = format_boolean,
+	[TVolume]  = format_volume,
+	[TPan]     = format_pan,
+	[TEnum]    = format_enum,
+	[TScaled]  = format_scaled,
 };
 void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
 	[TByte]    = pack_byte,
@@ -302,6 +347,21 @@ void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
 	[TScaled]  = pack_scaled,
 };
 
+Unpacked parse_type(ValueType type, const char *str)
+{
+	ValueType t = type;
+	Unpacked (*parser)(ValueType, const char *) = parsers[t];
+	while( parser == NULL )
+	{
+		t = type_parents[t];
+		if( t == TValue )
+		{
+			return UnpackedInt(Unset);
+		}
+		parser = parsers[t];
+	}
+	return parser(type, str);
+}
 void format_unpacked(ValueType type, Unpacked unpacked, char *str)
 {
 	ValueType t = type;
@@ -311,7 +371,7 @@ void format_unpacked(ValueType type, Unpacked unpacked, char *str)
 		t = type_parents[t];
 		if( t == TValue )
 		{
-			*str = '\0';
+			str[0] = '\0';
 			return;
 		}
 		formatter = formatters[t];
