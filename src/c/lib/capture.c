@@ -204,7 +204,7 @@ DEF_MEMAREA(master) = {
 };
 
 #define LINE 0xe
-MemMap memory_map[] = {
+capmix_MemMap memory_map[] = {
 	[0x0] = { .offset = 0x00000002 , .name = "initial_setting" },
 	[0x3] = OFFSET_AREA(O_PATCHBAY , patchbay),
 	[0x4] = OFFSET_AREA(O_REVERB   , reverb),
@@ -218,7 +218,7 @@ MemMap memory_map[] = {
 	ENDA
 };
 
-void print_map(struct memory_area *map, char *prefix, Addr old_offset)
+void capmix_print_map(struct capmix_memory_area *map, char *prefix, capmix_Addr old_offset)
 {
 	for(int i = 0; map[i].offset != 0xffffffff; i++ )
 	{
@@ -237,11 +237,11 @@ void print_map(struct memory_area *map, char *prefix, Addr old_offset)
 			continue;
 		}
 
-		print_map((MemMap *)(map[i].area), new_prefix, old_offset + offset);
+		capmix_print_map((capmix_MemMap *)(map[i].area), new_prefix, old_offset + offset);
 	}
 }
 
-MemMap * lookup_map(MemMap *map, char *part)
+capmix_MemMap * capmix_lookup_map(capmix_MemMap *map, char *part)
 {
 	for( int i = 0; map[i].offset != None; i++ )
 	{
@@ -254,15 +254,15 @@ MemMap * lookup_map(MemMap *map, char *part)
 	return NULL;
 }
 
-Addr name_addr(const char *desc)
+capmix_Addr capmix_name_addr(const char *desc)
 {
-	Addr ret = 0;
-	MemMap *map = (MemMap *)(memory_map);
+	capmix_Addr ret = 0;
+	capmix_MemMap *map = (capmix_MemMap *)(memory_map);
 	char *desc_ = strdup(desc);
 	char *tok = strtok(desc_, ".");
 	while( tok != NULL )
 	{
-		map = lookup_map(map, tok);
+		map = capmix_lookup_map(map, tok);
 		if( map == NULL ) //|| map == (void *)None )
 		{
 			return None;
@@ -270,14 +270,14 @@ Addr name_addr(const char *desc)
 		ret += map->offset;
 		//printf("0x%08x\n", ret);
 		tok = strtok(NULL, ".");
-		map = (MemMap *)(map->area);
+		map = (capmix_MemMap *)(map->area);
 	}
 	free(desc_);
 	return ret;
 }
 
 // 0x0006120e -> daw_monitor.b.channel.3.volume
-void addr_name(Addr addr, char *desc)
+void capmix_addr_name(capmix_Addr addr, char *desc)
 {
 	*desc = '\0';
 	int section;
@@ -286,18 +286,18 @@ void addr_name(Addr addr, char *desc)
 	else
 		section = addr >> 16;
 
-	Addr countdown = addr;
-	MemMap *map = (MemMap *)(memory_map[section].area);
+	capmix_Addr countdown = addr;
+	capmix_MemMap *map = (capmix_MemMap *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 	strcat(desc, memory_map[section].name);
 
 	while( countdown != 0 )
 	{
-		MemMap *candidate = NULL;
+		capmix_MemMap *candidate = NULL;
 
 		//printf("%x %s\n", countdown, desc);
 
-		Addr min_offset = None;
+		capmix_Addr min_offset = None;
 		for( int i = 0; map[i].offset != None; i++ )
 		{
 			if( map[i].name == NULL ) continue;
@@ -318,7 +318,7 @@ void addr_name(Addr addr, char *desc)
 		strcat(desc, ".");
 		strcat(desc, candidate->name);
 		countdown -= candidate->offset; // 0x120e
-		map = (MemMap *)(candidate->area);
+		map = (capmix_MemMap *)(candidate->area);
 	}
 	if( map != NULL && map->name != NULL )
 	{
@@ -327,7 +327,7 @@ void addr_name(Addr addr, char *desc)
 	}
 }
 
-ValueType addr_type(Addr addr)
+capmix_ValueType capmix_addr_type(capmix_Addr addr)
 {
 	int section;
 	if( addr >> 15 == 0x51 )
@@ -335,18 +335,18 @@ ValueType addr_type(Addr addr)
 	else
 		section = addr >> 16;
 
-	Addr countdown = addr;
-	MemMap *map = (MemMap *)(memory_map[section].area);
+	capmix_Addr countdown = addr;
+	capmix_MemMap *map = (capmix_MemMap *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 
-	ValueType type;
+	capmix_ValueType type;
 	while( countdown != 0 )
 	{
-		MemMap *candidate = NULL;
+		capmix_MemMap *candidate = NULL;
 
 		//printf("%x %s\n", countdown, desc);
 
-		Addr min_offset = None;
+		capmix_Addr min_offset = None;
 		for( int i = 0; map[i].offset != None; i++ )
 		{
 			if( map[i].name == NULL ) continue;
@@ -366,7 +366,7 @@ ValueType addr_type(Addr addr)
 
 		countdown -= candidate->offset; // 0x120e
 		type = candidate->type;
-		map = (MemMap *)(candidate->area);
+		map = (capmix_MemMap *)(candidate->area);
 	}
 	if( map != NULL && map->name != NULL )
 	{

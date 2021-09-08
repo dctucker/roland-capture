@@ -5,16 +5,16 @@
 
 #define CCA(members...) (const char *[]){ members, 0 }
 
-typedef struct mixer_page {
+typedef struct capmix_mixer_page {
 	int rows;
 	int cols;
 	const char *name;
 	const char **headers;
 	const char **labels;
-	Addr controls[8][16];
-} MixerPage;
+	capmix_Addr controls[8][16];
+} capmix_MixerPage;
 
-enum mixer_pages {
+enum capmix_pages {
 	PInputA,
 	PInputB,
 	PInputC,
@@ -31,7 +31,6 @@ enum mixer_pages {
 	N_Pages,
 };
 
-void init_mixer_pages();
-void print_page(MixerPage *);
+void capmix_print_page(capmix_MixerPage *);
 
-extern MixerPage mixer_pages[];
+extern capmix_MixerPage capmix_mixer_pages[];

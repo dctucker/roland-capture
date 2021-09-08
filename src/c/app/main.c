@@ -10,27 +10,27 @@
 void listener(u8 *msgbuf, size_t msglen)
 {
 	int datalen = msglen - 13;
-	RolandSysex *sysex = parse_sysex(msgbuf, msglen); //addr, data = Roland.parse_sysex(message)
+	capmix_RolandSysex *sysex = capmix_parse_sysex(msgbuf, msglen); //addr, data = Roland.parse_sysex(message)
 	if( sysex == NULL ) return;
-	Addr addr = bytes_addr(sysex->addr);
+	capmix_Addr addr = capmix_bytes_addr(sysex->addr);
 	
 	printf("cmd=%x addr=%08x data=", sysex->cmd, addr);
 	for(int i=0; i < datalen; i++)
 		printf("%02x ", sysex->data[i]);
 
-	memory_set(addr, sysex->data, datalen); //self.app.mixer.memory.set(addr, data)
+	capmix_memory_set(addr, sysex->data, datalen); //self.app.mixer.memory.set(addr, data)
 	char name[256];
-	addr_name(addr, name); //name = self.mixer.memory.addr_name(addr)
+	capmix_addr_name(addr, name); //name = self.mixer.memory.addr_name(addr)
 	printf("name=%s ", name);
 
 	char value[256];
-	ValueType type = addr_type(addr);
-	printf("type=%s ", type_name(type));
+	capmix_ValueType type = capmix_addr_type(addr);
+	printf("type=%s ", capmix_type_name(type));
 	
-	Unpacked unpacked = unpack_type(type, sysex->data);
+	capmix_Unpacked unpacked = capmix_unpack_type(type, sysex->data);
 	printf("unpacked=0x%x ", unpacked.as_int);
 
-	format_unpacked(type, unpacked, value); // value = self.app.mixer.memory.get_formatted(addr)
+	capmix_format_unpacked(type, unpacked, value); // value = self.app.mixer.memory.get_formatted(addr)
 	printf("value=%s ", value);
 
 	/*
@@ -62,19 +62,19 @@ int main(int argc, const char **argv)
 
 	if( strlen(control) > 0 ) // non-interactive
 	{
-		Addr addr = name_addr(control);
+		capmix_Addr addr = capmix_name_addr(control);
 		if( addr == None )
 		{
 			fprintf(stderr, "Unknown control: %s\n", control);
 			return 1;
 		}
-		ValueType type = addr_type(addr);
-		int type_len = type_size(type);
+		capmix_ValueType type = capmix_addr_type(addr);
+		int type_len = capmix_type_size(type);
 
 		u8 sysex_buf[16];
 		if( strlen(value) == 0 ) // get
 		{
-			int sysex_len = make_receive_sysex(sysex_buf, addr, type_len);
+			int sysex_len = capmix_make_receive_sysex(sysex_buf, addr, type_len);
 
 			for(int i=0; i < sysex_len; i++)
 				printf("0x%02x ", sysex_buf[i]);
@@ -96,16 +96,16 @@ int main(int argc, const char **argv)
 		}
 		else // set
 		{
-			Unpacked unpacked = parse_type(type, value);
-			if( unpacked.as_int == Unset )
+			capmix_Unpacked unpacked = capmix_parse_type(type, value);
+			if( unpacked.as_int == capmix_Unset )
 			{
 				fprintf(stderr, "Unable to parse value: %s\n", value);
 				return 1;
 			}
 			char data[8];
-			pack_type(type, unpacked, data);
+			capmix_pack_type(type, unpacked, data);
 
-			int sysex_len = make_send_sysex(sysex_buf, addr, data, type_len);
+			int sysex_len = capmix_make_send_sysex(sysex_buf, addr, data, type_len);
 
 			int ok = setup_midi(); if( ! ok ) return 2;
 			send_midi(sysex_buf, sysex_len);

@@ -5,17 +5,17 @@
 
 #define debug(X) printf("%s\n", X);
 
-bool test_name_addr(Addr expected, const char *desc)
+bool test_name_addr(capmix_Addr expected, const char *desc)
 {
-	Addr actual = name_addr(desc);
+	capmix_Addr actual = capmix_name_addr(desc);
 	printf("%s -> 0x%08x  expected 0x%08x", desc, actual, expected);
 	return actual == expected;
 }
 
-bool test_addr_name(const char *expected, Addr addr)
+bool test_addr_name(const char *expected, capmix_Addr addr)
 {
 	char actual[256];
-	addr_name(addr, actual);
+	capmix_addr_name(addr, actual);
 	printf("0x%08x -> %s  expected %s", addr, actual, expected);
 	return strcmp(actual, expected) == 0;
 }
@@ -40,51 +40,51 @@ printf("hello\n");
 }
 */
 
-bool test_addr_type(ValueType expected, Addr addr)
+bool test_addr_type(capmix_ValueType expected, capmix_Addr addr)
 {
-	ValueType type = addr_type(addr);
-	const char *name = type_name(type);
-	const char *expected_name = type_name(expected);
+	capmix_ValueType type = capmix_addr_type(addr);
+	const char *name = capmix_type_name(type);
+	const char *expected_name = capmix_type_name(expected);
 	printf("addr_type %08x -> %s  expected %s", addr, name, expected_name);
 	return type == expected;
 }
 
-bool test_parse(Unpacked expected, ValueType type, const char *str)
+bool test_parse(capmix_Unpacked expected, capmix_ValueType type, const char *str)
 {
-	const char *name = type_name(type);
+	const char *name = capmix_type_name(type);
 	printf("parse_type %s %s -> ", name, str);
-	Unpacked unpacked = parse_type(type, str);
+	capmix_Unpacked unpacked = capmix_parse_type(type, str);
 	printf("0x%x / %f", unpacked.as_int, unpacked.as_float);
 	printf("  expected 0x%x", expected.as_int );
 	return expected.as_int == unpacked.as_int || expected.as_float == unpacked.as_float;
 }
 
-bool test_type(const char *expected, ValueType type, u8 *bytes)
+bool test_type(const char *expected, capmix_ValueType type, u8 *bytes)
 {
 	char str[256];
-	fixed fx = fixed_from_packed(type, bytes);
-	Unpacked unpacked = unpack_type(type, bytes);
-	format_unpacked(type, unpacked, str);
+	fixed fx = capmix_fixed_from_packed(type, bytes);
+	capmix_Unpacked unpacked = capmix_unpack_type(type, bytes);
+	capmix_format_unpacked(type, unpacked, str);
 	printf("typed value 0x%x -> %s  expected %s", fx, str, expected);
 	return strcmp(str, expected) == 0;
 }
 
-bool test_format(const char *expected, ValueType type, Unpacked unpacked)
+bool test_format(const char *expected, capmix_ValueType type, capmix_Unpacked unpacked)
 {
 	char str[256];
-	format_unpacked(type, unpacked, str);
-	printf("format %s 0x%x -> %s  expected %s", type_name(type), unpacked.as_int, str, expected);
+	capmix_format_unpacked(type, unpacked, str);
+	printf("format %s 0x%x -> %s  expected %s", capmix_type_name(type), unpacked.as_int, str, expected);
 	return strcmp(str, expected) == 0;
 }
 
-bool test_pack(const u8 *expected, ValueType type, Unpacked unpacked)
+bool test_pack(const u8 *expected, capmix_ValueType type, capmix_Unpacked unpacked)
 {
 	char str[256];
 	char buf[6];
-	pack_type(type, unpacked, buf);
-	format_unpacked(type, unpacked, str);
-	printf("unpacked %s %s -> ", type_name(type), str);
-	int size = type_size(type);
+	capmix_pack_type(type, unpacked, buf);
+	capmix_format_unpacked(type, unpacked, str);
+	printf("unpacked %s %s -> ", capmix_type_name(type), str);
+	int size = capmix_type_size(type);
 	for(int i=0; i < size; i++)
 		printf("0x%02x ", buf[i]);
 	printf("  expected ");
@@ -96,7 +96,7 @@ bool test_pack(const u8 *expected, ValueType type, Unpacked unpacked)
 bool test_volume_format(const char *expected, int fixed)
 {
 	char buf[6];
-	to_nibbles(fixed, 6, buf);
+	capmix_to_nibbles(fixed, 6, buf);
 	return test_type(expected, TVolume, buf);
 }
 
@@ -129,38 +129,38 @@ int main(int argc, char *argv[])
 	char buf_min[] = {0,0,0,0,0,0};
 	TEST( test_type("+0", TVolume, buf_zero ));
 
-	TEST( test_pack(buf_zero, TVolume, UnpackedFloat(0.0)) );
-	TEST( test_pack(buf_min, TVolume, UnpackedFloat(-inf)) );
+	TEST( test_pack(buf_zero, TVolume, capmix_UnpackedFloat(0.0)) );
+	TEST( test_pack(buf_min, TVolume, capmix_UnpackedFloat(-inf)) );
 
-	TEST( test_pack(buf_min, TByte, UnpackedInt(0)) );
-	TEST( test_pack(buf_zero, TByte, UnpackedInt(2)) );
+	TEST( test_pack(buf_min , TByte, capmix_UnpackedInt(0)) );
+	TEST( test_pack(buf_zero, TByte, capmix_UnpackedInt(2)) );
 
 	char pan_max[] = { 8,0,0,0 };
 	char pan_zero[] = { 4,0,0,0 };
-	TEST( test_pack(buf_min, TPan, UnpackedFloat(-100.)) );
-	TEST( test_pack(pan_zero, TPan, UnpackedFloat(0.)) );
-	TEST( test_pack(pan_max, TPan, UnpackedFloat(100.)) );
+	TEST( test_pack(buf_min, TPan, capmix_UnpackedFloat(-100.)) );
+	TEST( test_pack(pan_zero, TPan, capmix_UnpackedFloat(0.)) );
+	TEST( test_pack(pan_max, TPan, capmix_UnpackedFloat(100.)) );
 
 	char bool_true[] = { 1 };
 	char bool_false[] = { 0 };
-	TEST( test_pack(bool_true, TBoolean, UnpackedInt(1)) );
-	TEST( test_pack(bool_false, TBoolean, UnpackedInt(0)) );
+	TEST( test_pack(bool_true, TBoolean, capmix_UnpackedInt(1)) );
+	TEST( test_pack(bool_false, TBoolean, capmix_UnpackedInt(0)) );
 
 	char ratio_2_5[] = { 7 };
-	TEST( test_pack(ratio_2_5, TRatio, UnpackedInt(7)) );
+	TEST( test_pack(ratio_2_5, TRatio, capmix_UnpackedInt(7)) );
 
-	TEST( test_format("2.5", TRatio, UnpackedInt(7)) );
-	TEST( test_format("?", TRatio, UnpackedInt(120)) );
+	TEST( test_format("2.5", TRatio, capmix_UnpackedInt(7)) );
+	TEST( test_format("?", TRatio, capmix_UnpackedInt(120)) );
 
 	TEST( test_addr_type(TVolume, 0x00062108) );
 
-	TEST( test_parse(UnpackedFloat(1.0), TVolume, "+1.0") );
-	TEST( test_parse(UnpackedFloat(0.0), TVolume, "0") );
-	TEST( test_parse(UnpackedFloat(50.0), TPan, "R50") );
-	TEST( test_parse(UnpackedFloat(-50.0), TPan, "L50") );
-	TEST( test_parse(UnpackedFloat(0), TPan, "C") );
-	TEST( test_parse(UnpackedInt(Unset), TPan, "30") );
-	TEST( test_true(UnpackedInt(Unset).as_float != UnpackedFloat(0.0).as_float, "UnpackedInt(Unset) != UnpackedFloat(0.0)") );
+	TEST( test_parse(capmix_UnpackedFloat(1.0), TVolume, "+1.0") );
+	TEST( test_parse(capmix_UnpackedFloat(0.0), TVolume, "0") );
+	TEST( test_parse(capmix_UnpackedFloat(50.0), TPan, "R50") );
+	TEST( test_parse(capmix_UnpackedFloat(-50.0), TPan, "L50") );
+	TEST( test_parse(capmix_UnpackedFloat(0), TPan, "C") );
+	TEST( test_parse(capmix_UnpackedInt(capmix_Unset), TPan, "30") );
+	TEST( test_true(capmix_UnpackedInt(capmix_Unset).as_float != capmix_UnpackedFloat(0.0).as_float, "UnpackedInt(capmix_Unset) != UnpackedFloat(0.0)") );
 
 	printf("Done.\n\n"); return exit_code;
 }

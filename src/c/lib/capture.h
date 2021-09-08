@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include "types.h"
 
-#define DEF_MEMAREA(NAME) MemMap NAME ## _area[]
-#define MEMAREA(NAME) .area=(MemMap **)& NAME ## _area
+#define DEF_MEMAREA(NAME) capmix_MemMap NAME ## _area[]
+#define MEMAREA(NAME) .area=(capmix_MemMap **)& NAME ## _area
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 #define None (0xffffffff)
 #define ENDA { .offset=None }
@@ -22,15 +22,15 @@
 #define O_MON_C     0x00003000
 #define O_MON_D     0x00004000
 
-typedef struct memory_area {
-	Addr offset;
+typedef struct capmix_memory_area {
+	capmix_Addr offset;
+	capmix_ValueType type;
 	const char *name;
-	ValueType type;
-	struct memory_area **area;
-} MemMap;
+	struct capmix_memory_area **area;
+} capmix_MemMap;
 
-void      print_map(struct memory_area *map, char *prefix, Addr old_offset);
-MemMap *  lookup_map(MemMap *map, char *part);
-u32       name_addr(const char *desc);
-void      addr_name(Addr addr, char *desc);
-ValueType addr_type(Addr addr);
+void              capmix_print_map(capmix_MemMap *map, char *prefix, capmix_Addr old_offset);
+capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part);
+u32               capmix_name_addr(const char *desc);
+void              capmix_addr_name(capmix_Addr addr, char *desc);
+capmix_ValueType  capmix_addr_type(capmix_Addr addr);

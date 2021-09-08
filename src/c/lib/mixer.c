@@ -3,11 +3,11 @@
 #include "mixer.h"
 
 char input_page_controls[6][16][256];
-const char *channel_headers[]     = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
+const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
 const char *input_labels[]      = CCA( "stereo","mute","solo","reverb","pan","volume" );
 const char *output_labels[]     = CCA( "stereo","mute","solo","","pan","volume" );
 
-MixerPage mixer_pages[] = {
+capmix_MixerPage capmix_mixer_pages[] = {
 	[PInputA] = {
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.a",
@@ -179,54 +179,7 @@ MixerPage mixer_pages[] = {
 	},
 };
 
-/*
-void init_io_page(MixerPage *page)
-{
-	for(int row = 0; row < page->rows; row++)
-	{
-		for(int col = 0; col < page->cols; col++)
-		{
-			const char *control = page->labels[row];
-			if( col % 2 == 1 && strcmp(control,"stereo") == 0 ) continue;
-			if( strlen(control) == 0 ) continue;
-			if( col >= 2 && strcmp(control,"hi-z") == 0 ) continue;
-			sprintf( page->controls[row][col], "%s.channel.%d.%s", page->name, col+1, control );
-		}
-	}
-}
-
-void init_compressor_page(MixerPage *page)
-{
-	for(int row = 0; row < page->rows; row++)
-	{
-		for(int col = 0; col < page->cols; col++)
-		{
-			const char *control = page->labels[row];
-			if( strlen(control) == 0 ) continue;
-			sprintf( page->controls[row][col], "preamp.channel.%d.%s", col+1, control );
-		}
-	}
-}
-
-void init_mixer_pages()
-{
-	//for(int i = 0; i < N_Pages; i++)
-	//{
-	init_io_page(&mixer_pages[PInputA]);
-	init_io_page(&mixer_pages[PInputB]);
-	init_io_page(&mixer_pages[PInputC]);
-	init_io_page(&mixer_pages[PInputD]);
-	init_io_page(&mixer_pages[POutputA]);
-	init_io_page(&mixer_pages[POutputB]);
-	init_io_page(&mixer_pages[POutputC]);
-	init_io_page(&mixer_pages[POutputD]);
-	init_io_page(&mixer_pages[PPreamp]);
-	init_compressor_page(&mixer_pages[PCompressor]);
-	//}
-}
-*/
-
-void print_page(MixerPage *page)
+void capmix_print_page(capmix_MixerPage *page)
 {
 	printf("\n");
 	for(int col = 0; col < page->cols; col++)
@@ -238,7 +191,7 @@ void print_page(MixerPage *page)
 	{
 		for(int col = 0; col < page->cols; col++)
 		{
-			Addr control = page->controls[row][col];
+			capmix_Addr control = page->controls[row][col];
 			if( control == 0 )
 				printf("\t");
 			else
@@ -248,21 +201,3 @@ void print_page(MixerPage *page)
 	}
 	printf("\n");
 }
-
-/*
-const char *pages = {
-	"input_monitor.a": InputPage(self, 'a'),
-	"input_monitor.b": InputPage(self, 'b'),
-	"input_monitor.c": InputPage(self, 'c'),
-	"input_monitor.d": InputPage(self, 'd'),
-	"daw_monitor.a" : OutputPage(self, 'a'),
-	"daw_monitor.b" : OutputPage(self, 'b'),
-	"daw_monitor.c" : OutputPage(self, 'c'),
-	"daw_monitor.d" : OutputPage(self, 'd'),
-	"preamp"        : PreampPage(self),
-	"compressor"    : CompressorPage(self),
-	"line"          : LinePage(self),
-	"reverb"        : ReverbPage(self),
-	"patchbay"      : Patchbay(self),
-};
-*/
