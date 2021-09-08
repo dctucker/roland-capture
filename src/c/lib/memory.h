@@ -4,20 +4,20 @@
 #define N_MEMSECTION 32
 #define N_MEMBUF   2048
 
-typedef struct memory {
-	struct memory_section {
+typedef struct capmix_memory {
+	struct capmix_memory_section {
 		u8 buffer[N_MEMBUF];
 	} section[N_MEMSECTION];
-} Memory;
+} capmix_Memory;
 
 typedef struct memory_coord {
 	int section;
 	int offset;
-} Coord;
+} capmix_Coord;
 
-Coord addr_coord(Addr addr);
-void  memory_init();
-int   memory_erase(Addr addr, size_t len);
-u8 *  memory_get(Addr addr);
-int   memory_set(Addr addr, u8 *data, size_t len);
+capmix_Coord capmix_addr_coord(capmix_Addr addr);
+void         capmix_memory_init();
+int          capmix_memory_erase(capmix_Addr addr, size_t len);
+u8 *         capmix_memory_get(capmix_Addr addr);
+int          capmix_memory_set(capmix_Addr addr, u8 *data, size_t len);
 

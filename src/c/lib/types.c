@@ -2,7 +2,12 @@
 #include <string.h>
 #include "types.h"
 
-int type_sizes[] = {
+#define UNPACK(NAME) capmix_Unpacked capmix_unpack_##NAME(capmix_ValueType type, fixed value)
+#define PARSE(NAME)  capmix_Unpacked capmix_parse_##NAME (capmix_ValueType type, const char *str)
+#define FORMAT(NAME) void            capmix_format_##NAME(capmix_ValueType type, capmix_Unpacked unpacked, char *str)
+#define PACK(NAME)   void            capmix_pack_##NAME  (capmix_ValueType type, capmix_Unpacked unpacked, u8 *buf)
+
+int capmix_type_sizes[] = {
 	[TByte]        = 1,
 	[TBoolean]     = 1,
 	[TVolume]      = 6,
@@ -24,7 +29,7 @@ int type_sizes[] = {
 	[TReverbTime]  = 1,
 };
 
-ValueType type_parents[] = {
+capmix_ValueType capmix_type_parents[] = {
 	[TByte       ] = TValue   ,
 	[TBoolean    ] = TByte    ,
 	[TVolume     ] = TValue   ,
@@ -47,7 +52,7 @@ ValueType type_parents[] = {
 };
 
 #define TYPE_NAME(NAME) [ T##NAME ] = #NAME
-const char *type_names[] = {
+const char *capmix_type_names[] = {
 	TYPE_NAME(Byte),
 	TYPE_NAME(Boolean),
 	TYPE_NAME(Volume),
@@ -69,7 +74,7 @@ const char *type_names[] = {
 	TYPE_NAME(ReverbTime),
 };
 
-void to_nibbles(fixed val, int n, u8 *buf)
+void capmix_to_nibbles(fixed val, int n, u8 *buf)
 {
 	// convert 0x0123 to [ 0x00, 0x01, 0x02, 0x03 ]
 	fixed acc = val;
@@ -80,7 +85,7 @@ void to_nibbles(fixed val, int n, u8 *buf)
 	}
 }
 
-fixed nibbles_to_fixed(u8 *buf, int len)
+fixed capmix_nibbles_to_fixed(u8 *buf, int len)
 {
 	// convert [ 0x00, 0x01, 0x02, 0x03 ] to 0x0123
 	fixed acc = 0;
@@ -92,13 +97,13 @@ fixed nibbles_to_fixed(u8 *buf, int len)
 	return acc;
 }
 
-u32 db_to_fixed(f32 db)
+u32 capmix_db_to_fixed(f32 db)
 {
 	// convert -6.02 to 0x100000
 	return (int)(pow(10., db/20.) * 0x200000);
 }
 
-f32 fixed_to_db(u32 fixed)
+f32 capmix_fixed_to_db(u32 fixed)
 {
 	// convert 0x200000 to 0
 	f32 ratio = fixed / 2097152.;
@@ -106,30 +111,30 @@ f32 fixed_to_db(u32 fixed)
 	return 20.*log10(ratio);
 }
 
-f32 fixed_to_pan(fixed f)
+f32 capmix_fixed_to_pan(fixed f)
 {
 	return round(100. * (f - 16384.) / 16384.);
 }
 
-fixed pan_to_fixed(f32 pan)
+fixed capmix_pan_to_fixed(f32 pan)
 {
 	return (int)(16384. + (16384. * (pan / 100.))) & 0xffff;
 }
 
 UNPACK(byte)
 {
-	return UnpackedInt(value & 0x7f);
+	return capmix_UnpackedInt(value & 0x7f);
 }
 PARSE(byte)
 {
 	int value;
 	if( sscanf(str, "%d", &value) > 0 )
-		return UnpackedInt(value);
-	return UnpackedInt(Unset);
+		return capmix_UnpackedInt(value);
+	return capmix_UnpackedInt(capmix_Unset);
 }
 FORMAT(byte)
 {
-	if( unpacked.as_int == Unset )
+	if( unpacked.as_int == capmix_Unset )
 		sprintf(str, "?");
 	else
 		sprintf(str, "0x%02x", unpacked.as_int);
@@ -141,15 +146,15 @@ PACK(byte)
 
 UNPACK(boolean)
 {
-	return UnpackedInt(value == 0 ? 0 : 1);
+	return capmix_UnpackedInt(value == 0 ? 0 : 1);
 }
 PARSE(boolean)
 {
 	if( strcmp(str,"1") || strcasecmp(str, "on") || strcasecmp(str,"true") )
-		return UnpackedInt(1);
+		return capmix_UnpackedInt(1);
 	else if( strcmp(str, "0") || strcasecmp(str, "off") || strcasecmp(str,"false") )
-		return UnpackedInt(0);
-	return UnpackedInt(Unset);
+		return capmix_UnpackedInt(0);
+	return capmix_UnpackedInt(capmix_Unset);
 }
 FORMAT(boolean)
 {
@@ -165,15 +170,15 @@ PACK(boolean)
 
 UNPACK(volume)
 {
-	f32 db = fixed_to_db(value);
-	return UnpackedFloat(db);
+	f32 db = capmix_fixed_to_db(value);
+	return capmix_UnpackedFloat(db);
 }
 PARSE(volume)
 {
 	f32 value;
 	if( sscanf(str, "%f", &value) > 0 )
-		return UnpackedFloat(value);
-	return UnpackedInt(Unset);
+		return capmix_UnpackedFloat(value);
+	return capmix_UnpackedInt(capmix_Unset);
 }
 FORMAT(volume)
 {
@@ -182,17 +187,17 @@ FORMAT(volume)
 PACK(volume)
 {
 	f32 value = unpacked.as_float;
-	fixed fx = db_to_fixed(value);
+	fixed fx = capmix_db_to_fixed(value);
 	if( fx > 0x7fffff ) fx = 0x7fffff;
 	if( value != -inf && round(value) == 0 )
 		fx = 0x200000;
-	to_nibbles(fx, 6, buf);
+	capmix_to_nibbles(fx, 6, buf);
 }
 
 UNPACK(pan)
 {
-	f32 db = fixed_to_pan(value);
-	return UnpackedFloat(db);
+	f32 db = capmix_fixed_to_pan(value);
+	return capmix_UnpackedFloat(db);
 }
 PARSE(pan)
 {
@@ -201,14 +206,14 @@ PARSE(pan)
 	if( sscanf(str, "%c%f", &side, &value) > 0 )
 	{
 		if( side == 'l' || side == 'L' )
-			return UnpackedFloat(-value);
+			return capmix_UnpackedFloat(-value);
 		else if( side == 'r' || side == 'R' )
-			return UnpackedFloat(fabs(value));
+			return capmix_UnpackedFloat(fabs(value));
 		else if( side == 'c' || side == 'C' )
-			return UnpackedFloat(0);
-		return UnpackedInt(Unset);
+			return capmix_UnpackedFloat(0);
+		return capmix_UnpackedInt(capmix_Unset);
 	}
-	return UnpackedInt(Unset);
+	return capmix_UnpackedInt(capmix_Unset);
 }
 FORMAT(pan)
 {
@@ -223,25 +228,25 @@ FORMAT(pan)
 PACK(pan)
 {
 	f32 value = unpacked.as_float;
-	fixed fx = pan_to_fixed(value);
-	to_nibbles(fx, 4, buf);
+	fixed fx = capmix_pan_to_fixed(value);
+	capmix_to_nibbles(fx, 4, buf);
 }
 
-ScaledType scaled_types[] = {
-	[TSens]      = (ScaledType){ .min =   0. , .max =  58. , .step = 0.5 },
-	[TThreshold] = (ScaledType){ .min = -40. , .max =   0. , .step = 1. },
-	[TGain]      = (ScaledType){ .min = -40. , .max =  40. , .step = 1. },
-	[TGate]      = (ScaledType){ .min = -70. , .max = -20. , .step = 1. },
-	[TReverbTime]= (ScaledType){ .min =  0.1 , .max =  5.  , .step = 0.1 },
+capmix_ScaledType capmix_scaled_types[] = {
+	[TSens]      = (capmix_ScaledType){ .min =   1. , .max =  58. , .step = 0.5 },
+	[TThreshold] = (capmix_ScaledType){ .min = -40. , .max =   0. , .step = 1. },
+	[TGain]      = (capmix_ScaledType){ .min = -40. , .max =  40. , .step = 1. },
+	[TGate]      = (capmix_ScaledType){ .min = -70. , .max = -20. , .step = 1. },
+	[TReverbTime]= (capmix_ScaledType){ .min =  0.1 , .max =  5.  , .step = 0.1 },
 };
 UNPACK(scaled)
 {
-	ScaledType *scale = &scaled_types[type];
-	return UnpackedFloat(scale->min + scale->step * value);
+	capmix_ScaledType *scale = &capmix_scaled_types[type];
+	return capmix_UnpackedFloat(scale->min + scale->step * value);
 }
 FORMAT(scaled)
 {
-	ScaledType *scale = &scaled_types[type];
+	capmix_ScaledType *scale = &capmix_scaled_types[type];
 	if( scale->step == 1. )
 		sprintf(str, "%1.0f", unpacked.as_float);
 	else
@@ -249,16 +254,16 @@ FORMAT(scaled)
 }
 PACK(scaled)
 {
-	ScaledType *scale = &scaled_types[type];
+	capmix_ScaledType *scale = &capmix_scaled_types[type];
 	u8 value = (unpacked.as_float - scale->min) / scale->step;
 	*buf = value;
 }
 
-NameTable enum_names[] = {
-	[TRatio] = (NameTable) { .size = 14, .names = (const char *[]){
+capmix_NameTable capmix_enum_names[] = {
+	[TRatio] = (capmix_NameTable) { .size = 14, .names = (const char *[]){
 		"1", "1.12", "1.25", "1.4", "1.6", "1.8", "2", "2.5", "3.2", "4", "5.6", "8", "16", "inf",
 	}},
-	[TAttack] = (NameTable) { .size = 125, .names = (const char *[]){
+	[TAttack] = (capmix_NameTable) { .size = 125, .names = (const char *[]){
 		 "0.0",  "0.1",  "0.2",  "0.3",  "0.4",  "0.5",  "0.6",  "0.7",  "0.8",  "0.9",
 		 "1.0",  "1.1",  "1.2",  "1.3",  "1.4",  "1.5",  "1.6",  "1.7",  "1.8",  "1.9",
 		 "2.0",  "2.1",  "2.2",  "2.4",  "2.5",  "2.7",  "2.8",  "3.0",  "3.2",  "3.3",  "3.6",  "3.8",
@@ -271,7 +276,7 @@ NameTable enum_names[] = {
 		"237",  "250",  "266",  "280",  "300",  "315",  "335",  "355",  "376",  "400",  "422",  "450",
 		"473",  "500",  "530",  "560",  "600",  "630",  "670",  "710",  "750",  "800",
 	}},
-	[TRelease] = (NameTable) { .size = 125, .names = (const char *[]){
+	[TRelease] = (capmix_NameTable) { .size = 125, .names = (const char *[]){
 		 "0",      "1",    "2",    "3",    "4",    "5",    "6",    "7",    "8",    "9",
 		 "10",    "11",   "12",   "13",   "14",   "15",   "16",   "17",   "18",   "19",
 		 "20",    "21",   "22",   "24",   "25",   "27",   "28",   "30",   "32",   "33",   "36",   "38",
@@ -284,19 +289,19 @@ NameTable enum_names[] = {
 		"2370", "2500", "2660", "2800", "3000", "3150", "3350", "3550", "3760", "4000", "4220", "4500",
 		"4730", "5000", "5300", "5600", "6000", "6300", "6700", "7100", "7500", "8000",
 	}},
-	[TKnee] = (NameTable) { .size = 10, .names = (const char *[]){
+	[TKnee] = (capmix_NameTable) { .size = 10, .names = (const char *[]){
 		"HARD", "SOFT1", "SOFT2", "SOFT3", "SOFT4", "SOFT5", "SOFT6", "SOFT7", "SOFT8", "SOFT9",
 	}},
-	[TAttenuation] = (NameTable) { .size = 3, .names = (const char *[]){
+	[TAttenuation] = (capmix_NameTable) { .size = 3, .names = (const char *[]){
 		"-20","-10","+4",
 	}},
-	[TReverbType] = (NameTable) { .size = 6, .names = (const char *[]){
+	[TReverbType] = (capmix_NameTable) { .size = 6, .names = (const char *[]){
 		"off", "echo", "room", "small_hall", "large_hall", "plate",
 	}},
-	[TPreDelay] = (NameTable) { .size = 13, .names = (const char *[]){
+	[TPreDelay] = (capmix_NameTable) { .size = 13, .names = (const char *[]){
 		"0.0", "0.1", "0.2", "0.4", "0.8", "1.6", "3.2", "6.4", "10", "20", "40", "80", "160",
 	}},
-	[TPatch] = (NameTable) { .size = 9, .names = (const char *[]){
+	[TPatch] = (capmix_NameTable) { .size = 9, .names = (const char *[]){
 		"MIX A", "MIX B", "MIX C", "MIX D",
 		"WAVE 1/2", "WAVE 3/4", "WAVE 5/6", "WAVE 7/8", "WAVE 9/10",
 	}},
@@ -305,7 +310,7 @@ NameTable enum_names[] = {
 FORMAT(enum)
 {
 	u32 v = unpacked.as_int;
-	NameTable *names = &enum_names[type];
+	capmix_NameTable *names = &capmix_enum_names[type];
 	if( v >= names->size )
 	{
 		sprintf(str, "?");
@@ -316,59 +321,59 @@ FORMAT(enum)
 }
 //PACK(enum) // pack_byte
 
-Unpacked (*unpackers[NTypes])(ValueType, fixed) = {
-	[TByte]    = unpack_byte,
-	[TBoolean] = unpack_boolean,
-	[TVolume]  = unpack_volume,
-	[TPan]     = unpack_pan,
-	[TEnum]    = unpack_byte, //
-	[TScaled]  = unpack_scaled,
+capmix_Unpacked (*unpackers[NTypes])(capmix_ValueType, fixed) = {
+	[TByte]    = capmix_unpack_byte,
+	[TBoolean] = capmix_unpack_boolean,
+	[TVolume]  = capmix_unpack_volume,
+	[TPan]     = capmix_unpack_pan,
+	[TEnum]    = capmix_unpack_byte, //
+	[TScaled]  = capmix_unpack_scaled,
 };
-Unpacked (*parsers[NTypes])(ValueType, const char *) = {
-	[TByte]    = parse_byte,
-	[TBoolean] = parse_boolean,
-	[TVolume]  = parse_volume,
-	[TPan]     = parse_pan,
+capmix_Unpacked (*parsers[NTypes])(capmix_ValueType, const char *) = {
+	[TByte]    = capmix_parse_byte,
+	[TBoolean] = capmix_parse_boolean,
+	[TVolume]  = capmix_parse_volume,
+	[TPan]     = capmix_parse_pan,
 };
-void (*formatters[NTypes])(ValueType, Unpacked, char *) = {
-	[TByte]    = format_byte,
-	[TBoolean] = format_boolean,
-	[TVolume]  = format_volume,
-	[TPan]     = format_pan,
-	[TEnum]    = format_enum,
-	[TScaled]  = format_scaled,
+void (*formatters[NTypes])(capmix_ValueType, capmix_Unpacked, char *) = {
+	[TByte]    = capmix_format_byte,
+	[TBoolean] = capmix_format_boolean,
+	[TVolume]  = capmix_format_volume,
+	[TPan]     = capmix_format_pan,
+	[TEnum]    = capmix_format_enum,
+	[TScaled]  = capmix_format_scaled,
 };
-void (*packers[NTypes])(ValueType, Unpacked, u8 *) = {
-	[TByte]    = pack_byte,
-	[TBoolean] = pack_boolean,
-	[TVolume]  = pack_volume,
-	[TPan]     = pack_pan,
-	[TEnum]    = pack_byte, //
-	[TScaled]  = pack_scaled,
+void (*packers[NTypes])(capmix_ValueType, capmix_Unpacked, u8 *) = {
+	[TByte]    = capmix_pack_byte,
+	[TBoolean] = capmix_pack_boolean,
+	[TVolume]  = capmix_pack_volume,
+	[TPan]     = capmix_pack_pan,
+	[TEnum]    = capmix_pack_byte, //
+	[TScaled]  = capmix_pack_scaled,
 };
 
-Unpacked parse_type(ValueType type, const char *str)
+capmix_Unpacked capmix_parse_type(capmix_ValueType type, const char *str)
 {
-	ValueType t = type;
-	Unpacked (*parser)(ValueType, const char *) = parsers[t];
+	capmix_ValueType t = type;
+	capmix_Unpacked (*parser)(capmix_ValueType, const char *) = parsers[t];
 	while( parser == NULL )
 	{
-		t = type_parents[t];
+		t = capmix_type_parents[t];
 		if( t == TValue )
 		{
-			return UnpackedInt(Unset);
+			return capmix_UnpackedInt(capmix_Unset);
 		}
 		parser = parsers[t];
 	}
 	return parser(type, str);
 }
-void format_unpacked(ValueType type, Unpacked unpacked, char *str)
+void capmix_format_unpacked(capmix_ValueType type, capmix_Unpacked unpacked, char *str)
 {
-	ValueType t = type;
-	void (*formatter)(ValueType, Unpacked, char*) = formatters[t];
+	capmix_ValueType t = type;
+	void (*formatter)(capmix_ValueType, capmix_Unpacked, char*) = formatters[t];
 	while( formatter == NULL )
 	{
-		t = type_parents[t];
+		t = capmix_type_parents[t];
 		if( t == TValue )
 		{
 			str[0] = '\0';
@@ -378,47 +383,47 @@ void format_unpacked(ValueType type, Unpacked unpacked, char *str)
 	}
 	formatter(type, unpacked, str);
 }
-void format_type(ValueType type, u8 *data, char *str)
+void capmix_format_type(capmix_ValueType type, u8 *data, char *str)
 {
-	int len = type_sizes[type];
-	fixed fx = nibbles_to_fixed(data, len);
-	Unpacked unpacked = unpack_volume(type, fx);
-	format_unpacked(type, unpacked, str);
+	int len = capmix_type_size(type);
+	fixed fx = capmix_nibbles_to_fixed(data, len);
+	capmix_Unpacked unpacked = capmix_unpack_volume(type, fx);
+	capmix_format_unpacked(type, unpacked, str);
 }
 
-fixed fixed_from_packed(ValueType type, u8 *data)
+fixed capmix_fixed_from_packed(capmix_ValueType type, u8 *data)
 {
-	int len = type_sizes[type];
-	int fx = nibbles_to_fixed(data, len);
+	int len = capmix_type_size(type);
+	int fx = capmix_nibbles_to_fixed(data, len);
 	return fx;
 }
-Unpacked unpack_type(ValueType type, u8 *data)
+capmix_Unpacked capmix_unpack_type(capmix_ValueType type, u8 *data)
 {
-	ValueType t = type;
-	Unpacked (*unpacker)(ValueType, fixed) = unpackers[t];
+	capmix_ValueType t = type;
+	capmix_Unpacked (*unpacker)(capmix_ValueType, fixed) = unpackers[t];
 	while( unpacker == NULL )
 	{
-		t = type_parents[t];
+		t = capmix_type_parents[t];
 		if( type == TValue )
 		{
-			return UnpackedInt(Unset);
+			return capmix_UnpackedInt(capmix_Unset);
 		}
 		unpacker = unpackers[t];
 	}
-	fixed fx = fixed_from_packed(type, data);
+	fixed fx = capmix_fixed_from_packed(type, data);
 	return unpacker(type, fx);
 }
 
-void pack_type(ValueType type, Unpacked unpacked, u8 *buf)
+void capmix_pack_type(capmix_ValueType type, capmix_Unpacked unpacked, u8 *buf)
 {
-	ValueType t = type;
-	void (*packer)(ValueType, Unpacked, u8 *) = packers[t];
+	capmix_ValueType t = type;
+	void (*packer)(capmix_ValueType, capmix_Unpacked, u8 *) = packers[t];
 	while( packer == NULL )
 	{
-		t = type_parents[t];
+		t = capmix_type_parents[t];
 		if( type == TValue )
 		{
-			*buf = Unset;
+			*buf = capmix_Unset;
 			return;
 		}
 		packer = packers[t];
@@ -426,12 +431,12 @@ void pack_type(ValueType type, Unpacked unpacked, u8 *buf)
 	packer(type, unpacked, buf);
 }
 
-int type_size(ValueType type)
+int capmix_type_size(capmix_ValueType type)
 {
-	return type_sizes[type];
+	return capmix_type_size(type);
 }
 
-const char * type_name(ValueType type)
+const char * capmix_type_name(capmix_ValueType type)
 {
-	return type_names[type];
+	return capmix_type_names[type];
 }
