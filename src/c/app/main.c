@@ -5,25 +5,29 @@
 #include "lib/roland.h"
 #include "lib/capture.h"
 #include "lib/memory.h"
-#include "comm.h"
+#include "lib/comm.h"
 
 void capmix_listener(u8 *msgbuf, size_t msglen)
 {
-	int datalen = msglen - 13;
-	capmix_RolandSysex *sysex = capmix_parse_sysex(msgbuf, msglen); //addr, data = Roland.parse_sysex(message)
+	capmix_RolandSysex *sysex;
+	capmix_Addr         addr;
+
+	int  i;
+	char name[256];
+	char value[256];
+	int  datalen = msglen - 13;
+
+	sysex = capmix_parse_sysex(msgbuf, msglen); //addr, data = Roland.parse_sysex(message)
 	if( sysex == NULL ) return;
-	capmix_Addr addr = capmix_bytes_addr(sysex->addr);
+	addr = capmix_bytes_addr(sysex->addr);
 	
 	printf("cmd=%x addr=%08x data=", sysex->cmd, addr);
-	for(int i=0; i < datalen; i++)
-		printf("%02x ", sysex->data[i]);
+	for(i=0; i < datalen; i++) printf("%02x ", sysex->data[i]);
 
 	capmix_memory_set(addr, sysex->data, datalen); //self.app.mixer.memory.set(addr, data)
-	char name[256];
 	capmix_addr_name(addr, name); //name = self.mixer.memory.addr_name(addr)
 	printf("name=%s ", name);
 
-	char value[256];
 	capmix_ValueType type = capmix_addr_type(addr);
 	printf("type=%s ", capmix_type_name(type));
 	
@@ -62,54 +66,50 @@ int main(int argc, const char **argv)
 
 	if( strlen(control) > 0 ) // non-interactive
 	{
+		int type_len;
+		int sysex_len;
+		u8  sysex_buf[16];
+
 		capmix_Addr addr = capmix_name_addr(control);
-		if( addr == None )
+		if( addr == capmix_None )
 		{
 			fprintf(stderr, "Unknown control: %s\n", control);
 			return 1;
 		}
 		capmix_ValueType type = capmix_addr_type(addr);
-		int type_len = capmix_type_size(type);
-
-		u8 sysex_buf[16];
+		type_len = capmix_type_size(type);
 		if( strlen(value) == 0 ) // get
 		{
-			int sysex_len = capmix_make_receive_sysex(sysex_buf, addr, type_len);
+			sysex_len = capmix_make_receive_sysex(sysex_buf, addr, type_len);
 
-			for(int i=0; i < sysex_len; i++)
-				printf("0x%02x ", sysex_buf[i]);
+			for(int i=0; i < sysex_len; i++) printf("0x%02x ", sysex_buf[i]);
 			printf("\n");
 
-			int ok = capmix_setup_midi(); if( ! ok ) return 2;
+			if( ! capmix_setup_midi() ) return 2;
 			capmix_send_midi(sysex_buf, sysex_len);
 
 			int i = 0;
-			do
+			while( capmix_read_midi <= 0 && i++ < 50)
 			{
-				if( capmix_read_midi() > 0 )
-					break;
-				else
-					usleep(10000);
+				usleep(10000);
 			}
-			while( i++ < 50 );
 
 			capmix_cleanup_midi();
 			return 0;
 		}
 		else // set
 		{
+			char data[8];
 			capmix_Unpacked unpacked = capmix_parse_type(type, value);
 			if( unpacked.as_int == capmix_Unset )
 			{
 				fprintf(stderr, "Unable to parse value: %s\n", value);
 				return 1;
 			}
-			char data[8];
 			capmix_pack_type(type, unpacked, data);
+			sysex_len = capmix_make_send_sysex(sysex_buf, addr, data, type_len);
 
-			int sysex_len = capmix_make_send_sysex(sysex_buf, addr, data, type_len);
-
-			int ok = capmix_setup_midi(); if( ! ok ) return 2;
+			if( ! capmix_setup_midi() ) return 2;
 			capmix_send_midi(sysex_buf, sysex_len);
 			capmix_read_midi();
 		}

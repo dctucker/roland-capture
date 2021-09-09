@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include "types.h"
 
-#define None (0xffffffff)
+#define capmix_None (0xffffffff)
 
 #define O_PATCHBAY  0x00030000
 #define O_REVERB    0x00040000
@@ -51,4 +51,4 @@ u32               capmix_name_addr(const char *desc);
 void              capmix_addr_name(capmix_Addr addr, char *desc);
 capmix_ValueType  capmix_addr_type(capmix_Addr addr);
 
-extern capmix_MemMap memory_map[];
+extern const capmix_MemMap memory_map[];
