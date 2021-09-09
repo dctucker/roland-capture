@@ -1,6 +1,6 @@
 IDIR = .
 ODIR = obj
-CFLAGS=-I$(IDIR) -g
+CFLAGS=-I$(IDIR) -g -save-temps
 LIBS=-lasound -lm
 
 OBJ = app/main.o app/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o lib/mixer.o

@@ -3,12 +3,7 @@
 #include <stddef.h>
 #include "types.h"
 
-#define DEF_MEMAREA(NAME) capmix_MemMap NAME ## _area[]
-#define MEMAREA(NAME) .area=(capmix_MemMap **)& NAME ## _area
-#define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 #define None (0xffffffff)
-#define ENDA { .offset=None }
-#define MEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = #NAME, .offset = OFFSET, .type = T##TYPE }
 
 #define O_PATCHBAY  0x00030000
 #define O_REVERB    0x00040000
@@ -25,12 +20,35 @@
 typedef struct capmix_memory_area {
 	capmix_Addr offset;
 	capmix_ValueType type;
-	const char *name;
-	struct capmix_memory_area **area;
+	const char *const name;
+	const struct capmix_memory_area **const area;
 } capmix_MemMap;
+
+struct capmix_str {
+	const char
+		*const top_map[16],
+		*const patchbay[5],
+		*const type,
+		*const reverb_types[6],
+		*const preamp_params[15],
+		*const reverb_params[3],
+		*const monitors[4],
+		*const channel,
+		*const channels[16],
+		*const channel_params[15],
+		*const master,
+		*const master_channels[2],
+		*const left_right[2],
+		*const master_params[2],
+		*const reverb_return,
+		*const link
+	;
+};
 
 void              capmix_print_map(capmix_MemMap *map, char *prefix, capmix_Addr old_offset);
 capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part);
 u32               capmix_name_addr(const char *desc);
 void              capmix_addr_name(capmix_Addr addr, char *desc);
 capmix_ValueType  capmix_addr_type(capmix_Addr addr);
+
+extern capmix_MemMap memory_map[];

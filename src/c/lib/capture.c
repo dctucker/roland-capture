@@ -3,203 +3,282 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "capture.h"
+#include "strings.h"
+
+#define DEF_MEMAREA(NAME) capmix_MemMap NAME ## _area[]
+#define MEMAREA(NAME) .area=(const capmix_MemMap **const)& NAME ## _area
+#define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
+#define ENDA { .offset=None }
+#define MEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
+#define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] ={ .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE }
+
+const struct capmix_str capmix_str = {
+	.top_map = {
+		[3] = "patchbay",
+		[4] = "reverb",
+		[5] = "preamp",
+		[6] = "input_monitor",
+		[7] = "daw_monitor",
+		[8] = "master",
+	},
+	.patchbay = { "1-2", "3-4", "5-6", "7-8", "9-10", },
+	.type = "type",
+	.reverb_types = {
+		[1] = "echo",
+		[2] = "room",
+		[3] = "small_hall",
+		[4] = "large_hall",
+		[5] = "plate",
+	},
+	.reverb_params = {
+		[0x01] = "pre_delay" ,
+		[0x02] = "time"      ,
+	},
+	.preamp_params = {
+		[0x0] = "+48"       ,
+		[0x1] = "lo-cut"    ,
+		[0x2] = "phase"     ,
+		[0x3] = "hi-z"      ,
+		[0x4] = "sens"      ,
+		[0x5] = "stereo"    ,
+		[0x6] = "bypass"    ,
+		[0x7] = "gate"      ,
+		[0x8] = "attack"    ,
+		[0x9] = "release"   ,
+		[0xa] = "threshold" ,
+		[0xb] = "ratio"     ,
+		[0xc] = "gain"      ,
+		[0xd] = "knee"      ,
+	},
+	.monitors = { "a","b","c","d", },
+	.channel = "channel",
+	.channels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", },
+	.channel_params = {
+		[0x0] = "stereo",
+		[0x1] = "attenuation",
+		[0x2] = "solo",
+		[0x3] = "mute",
+		[0x4] = "pan",
+		[0x8] = "volume",
+		[0xe] = "reverb",
+	},
+	.master = "master",
+	.master_channels = {
+		"direct_monitor",
+		"daw_monitor",
+	},
+	.left_right = {
+		[0x0] = "left",
+		[0x1] = "right",
+	},
+	.master_params = {
+		[0x0] = "stereo",
+		[0x1] = "volume",
+	},
+	.reverb_return = "reverb_return",
+	.link = "link",
+};
 
 DEF_MEMAREA(patchbay) = {
-	MEMNODE(0x0, Patch, 1-2),
-	MEMNODE(0x1, Patch, 3-4),
-	MEMNODE(0x2, Patch, 5-6),
-	MEMNODE(0x3, Patch, 7-8),
-	MEMNODE(0x4, Patch, 9-10),
+	CMEMNODE(0x0, Patch, patchbay),
+	CMEMNODE(0x1, Patch, patchbay),
+	CMEMNODE(0x2, Patch, patchbay),
+	CMEMNODE(0x3, Patch, patchbay),
+	CMEMNODE(0x4, Patch, patchbay),
 	ENDA
 };
 
 DEF_MEMAREA(reverb_params) = {
-	MEMNODE(0x1, PreDelay, pre_delay),
-	MEMNODE(0x2, ReverbTime, time),
+	CMEMNODE(0x1, PreDelay,   reverb_params),
+	CMEMNODE(0x2, ReverbTime, reverb_params),
 	ENDA
 };
 DEF_MEMAREA(reverb) = {
-	MEMNODE(0x0, ReverbType, type),
-	[0x1] = { .offset=0x0100, .name="echo",       MEMAREA(reverb_params) },
-	[0x2] = { .offset=0x0200, .name="room",       MEMAREA(reverb_params) },
-	[0x3] = { .offset=0x0300, .name="small_hall", MEMAREA(reverb_params) },
-	[0x4] = { .offset=0x0400, .name="large_hall", MEMAREA(reverb_params) },
-	[0x5] = { .offset=0x0500, .name="plate",      MEMAREA(reverb_params) },
+	MEMNODE(0x0, ReverbType, capmix_str.type),
+	[0x1] = { .offset=0x0100, .name=capmix_str.reverb_types[0x1], MEMAREA(reverb_params) },
+	[0x2] = { .offset=0x0200, .name=capmix_str.reverb_types[0x2], MEMAREA(reverb_params) },
+	[0x3] = { .offset=0x0300, .name=capmix_str.reverb_types[0x3], MEMAREA(reverb_params) },
+	[0x4] = { .offset=0x0400, .name=capmix_str.reverb_types[0x4], MEMAREA(reverb_params) },
+	[0x5] = { .offset=0x0500, .name=capmix_str.reverb_types[0x5], MEMAREA(reverb_params) },
 	ENDA
 };
 
 DEF_MEMAREA(mic_preamp_params) = {
-	MEMNODE(0x0, Boolean   , +48       ),
-	MEMNODE(0x1, Boolean   , lo-cut    ),
-	MEMNODE(0x2, Boolean   , phase     ),
-	MEMNODE(0x3, Boolean   , hi-z      ),
-	MEMNODE(0x4, Sens      , sens      ),
-	MEMNODE(0x5, Boolean   , stereo    ),
-	MEMNODE(0x6, Boolean   , bypass    ),
-	MEMNODE(0x7, Gate      , gate      ),
-	MEMNODE(0x8, Attack    , attack    ),
-	MEMNODE(0x9, Release   , release   ),
-	MEMNODE(0xa, Threshold , threshold ),
-	MEMNODE(0xb, Ratio     , ratio     ),
-	MEMNODE(0xc, Gain      , gain      ),
-	MEMNODE(0xd, Knee      , knee      ),
+	CMEMNODE(0x0, Boolean  , preamp_params),
+	CMEMNODE(0x1, Boolean  , preamp_params),
+	CMEMNODE(0x2, Boolean  , preamp_params),
+	CMEMNODE(0x3, Boolean  , preamp_params),
+	CMEMNODE(0x4, Sens     , preamp_params),
+	CMEMNODE(0x5, Boolean  , preamp_params),
+	CMEMNODE(0x6, Boolean  , preamp_params),
+	CMEMNODE(0x7, Gate     , preamp_params),
+	CMEMNODE(0x8, Attack   , preamp_params),
+	CMEMNODE(0x9, Release  , preamp_params),
+	CMEMNODE(0xa, Threshold, preamp_params),
+	CMEMNODE(0xb, Ratio    , preamp_params),
+	CMEMNODE(0xc, Gain     , preamp_params),
+	CMEMNODE(0xd, Knee     , preamp_params),
 	ENDA
 };
 DEF_MEMAREA(preamp_params) = {
-	MEMNODE(0x0, Boolean   , +48       ),
-	MEMNODE(0x1, Boolean   , lo-cut    ),
-	MEMNODE(0x2, Boolean   , phase     ),
-	MEMNODE(0x4, Sens      , sens      ),
-	MEMNODE(0x5, Boolean   , stereo    ),
-	MEMNODE(0x6, Boolean   , bypass    ),
-	MEMNODE(0x7, Gate      , gate      ),
-	MEMNODE(0x8, Attack    , attack    ),
-	MEMNODE(0x9, Release   , release   ),
-	MEMNODE(0xa, Threshold , threshold ),
-	MEMNODE(0xb, Ratio     , ratio     ),
-	MEMNODE(0xc, Gain      , gain      ),
-	MEMNODE(0xd, Knee      , knee      ),
+	CMEMNODE(0x0, Boolean   , preamp_params),
+	CMEMNODE(0x1, Boolean   , preamp_params),
+	CMEMNODE(0x2, Boolean   , preamp_params),
+	CMEMNODE(0x4, Sens      , preamp_params),
+	CMEMNODE(0x5, Boolean   , preamp_params),
+	CMEMNODE(0x6, Boolean   , preamp_params),
+	CMEMNODE(0x7, Gate      , preamp_params),
+	CMEMNODE(0x8, Attack    , preamp_params),
+	CMEMNODE(0x9, Release   , preamp_params),
+	CMEMNODE(0xa, Threshold , preamp_params),
+	CMEMNODE(0xb, Ratio     , preamp_params),
+	CMEMNODE(0xc, Gain      , preamp_params),
+	CMEMNODE(0xd, Knee      , preamp_params),
 	ENDA
 };
+#define PREAMP(OFFSET, AREA) [OFFSET>>8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>>8], MEMAREA(AREA) }
 DEF_MEMAREA(preamp_channels) = {
-	[0x0] = { .offset=0x000, .name = "1",  MEMAREA(mic_preamp_params) },
-	[0x1] = { .offset=0x100, .name = "2",  MEMAREA(mic_preamp_params) },
-	[0x2] = { .offset=0x200, .name = "3",  MEMAREA(preamp_params) },
-	[0x3] = { .offset=0x300, .name = "4",  MEMAREA(preamp_params) },
-	[0x4] = { .offset=0x400, .name = "5",  MEMAREA(preamp_params) },
-	[0x5] = { .offset=0x500, .name = "6",  MEMAREA(preamp_params) },
-	[0x6] = { .offset=0x600, .name = "7",  MEMAREA(preamp_params) },
-	[0x7] = { .offset=0x700, .name = "8",  MEMAREA(preamp_params) },
-	[0x8] = { .offset=0x800, .name = "9",  MEMAREA(preamp_params) },
-	[0x9] = { .offset=0x900, .name = "10", MEMAREA(preamp_params) },
-	[0xa] = { .offset=0xa00, .name = "11", MEMAREA(preamp_params) },
-	[0xb] = { .offset=0xb00, .name = "12", MEMAREA(preamp_params) },
+	PREAMP(0x000, mic_preamp_params),
+	PREAMP(0x100, mic_preamp_params),
+	PREAMP(0x200, preamp_params),
+	PREAMP(0x300, preamp_params),
+	PREAMP(0x400, preamp_params),
+	PREAMP(0x500, preamp_params),
+	PREAMP(0x600, preamp_params),
+	PREAMP(0x700, preamp_params),
+	PREAMP(0x800, preamp_params),
+	PREAMP(0x900, preamp_params),
+	PREAMP(0xa00, preamp_params),
+	PREAMP(0xb00, preamp_params),
 	ENDA
 };
-DEF_MEMAREA(preamp) = { { .name="channel", MEMAREA(preamp_channels) }, ENDA };
+DEF_MEMAREA(preamp) = { { .name=capmix_str.channel, MEMAREA(preamp_channels) }, ENDA };
 
 DEF_MEMAREA(line_params) = {
-	MEMNODE(0x0, Boolean    , stereo),
-	MEMNODE(0x1, Attenuation, attenuation),
+	MEMNODE(0x0, Boolean    , capmix_str.channel_params[0]),
+	MEMNODE(0x1, Attenuation, capmix_str.channel_params[1]),
 	ENDA
 };
 DEF_MEMAREA(line_channels) = {
-	[0x0] = { .offset=0x000, .name = "13", MEMAREA(line_params) },
-	[0x1] = { .offset=0x100, .name = "14", MEMAREA(line_params) },
-	[0x2] = { .offset=0x200, .name = "15", MEMAREA(line_params) },
-	[0x3] = { .offset=0x300, .name = "16", MEMAREA(line_params) },
+	[0x0] = { .offset=0x000, .name = capmix_str.channels[12], MEMAREA(line_params) },
+	[0x1] = { .offset=0x100, .name = capmix_str.channels[13], MEMAREA(line_params) },
+	[0x2] = { .offset=0x200, .name = capmix_str.channels[14], MEMAREA(line_params) },
+	[0x3] = { .offset=0x300, .name = capmix_str.channels[15], MEMAREA(line_params) },
 	ENDA
 };
-DEF_MEMAREA(line) = { { .name="channel", MEMAREA(line_channels) }, ENDA };
+DEF_MEMAREA(line) = { { .name=capmix_str.channel, MEMAREA(line_channels) }, ENDA };
 
 DEF_MEMAREA(input) = {
-	MEMNODE(0x0, Boolean, stereo),
-	MEMNODE(0x2, Boolean, solo),
-	MEMNODE(0x3, Boolean, mute),
-	MEMNODE(0x4, Pan    , pan),
-	MEMNODE(0x8, Volume , volume),
-	MEMNODE(0xe, Volume , reverb),
+	MEMNODE(0x0, Boolean, capmix_str.channel_params[0x0]),
+	MEMNODE(0x2, Boolean, capmix_str.channel_params[0x2]),
+	MEMNODE(0x3, Boolean, capmix_str.channel_params[0x3]),
+	MEMNODE(0x4, Pan    , capmix_str.channel_params[0x4]),
+	MEMNODE(0x8, Volume , capmix_str.channel_params[0x8]),
+	MEMNODE(0xe, Volume , capmix_str.channel_params[0xe]),
 	ENDA
 };
+
+#define CHANNEL(OFFSET, AREA) [OFFSET>>8] = { .offset=OFFSET, .name=capmix_str.channels[OFFSET>>8], MEMAREA(AREA) }
 DEF_MEMAREA(input_channels) = {
-	[0x0] = { .offset=0x000, .name="1",  MEMAREA(input) },
-	[0x1] = { .offset=0x100, .name="2",  MEMAREA(input) },
-	[0x2] = { .offset=0x200, .name="3",  MEMAREA(input) },
-	[0x3] = { .offset=0x300, .name="4",  MEMAREA(input) },
-	[0x4] = { .offset=0x400, .name="5",  MEMAREA(input) },
-	[0x5] = { .offset=0x500, .name="6",  MEMAREA(input) },
-	[0x6] = { .offset=0x600, .name="7",  MEMAREA(input) },
-	[0x7] = { .offset=0x700, .name="8",  MEMAREA(input) },
-	[0x8] = { .offset=0x800, .name="9",  MEMAREA(input) },
-	[0x9] = { .offset=0x900, .name="10", MEMAREA(input) },
-	[0xa] = { .offset=0xa00, .name="11", MEMAREA(input) },
-	[0xb] = { .offset=0xb00, .name="12", MEMAREA(input) },
-	[0xc] = { .offset=0xc00, .name="13", MEMAREA(input) },
-	[0xd] = { .offset=0xd00, .name="14", MEMAREA(input) },
-	[0xe] = { .offset=0xe00, .name="15", MEMAREA(input) },
-	[0xf] = { .offset=0xf00, .name="16", MEMAREA(input) },
+	CHANNEL(0x000, input),
+	CHANNEL(0x100, input),
+	CHANNEL(0x200, input),
+	CHANNEL(0x300, input),
+	CHANNEL(0x400, input),
+	CHANNEL(0x500, input),
+	CHANNEL(0x600, input),
+	CHANNEL(0x700, input),
+	CHANNEL(0x800, input),
+	CHANNEL(0x900, input),
+	CHANNEL(0xa00, input),
+	CHANNEL(0xb00, input),
+	CHANNEL(0xc00, input),
+	CHANNEL(0xd00, input),
+	CHANNEL(0xe00, input),
+	CHANNEL(0xf00, input),
 	ENDA
 };
-DEF_MEMAREA(input_channel) = { { .name="channel", MEMAREA(input_channels) }, ENDA };
+DEF_MEMAREA(input_channel) = { { .name=capmix_str.channel, MEMAREA(input_channels) }, ENDA };
+#define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name=capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
 DEF_MEMAREA(input_monitor) = {
-	[0x0] = { .offset=0x0000, .name="a", MEMAREA(input_channel) },
-	[0x1] = { .offset=0x1000, .name="b", MEMAREA(input_channel) },
-	[0x2] = { .offset=0x2000, .name="c", MEMAREA(input_channel) },
-	[0x3] = { .offset=0x3000, .name="d", MEMAREA(input_channel) },
+	MONITOR(0x0000, input_channel),
+	MONITOR(0x1000, input_channel),
+	MONITOR(0x2000, input_channel),
+	MONITOR(0x3000, input_channel),
 	ENDA
 };
 
 DEF_MEMAREA(daw) = {
-	MEMNODE(0x0, Boolean, stereo),
-	MEMNODE(0x2, Boolean, solo),
-	MEMNODE(0x3, Boolean, mute),
-	MEMNODE(0x4, Pan    , pan),
-	MEMNODE(0x8, Volume , volume),
+	MEMNODE(0x0, Boolean, capmix_str.channel_params[0x0]),
+	MEMNODE(0x2, Boolean, capmix_str.channel_params[0x2]),
+	MEMNODE(0x3, Boolean, capmix_str.channel_params[0x3]),
+	MEMNODE(0x4, Pan    , capmix_str.channel_params[0x4]),
+	MEMNODE(0x8, Volume , capmix_str.channel_params[0x8]),
 	ENDA
 };
 DEF_MEMAREA(daw_channels) = {
-	[0x0] = { .offset=0x000, .name="1",  MEMAREA(daw) },
-	[0x1] = { .offset=0x100, .name="2",  MEMAREA(daw) },
-	[0x2] = { .offset=0x200, .name="3",  MEMAREA(daw) },
-	[0x3] = { .offset=0x300, .name="4",  MEMAREA(daw) },
-	[0x4] = { .offset=0x400, .name="5",  MEMAREA(daw) },
-	[0x5] = { .offset=0x500, .name="6",  MEMAREA(daw) },
-	[0x6] = { .offset=0x600, .name="7",  MEMAREA(daw) },
-	[0x7] = { .offset=0x700, .name="8",  MEMAREA(daw) },
-	[0x8] = { .offset=0x800, .name="9",  MEMAREA(daw) },
-	[0x9] = { .offset=0x900, .name="10", MEMAREA(daw) },
+	CHANNEL(0x000, daw),
+	CHANNEL(0x100, daw),
+	CHANNEL(0x200, daw),
+	CHANNEL(0x300, daw),
+	CHANNEL(0x400, daw),
+	CHANNEL(0x500, daw),
+	CHANNEL(0x600, daw),
+	CHANNEL(0x700, daw),
+	CHANNEL(0x800, daw),
+	CHANNEL(0x900, daw),
 	ENDA
 };
-DEF_MEMAREA(daw_channel) = { { .name="channel", MEMAREA(daw_channels) }, ENDA };
+DEF_MEMAREA(daw_channel) = { { .name=capmix_str.channel, MEMAREA(daw_channels) }, ENDA };
 DEF_MEMAREA(daw_monitor) = {
-	[0x0] = { .offset=0x0000, .name="a", MEMAREA(daw_channel) },
-	[0x1] = { .offset=0x1000, .name="b", MEMAREA(daw_channel) },
-	[0x2] = { .offset=0x2000, .name="c", MEMAREA(daw_channel) },
-	[0x3] = { .offset=0x3000, .name="d", MEMAREA(daw_channel) },
+	MONITOR(0x0000, daw_channel),
+	MONITOR(0x1000, daw_channel),
+	MONITOR(0x2000, daw_channel),
+	MONITOR(0x3000, daw_channel),
 	ENDA
 };
 
 DEF_MEMAREA(master_params) = {
-	MEMNODE(0x0, Boolean, stereo),
-	MEMNODE(0x1, Boolean, volume),
+	MEMNODE(0x0, Boolean, capmix_str.master_params[0]),
+	MEMNODE(0x1, Boolean, capmix_str.master_params[1]),
 	ENDA
 };
 DEF_MEMAREA(direct_monitor_a) = {
-	{ .offset=0x0000, .name="left"  , MEMAREA(master_params) },
-	{ .offset=0x0100, .name="right" , MEMAREA(master_params) },
-	{ .offset=0x0007, .name="reverb_return", .type=TVolume },
-	{ .offset=0x000d, .name="link"         , .type=TBoolean },
+	{ .offset=0x0000, .name=capmix_str.left_right[0], MEMAREA(master_params) },
+	{ .offset=0x0100, .name=capmix_str.left_right[1], MEMAREA(master_params) },
+	{ .offset=0x0007, .name=capmix_str.reverb_return, .type=TVolume },
+	{ .offset=0x000d, .name=capmix_str.link, .type=TBoolean },
 	ENDA
 };
 DEF_MEMAREA(direct_monitor) = {
-	{ .offset=0x0000, .name="left" ,  MEMAREA(master_params) },
-	{ .offset=0x0100, .name="right",  MEMAREA(master_params) },
-	{ .offset=0x000d, .name="link" },
+	{ .offset=0x0000, .name=capmix_str.left_right[1],  MEMAREA(master_params) },
+	{ .offset=0x0100, .name=capmix_str.left_right[0],  MEMAREA(master_params) },
+	{ .offset=0x000d, .name=capmix_str.link },
 	ENDA
 };
 DEF_MEMAREA(master_direct_monitors) = {
-	[0x0] = { .offset=0x0000, .name="a", MEMAREA(direct_monitor_a) },
-	[0x1] = { .offset=0x1000, .name="b", MEMAREA(direct_monitor) },
-	[0x2] = { .offset=0x2000, .name="c", MEMAREA(direct_monitor) },
-	[0x3] = { .offset=0x3000, .name="d", MEMAREA(direct_monitor) },
+	[0x0] = { .offset=0x0000, .name=capmix_str.monitors[0], MEMAREA(direct_monitor_a) },
+	[0x1] = { .offset=0x1000, .name=capmix_str.monitors[1], MEMAREA(direct_monitor) },
+	[0x2] = { .offset=0x2000, .name=capmix_str.monitors[2], MEMAREA(direct_monitor) },
+	[0x3] = { .offset=0x3000, .name=capmix_str.monitors[3], MEMAREA(direct_monitor) },
 	ENDA
 };
 DEF_MEMAREA(daw_monitor_lr) = {
-	[0x0] = { .offset=0x0000, .name = "left",  MEMAREA(master_params) },
-	[0x1] = { .offset=0x0100, .name = "right", MEMAREA(master_params) },
+	[0x0] = { .offset=0x0000, .name = capmix_str.left_right[0],  MEMAREA(master_params) },
+	[0x1] = { .offset=0x0100, .name = capmix_str.left_right[1], MEMAREA(master_params) },
 	ENDA
 };
 DEF_MEMAREA(master_daw_monitors) = {
-	[0x0] = { .offset=0x0000, .name="a", MEMAREA(daw_monitor_lr) },
-	[0x1] = { .offset=0x1000, .name="b", MEMAREA(daw_monitor_lr) },
-	[0x2] = { .offset=0x2000, .name="c", MEMAREA(daw_monitor_lr) },
-	[0x3] = { .offset=0x3000, .name="d", MEMAREA(daw_monitor_lr) },
+	[0x0] = { .offset=0x0000, .name=capmix_str.monitors[0], MEMAREA(daw_monitor_lr) },
+	[0x1] = { .offset=0x1000, .name=capmix_str.monitors[1], MEMAREA(daw_monitor_lr) },
+	[0x2] = { .offset=0x2000, .name=capmix_str.monitors[2], MEMAREA(daw_monitor_lr) },
+	[0x3] = { .offset=0x3000, .name=capmix_str.monitors[3], MEMAREA(daw_monitor_lr) },
 	ENDA
 };
 
 DEF_MEMAREA(master) = {
-	[0x0] = { .offset=0x00000000, .name="direct_monitor", MEMAREA(master_direct_monitors) },
-	[0x1] = { .offset=0x00010000, .name="daw_monitor",    MEMAREA(master_daw_monitors) },
+	[0x0] = { .offset=0x00000000, .name=capmix_str.master_channels[0], MEMAREA(master_direct_monitors) },
+	[0x1] = { .offset=0x00010000, .name=capmix_str.master_channels[1], MEMAREA(master_daw_monitors) },
 	ENDA
 };
 
