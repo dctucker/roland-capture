@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #define TEST(x) printf("\033[s  "); if( !(x) ) fail(); else pass()
+#define None capmix_None
 
 int exit_code = 0;
 

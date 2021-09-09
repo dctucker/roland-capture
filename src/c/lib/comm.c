@@ -1,4 +1,4 @@
-#include "comm.h"
+#include "lib/comm.h"
 #include <alsa/asoundlib.h>
 
 snd_rawmidi_t *midi_in;

@@ -7,7 +7,7 @@ const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9","10",
 const char *input_labels[]      = CCA( "stereo","mute","solo","reverb","pan","volume" );
 const char *output_labels[]     = CCA( "stereo","mute","solo","","pan","volume" );
 
-capmix_MixerPage capmix_mixer_pages[] = {
+const capmix_MixerPage capmix_mixer_pages[] = {
 	[PInputA] = {
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.a",
@@ -179,7 +179,7 @@ capmix_MixerPage capmix_mixer_pages[] = {
 	},
 };
 
-void capmix_print_page(capmix_MixerPage *page)
+void capmix_print_page(const capmix_MixerPage *page)
 {
 	printf("\n");
 	for(int col = 0; col < page->cols; col++)

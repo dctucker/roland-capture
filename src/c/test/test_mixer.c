@@ -3,7 +3,7 @@
 #include "lib/mixer.h"
 #include "test.h"
 
-bool test_mixer(capmix_MixerPage *mixer_page)
+bool test_mixer(const capmix_MixerPage *mixer_page)
 {
 	//char *control = input_pages[0].controls[0][1];
 	printf("# %s", mixer_page->name);
@@ -15,7 +15,7 @@ bool test_mixers()
 {
 	for(int i = 0; i < N_Pages-1; i++)
 	{
-		capmix_MixerPage *mixer_page = &capmix_mixer_pages[i];
+		const capmix_MixerPage *mixer_page = &capmix_mixer_pages[i];
 		TEST( test_mixer(mixer_page) );
 		printf("\n");
 		for(int i=0; i <= mixer_page->rows; i++)
