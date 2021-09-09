@@ -433,7 +433,7 @@ void capmix_pack_type(capmix_ValueType type, capmix_Unpacked unpacked, u8 *buf)
 
 int capmix_type_size(capmix_ValueType type)
 {
-	return capmix_type_size(type);
+	return capmix_type_sizes[type];
 }
 
 const char * capmix_type_name(capmix_ValueType type)
