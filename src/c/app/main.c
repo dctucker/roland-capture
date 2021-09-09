@@ -7,7 +7,7 @@
 #include "lib/memory.h"
 #include "comm.h"
 
-void listener(u8 *msgbuf, size_t msglen)
+void capmix_listener(u8 *msgbuf, size_t msglen)
 {
 	int datalen = msglen - 13;
 	capmix_RolandSysex *sysex = capmix_parse_sysex(msgbuf, msglen); //addr, data = Roland.parse_sysex(message)
@@ -80,18 +80,20 @@ int main(int argc, const char **argv)
 				printf("0x%02x ", sysex_buf[i]);
 			printf("\n");
 
-			int ok = setup_midi(); if( ! ok ) return 2;
-			send_midi(sysex_buf, sysex_len);
+			int ok = capmix_setup_midi(); if( ! ok ) return 2;
+			capmix_send_midi(sysex_buf, sysex_len);
 
 			int i = 0;
 			do
 			{
-				read_midi();
-				usleep(10000);
+				if( capmix_read_midi() > 0 )
+					break;
+				else
+					usleep(10000);
 			}
 			while( i++ < 50 );
 
-			cleanup_midi();
+			capmix_cleanup_midi();
 			return 0;
 		}
 		else // set
@@ -107,19 +109,19 @@ int main(int argc, const char **argv)
 
 			int sysex_len = capmix_make_send_sysex(sysex_buf, addr, data, type_len);
 
-			int ok = setup_midi(); if( ! ok ) return 2;
-			send_midi(sysex_buf, sysex_len);
-			read_midi();
+			int ok = capmix_setup_midi(); if( ! ok ) return 2;
+			capmix_send_midi(sysex_buf, sysex_len);
+			capmix_read_midi();
 		}
 	}
 	else // interactive
 	{
-		int ok = setup_midi();
+		int ok = capmix_setup_midi();
 		while(ok)
 		{
-			read_midi();
+			capmix_read_midi();
 		}
-		cleanup_midi();
+		capmix_cleanup_midi();
 		return 0;
 	}
 }
