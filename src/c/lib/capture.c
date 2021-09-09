@@ -9,8 +9,12 @@
 #define MEMAREA(NAME) .area=(const capmix_MemMap **const)& NAME ## _area
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 #define ENDA { .offset=None }
-#define MEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
-#define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] ={ .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE }
+#define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
+#define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE }
+
+#define PREAMP( OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) }
+#define CHANNEL(OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) }
+#define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name = capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
 
 const struct capmix_str capmix_str = {
 	.top_map = {
@@ -136,7 +140,6 @@ DEF_MEMAREA(preamp_params) = {
 	CMEMNODE(0xd, Knee      , preamp_params),
 	ENDA
 };
-#define PREAMP(OFFSET, AREA) [OFFSET>>8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>>8], MEMAREA(AREA) }
 DEF_MEMAREA(preamp_channels) = {
 	PREAMP(0x000, mic_preamp_params),
 	PREAMP(0x100, mic_preamp_params),
@@ -178,7 +181,6 @@ DEF_MEMAREA(input) = {
 	ENDA
 };
 
-#define CHANNEL(OFFSET, AREA) [OFFSET>>8] = { .offset=OFFSET, .name=capmix_str.channels[OFFSET>>8], MEMAREA(AREA) }
 DEF_MEMAREA(input_channels) = {
 	CHANNEL(0x000, input),
 	CHANNEL(0x100, input),
@@ -199,7 +201,6 @@ DEF_MEMAREA(input_channels) = {
 	ENDA
 };
 DEF_MEMAREA(input_channel) = { { .name=capmix_str.channel, MEMAREA(input_channels) }, ENDA };
-#define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name=capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
 DEF_MEMAREA(input_monitor) = {
 	MONITOR(0x0000, input_channel),
 	MONITOR(0x1000, input_channel),
@@ -264,7 +265,7 @@ DEF_MEMAREA(master_direct_monitors) = {
 	ENDA
 };
 DEF_MEMAREA(daw_monitor_lr) = {
-	[0x0] = { .offset=0x0000, .name = capmix_str.left_right[0],  MEMAREA(master_params) },
+	[0x0] = { .offset=0x0000, .name = capmix_str.left_right[0], MEMAREA(master_params) },
 	[0x1] = { .offset=0x0100, .name = capmix_str.left_right[1], MEMAREA(master_params) },
 	ENDA
 };
@@ -297,7 +298,7 @@ capmix_MemMap memory_map[] = {
 	ENDA
 };
 
-void capmix_print_map(struct capmix_memory_area *map, char *prefix, capmix_Addr old_offset)
+void              capmix_print_map(struct capmix_memory_area *map, char *prefix, capmix_Addr old_offset)
 {
 	for(int i = 0; map[i].offset != 0xffffffff; i++ )
 	{
@@ -320,7 +321,7 @@ void capmix_print_map(struct capmix_memory_area *map, char *prefix, capmix_Addr 
 	}
 }
 
-capmix_MemMap * capmix_lookup_map(capmix_MemMap *map, char *part)
+capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part)
 {
 	for( int i = 0; map[i].offset != None; i++ )
 	{
@@ -333,7 +334,7 @@ capmix_MemMap * capmix_lookup_map(capmix_MemMap *map, char *part)
 	return NULL;
 }
 
-capmix_Addr capmix_name_addr(const char *desc)
+capmix_Addr       capmix_name_addr(const char *desc)
 {
 	capmix_Addr ret = 0;
 	capmix_MemMap *map = (capmix_MemMap *)(memory_map);
@@ -355,9 +356,9 @@ capmix_Addr capmix_name_addr(const char *desc)
 	return ret;
 }
 
-// 0x0006120e -> daw_monitor.b.channel.3.volume
-void capmix_addr_name(capmix_Addr addr, char *desc)
+void              capmix_addr_name(capmix_Addr addr, char *desc)
 {
+	// 0x0006120e -> daw_monitor.b.channel.3.volume
 	*desc = '\0';
 	int section;
 	if( addr >> 15 == 0x51 )
@@ -406,7 +407,7 @@ void capmix_addr_name(capmix_Addr addr, char *desc)
 	}
 }
 
-capmix_ValueType capmix_addr_type(capmix_Addr addr)
+capmix_ValueType  capmix_addr_type(capmix_Addr addr)
 {
 	int section;
 	if( addr >> 15 == 0x51 )

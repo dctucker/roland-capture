@@ -8,7 +8,7 @@ const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
 unsigned char buf[8192];
 int msglen = 0;
 
-int setup_midi()
+int capmix_setup_midi()
 {
 	int err;
 	if( (err = snd_rawmidi_open(&midi_in, &midi_out, port_name, SND_RAWMIDI_APPEND | SND_RAWMIDI_NONBLOCK)) < 0 )
@@ -21,7 +21,7 @@ int setup_midi()
 	return 1;
 }
 
-int read_midi()
+int capmix_read_midi()
 {
 	int err;
 	err = snd_rawmidi_read(midi_in, buf+msglen, sizeof(buf)-msglen);
@@ -31,17 +31,17 @@ int read_midi()
 		if( buf[i] == 0xf7 )
 		{
 			msglen += err;
-			listener(buf, msglen);
+			capmix_listener(buf, msglen);
 			int pmsglen = msglen;
 			msglen = 0;
 			return pmsglen;
 		}
 	}
 	msglen += err;
-	return err;
+	return msglen;
 }
 
-int send_midi(u8 *data, int len)
+int capmix_send_midi(u8 *data, int len)
 {
 	int err;
 	if( (err = snd_rawmidi_write(midi_out, data, len)) < 0 )
@@ -52,8 +52,8 @@ int send_midi(u8 *data, int len)
 	return err;
 }
 
-void cleanup_midi()
+void capmix_cleanup_midi()
 {
-	if( midi_in )  snd_rawmidi_close(midi_in);
 	if( midi_out ) snd_rawmidi_close(midi_out);
+	if( midi_in )  snd_rawmidi_close(midi_in);
 }

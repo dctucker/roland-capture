@@ -108,8 +108,8 @@ bool test_true(bool pass, const char *message)
 
 int main(int argc, char *argv[])
 {
-	capmix_print_map(memory_map, "", 0);
-	return 0;
+	//capmix_print_map(memory_map, "", 0);
+	//return 0;
 	bool b;
 	printf("\nTesting C library...\n");
 
