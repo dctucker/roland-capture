@@ -47,7 +47,7 @@ struct capmix_str {
 
 void              capmix_print_map(capmix_MemMap *map, char *prefix, capmix_Addr old_offset);
 capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part);
-u32               capmix_name_addr(const char *desc);
+uint32_t          capmix_name_addr(const char *desc);
 void              capmix_addr_name(capmix_Addr addr, char *desc);
 capmix_ValueType  capmix_addr_type(capmix_Addr addr);
 

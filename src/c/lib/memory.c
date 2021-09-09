@@ -22,25 +22,25 @@ int capmix_memory_erase(capmix_Addr addr, size_t len)
 	capmix_Coord coord = capmix_addr_coord(addr);
 	if( coord.section > N_MEMSECTION || len + coord.offset > N_MEMBUF )
 		return 0;
-	u8 *mem = &(memory.section[coord.section].buffer[coord.offset]);
+	uint8_t *mem = &(memory.section[coord.section].buffer[coord.offset]);
 	for(int i=0; i < len; i++)
 		mem[i] = capmix_Unset;
 	return 1;
 }
 
-u8 *capmix_memory_get(capmix_Addr addr)
+uint8_t *capmix_memory_get(capmix_Addr addr)
 {
 	capmix_Coord coord = capmix_addr_coord(addr);
-	u8 *mem = &( memory.section[coord.section].buffer[coord.offset] );
+	uint8_t *mem = &( memory.section[coord.section].buffer[coord.offset] );
 	return mem;
 }
 
-int capmix_memory_set(capmix_Addr addr, u8 *data, size_t len)
+int capmix_memory_set(capmix_Addr addr, uint8_t *data, size_t len)
 {
 	capmix_Coord coord = capmix_addr_coord(addr);
 	if( coord.section > N_MEMSECTION || len + coord.offset > N_MEMBUF )
 		return 0;
-	u8 *mem = &(memory.section[coord.section].buffer[coord.offset]);
+	uint8_t *mem = &(memory.section[coord.section].buffer[coord.offset]);
 	for(int i=0; i < len; i++)
 		mem[i] = data[i];
 	return 1;

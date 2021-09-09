@@ -4,7 +4,7 @@
 
 int   capmix_setup_midi();
 int   capmix_read_midi();
-int   capmix_send_midi(u8 *buf, int len);
+int   capmix_send_midi(uint8_t *buf, int len);
 void  capmix_cleanup_midi();
 
-extern void  capmix_listener(u8 *, size_t);
+extern void  capmix_listener(uint8_t *, size_t);
