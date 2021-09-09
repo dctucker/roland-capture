@@ -7,7 +7,7 @@
 #include "lib/memory.h"
 #include "lib/comm.h"
 
-void capmix_listener(u8 *msgbuf, size_t msglen)
+void capmix_listener(uint8_t *msgbuf, size_t msglen)
 {
 	capmix_RolandSysex *sysex;
 	capmix_Addr         addr;
@@ -34,7 +34,7 @@ void capmix_listener(u8 *msgbuf, size_t msglen)
 	capmix_Unpacked unpacked = capmix_unpack_type(type, sysex->data);
 	printf("unpacked=0x%x ", unpacked.as_int);
 
-	capmix_format_unpacked(type, unpacked, value); // value = self.app.mixer.memory.get_formatted(addr)
+	capmix_format_type(type, unpacked, value); // value = self.app.mixer.memory.get_formatted(addr)
 	printf("value=%s ", value);
 
 	/*
@@ -68,7 +68,7 @@ int main(int argc, const char **argv)
 	{
 		int type_len;
 		int sysex_len;
-		u8  sysex_buf[16];
+		uint8_t  sysex_buf[16];
 
 		capmix_Addr addr = capmix_name_addr(control);
 		if( addr == capmix_None )

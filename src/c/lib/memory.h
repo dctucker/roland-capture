@@ -6,7 +6,7 @@
 
 typedef struct capmix_memory {
 	struct capmix_memory_section {
-		u8 buffer[N_MEMBUF];
+		uint8_t buffer[N_MEMBUF];
 	} section[N_MEMSECTION];
 } capmix_Memory;
 
@@ -18,6 +18,6 @@ typedef struct memory_coord {
 capmix_Coord  capmix_addr_coord(capmix_Addr addr);
 void          capmix_memory_init();
 int           capmix_memory_erase(capmix_Addr addr, size_t len);
-u8 *          capmix_memory_get(capmix_Addr addr);
-int           capmix_memory_set(capmix_Addr addr, u8 *data, size_t len);
+uint8_t *     capmix_memory_get(capmix_Addr addr);
+int           capmix_memory_set(capmix_Addr addr, uint8_t *data, size_t len);
 

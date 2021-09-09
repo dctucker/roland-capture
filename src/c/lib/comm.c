@@ -41,7 +41,7 @@ int capmix_read_midi()
 	return msglen;
 }
 
-int capmix_send_midi(u8 *data, int len)
+int capmix_send_midi(uint8_t *data, int len)
 {
 	int err;
 	if( (err = snd_rawmidi_write(midi_out, data, len)) < 0 )

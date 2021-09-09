@@ -287,7 +287,7 @@ void              capmix_print_map(struct capmix_memory_area *map, char *prefix,
 	for(int i = 0; map[i].offset != 0xffffffff; i++ )
 	{
 		if( map[i].name == NULL ) continue;
-		u32 offset = map[i].offset;
+		uint32_t offset = map[i].offset;
 		const char *name = map[i].name;
 		char new_prefix[256];
 		if( strlen(prefix) == 0 )

@@ -4,11 +4,7 @@
 #include <stddef.h>
 #include <math.h>
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef float f32;
-typedef u32 fixed;
+typedef uint32_t capmix_fixed;
 
 #define inf INFINITY
 #define capmix_Unset 0xff
@@ -47,26 +43,49 @@ typedef struct capmix_NameTable {
 } capmix_NameTable;
 
 typedef struct capmix_ScaledType {
-	f32 min;
-	f32 max;
-	f32 step;
+	float min;
+	float max;
+	float step;
 } capmix_ScaledType;
 
 #define capmix_UnpackedFloat(F) (capmix_Unpacked){ .as_float = (F) }
 #define capmix_UnpackedInt(I)   (capmix_Unpacked){ .as_int = (I) }
 typedef union capmix_unpacked
 {
-	u32 as_int;
-	f32 as_float;
+	uint32_t as_int;
+	float    as_float;
 } capmix_Unpacked;
 
-capmix_Unpacked  capmix_parse_type(capmix_ValueType, const char *);
-void             capmix_format_unpacked(capmix_ValueType, capmix_Unpacked, char *);
-void             capmix_format_value(capmix_ValueType, u8 *, char *);
-fixed            capmix_nibbles_to_fixed(u8 *, int );
-void             capmix_to_nibbles(fixed, int, u8 *);
-fixed            capmix_fixed_from_packed(capmix_ValueType, u8 *);
-capmix_Unpacked  capmix_unpack_type(capmix_ValueType, u8 *);
-void             capmix_pack_type(capmix_ValueType, capmix_Unpacked, u8 *);
-int              capmix_type_size(capmix_ValueType);
-const char *     capmix_type_name(capmix_ValueType);
+typedef struct capmix_type_info {
+	union {
+		uint32_t min;
+		float    min_f;
+	};
+	union {
+		uint32_t max;
+		float    max_f;
+	};
+	union {
+		uint32_t step;
+		float    step_f;
+	};
+	capmix_Unpacked (*unpack) (capmix_ValueType, capmix_fixed);
+	capmix_Unpacked (*parse)  (capmix_ValueType, const char *);
+	void            (*format) (capmix_ValueType, capmix_Unpacked, char *);
+	void            (*pack)   (capmix_ValueType, capmix_Unpacked, char *);
+	const char *const name;
+} capmix_type_info;
+
+capmix_fixed     capmix_nibbles_to_fixed  (uint8_t *, int );
+void             capmix_fixed_to_nibbles  (capmix_fixed, int, uint8_t *);
+
+capmix_fixed     capmix_fixed_from_packed (capmix_ValueType, uint8_t *);
+
+capmix_Unpacked  capmix_unpack_type       (capmix_ValueType, uint8_t *);
+capmix_Unpacked  capmix_parse_type        (capmix_ValueType, const char *);
+void             capmix_format_type       (capmix_ValueType, capmix_Unpacked, char *);
+void             capmix_pack_type         (capmix_ValueType, capmix_Unpacked, uint8_t *);
+
+capmix_ValueType capmix_type_parent       (capmix_ValueType type);
+int              capmix_type_size         (capmix_ValueType);
+const char *     capmix_type_name         (capmix_ValueType);
