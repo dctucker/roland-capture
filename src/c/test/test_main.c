@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
 	TEST( test_parse(capmix_UnpackedFloat(0), TPan, "C") );
 	TEST( test_parse(capmix_UnpackedInt(capmix_Unset), TPan, "30") );
 	TEST( test_true(capmix_UnpackedInt(capmix_Unset).as_float != capmix_UnpackedFloat(0.0).as_float, "UnpackedInt(capmix_Unset) != UnpackedFloat(0.0)") );
+	TEST( test_parse(capmix_UnpackedInt(0x7), TRatio, "2.5") );
 
 	printf("Done.\n\n"); return exit_code;
 }

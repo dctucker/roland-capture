@@ -3,8 +3,6 @@
 #include "lib/types.h"
 #include "lib/capture.h"
 
-#define CCA(members...) (const char *[]){ members, 0 }
-
 typedef struct capmix_mixer_page {
 	int rows;
 	int cols;

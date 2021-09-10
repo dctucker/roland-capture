@@ -8,6 +8,7 @@ typedef uint32_t capmix_fixed;
 
 #define inf INFINITY
 #define capmix_Unset 0xff
+#define CCA(members...) (const char *[]){ members, 0 }
 
 #define capmix_addr_bytes(ADDR) (ADDR>>24) & 0xff, (ADDR>>16) & 0xff, (ADDR>>8) & 0xff, ADDR & 0xff
 #define capmix_bytes_addr(ADDR) ((capmix_Addr)((ADDR[0] << 24) | (ADDR[1]<<16) | (ADDR[2]<<8) | ADDR[3]))
@@ -70,11 +71,14 @@ typedef struct capmix_type_info {
 		uint32_t step;
 		float    step_f;
 	};
-	capmix_Unpacked (*unpack) (capmix_ValueType, capmix_fixed);
-	capmix_Unpacked (*parse)  (capmix_ValueType, const char *);
-	void            (*format) (capmix_ValueType, capmix_Unpacked, char *);
-	void            (*pack)   (capmix_ValueType, capmix_Unpacked, char *);
+	int size;
+	capmix_Unpacked (*unpack) (struct capmix_type_info *, capmix_fixed);
+	capmix_Unpacked (*parse)  (struct capmix_type_info *, const char *);
+	void            (*format) (struct capmix_type_info *, capmix_Unpacked, char *);
+	void            (*pack)   (struct capmix_type_info *, capmix_Unpacked, uint8_t *);
 	const char *const name;
+	const char **enum_names;
+	
 } capmix_type_info;
 
 capmix_fixed     capmix_nibbles_to_fixed  (uint8_t *, int );
