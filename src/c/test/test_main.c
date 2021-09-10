@@ -1,3 +1,4 @@
+#include <math.h>
 #include "lib/types.h"
 #include "lib/capture.h"
 #include "lib/mixer.h"
@@ -132,7 +133,7 @@ int main(int argc, char *argv[])
 	TEST( test_type("+0", TVolume, buf_zero ));
 
 	TEST( test_pack(buf_zero, TVolume, capmix_UnpackedFloat(0.0)) );
-	TEST( test_pack(buf_min, TVolume, capmix_UnpackedFloat(-inf)) );
+	TEST( test_pack(buf_min, TVolume, capmix_UnpackedFloat(-INFINITY)) );
 
 	TEST( test_pack(buf_min , TByte, capmix_UnpackedInt(0)) );
 	TEST( test_pack(buf_zero, TByte, capmix_UnpackedInt(2)) );
@@ -164,6 +165,8 @@ int main(int argc, char *argv[])
 	TEST( test_parse(capmix_UnpackedInt(capmix_Unset), TPan, "30") );
 	TEST( test_true(capmix_UnpackedInt(capmix_Unset).as_float != capmix_UnpackedFloat(0.0).as_float, "UnpackedInt(capmix_Unset) != UnpackedFloat(0.0)") );
 	TEST( test_parse(capmix_UnpackedInt(0x7), TRatio, "2.5") );
+	TEST( test_parse(capmix_UnpackedInt(1), TBoolean, "on") );
+	TEST( test_parse(capmix_UnpackedInt(0), TBoolean, "off") );
 
 	printf("Done.\n\n"); return exit_code;
 }
