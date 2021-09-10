@@ -23,12 +23,12 @@ bin/test_main: test/test_main.o lib/capture.o lib/roland.o lib/memory.o lib/type
 bin/test_mixer: test/test_mixer.o lib/capture.o lib/roland.o lib/memory.o lib/types.o lib/mixer.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-test: bin/test_main
-	gdb -q bin/test_main -ex r -ex quit
-
-.phony: clean run
+.phony: clean run test
 run:
 	bin/main
+
+test: bin/test_main
+	gdb -q bin/test_main -ex r -ex quit
 
 weigh:
 	du -h **/*.o bin/**/* bin/* | sort -h
