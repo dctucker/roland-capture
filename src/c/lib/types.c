@@ -438,81 +438,99 @@ void             capmix_format_packed     (capmix_ValueType type, uint8_t *data,
 */
 
 capmix_type_info capmix_types[NTypes] = {
-	[TValue      ] = {
-	},
-	[TByte       ] = {
+	[TValue] = {},
+	[TByte] = {
+		.parent = TValue,
 		.min = 0x0, .max = 0x7f, .step = 0x1,
 		.unpack = capmix_unpack_byte,
 		.parse = capmix_parse_byte,
 		.format = capmix_format_byte,
 	},
-	[TBoolean    ] = {
+	[TBoolean] = {
+		.parent = TByte,
 		.min = 0x0, .max = 0x1, .step = 0x1,
 		.unpack = capmix_unpack_boolean,
 		.parse = capmix_parse_boolean,
 		.format = capmix_format_boolean,
 	},
-	[TVolume     ] = {
+	[TVolume] = {
+		.parent = TValue,
 		.min_f = -71., .max_f = 12., .step_f = 1.,
 		.unpack = capmix_unpack_volume,
 		.parse = capmix_parse_volume,
 		.format = capmix_format_volume,
 	},
-	[TPan        ] = {
+	[TPan] = {
+		.parent = TValue,
 		.min_f = -100., .max_f = 100., .step_f = 1.,
 		.unpack = capmix_unpack_pan,
 		.parse = capmix_parse_pan,
 		.format = capmix_format_pan,
 	},
 
-	[TScaled     ] = {
+	[TScaled] = {
+		.parent = TByte,
 		.unpack = capmix_unpack_scaled,
 		//.parse = capmix_parse_byte,
 		.format = capmix_format_scaled,
 	},
-	[TSens       ] = {
+	[TSens] = {
+		.parent = TScaled,
 		.min_f =   1., .max_f =  58., .step_f = 0.5,
 	},
-	[TThreshold  ] = {
+	[TThreshold] = {
+		.parent = TScaled,
 		.min_f = -40., .max_f =   0., .step_f = 1.,
 	},
-	[TGain       ] = {
+	[TGain] = {
+		.parent = TScaled,
 		.min_f = -40., .max_f =  40., .step_f = 1.,
 	},
-	[TGate       ] = {
+	[TGate] = {
+		.parent = TScaled,
 		.min_f = -70., .max_f = -20., .step_f = 1.,
 	},
-	[TReverbTime ] = {
+	[TReverbTime] = {
+		.parent = TScaled,
 		.min_f =  0.1, .max_f =  5., .step_f = 0.1,
 	},
 
-	[TEnum       ] = {
+	[TEnum] = {
+		.parent = TByte,
 		//.unpack = capmix_unpack_byte,
 		.parse = NULL, // # TODO
 		.format = capmix_format_enum,
 	},
-	[TRatio      ] = {
+	[TRatio] = {
+		.parent = TEnum,
 		.min = 0, .max = 13, .step = 1,
 	},
-	[TAttack     ] = {
+	[TAttack] = {
+		.parent = TEnum,
 		.min = 0, .max = 124, .step = 1,
 	},
-	[TRelease    ] = {
+	[TRelease] = {
+		.parent = TEnum,
 		.min = 0, .max = 124, .step = 1,
 	},
-	[TKnee       ] = {
+	[TKnee] = {
+		.parent = TEnum,
 		.min = 0, .max = 9, .step = 1,
 	},
 	[TAttenuation] = {
+		.parent = TEnum,
 		.min = 0, .max = 2, .step = 1,
 	},
-	[TReverbType ] = {
+	[TReverbType] = {
+		.parent = TEnum,
 		.min = 0, .max = 5, .step = 1,
 	},
-	[TPreDelay   ] = {
+	[TPreDelay] = {
+		.parent = TEnum,
 		.min = 0, .max = 12, .step = 1,
 	},
-	[TPatch      ] = {
+	[TPatch] = {
+		.parent = TEnum,
 		.min = 0, .max = 8, .step = 1,
 	},
 };

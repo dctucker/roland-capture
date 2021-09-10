@@ -57,6 +57,7 @@ typedef union capmix_unpacked
 } capmix_Unpacked;
 
 typedef struct capmix_type_info {
+	capmix_ValueType parent;
 	union {
 		uint32_t min;
 		float    min_f;
