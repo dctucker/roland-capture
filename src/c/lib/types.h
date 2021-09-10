@@ -1,17 +1,13 @@
 #pragma once
 
 #include <inttypes.h>
-#include <stddef.h>
-#include <math.h>
 
 typedef uint32_t capmix_fixed;
 
-#define inf INFINITY
-#define capmix_Unset 0xff
 #define CCA(members...) (const char *[]){ members, 0 }
-
 #define capmix_addr_bytes(ADDR) (ADDR>>24) & 0xff, (ADDR>>16) & 0xff, (ADDR>>8) & 0xff, ADDR & 0xff
 #define capmix_bytes_addr(ADDR) ((capmix_Addr)((ADDR[0] << 24) | (ADDR[1]<<16) | (ADDR[2]<<8) | ADDR[3]))
+
 typedef uint32_t capmix_Addr;
 
 typedef enum capmix_ValueType {
@@ -38,19 +34,11 @@ typedef enum capmix_ValueType {
 	NTypes, // dummy
 } capmix_ValueType;
 
-typedef struct capmix_NameTable {
-	int size;
-	const char **names;
-} capmix_NameTable;
-
-typedef struct capmix_ScaledType {
-	float min;
-	float max;
-	float step;
-} capmix_ScaledType;
-
+#define capmix_Unset 0xff
 #define capmix_UnpackedFloat(F) (capmix_Unpacked){ .as_float = (F) }
 #define capmix_UnpackedInt(I)   (capmix_Unpacked){ .as_int = (I) }
+#define capmix_UnsetInt (capmix_Unpacked){ .as_int = capmix_Unset }
+
 typedef union capmix_unpacked
 {
 	uint32_t as_int;
@@ -58,6 +46,7 @@ typedef union capmix_unpacked
 } capmix_Unpacked;
 
 typedef struct capmix_type_info {
+	capmix_ValueType type;
 	capmix_ValueType parent;
 	union {
 		uint32_t min;
@@ -91,6 +80,8 @@ capmix_Unpacked  capmix_parse_type        (capmix_ValueType, const char *);
 void             capmix_format_type       (capmix_ValueType, capmix_Unpacked, char *);
 void             capmix_pack_type         (capmix_ValueType, capmix_Unpacked, uint8_t *);
 
-capmix_ValueType capmix_type_parent       (capmix_ValueType type);
-int              capmix_type_size         (capmix_ValueType);
-const char *     capmix_type_name         (capmix_ValueType);
+capmix_type_info *  capmix_type(capmix_ValueType type);
+const char *        capmix_type_name         (capmix_ValueType);
+int                 capmix_type_size         (capmix_ValueType);
+capmix_ValueType    capmix_type_parent       (capmix_ValueType type);
+

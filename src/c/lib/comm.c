@@ -7,8 +7,9 @@ snd_rawmidi_t *midi_out;
 const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
 unsigned char buf[8192];
 int msglen = 0;
+void (*capmix_listener)(uint8_t *, int) = NULL;
 
-int capmix_setup_midi()
+int capmix_setup_midi( void (*listener)(uint8_t *, int) )
 {
 	int err;
 	if( (err = snd_rawmidi_open(&midi_in, &midi_out, port_name, SND_RAWMIDI_APPEND | SND_RAWMIDI_NONBLOCK)) < 0 )
@@ -17,6 +18,7 @@ int capmix_setup_midi()
 		midi_out = NULL;
 		return 0;
 	}
+    capmix_listener = listener;
 	printf("Opened %s (%x, %x)\n", port_name, midi_in, midi_out);
 	return 1;
 }

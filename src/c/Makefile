@@ -3,7 +3,7 @@ ODIR = obj
 CFLAGS=-I$(IDIR) -g -save-temps
 LIBS=-lasound -lm
 
-OBJ = app/main.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o lib/mixer.o
+OBJ = app/main.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o lib/mixer.o lib/capmix.o
 DEPS = lib/$(patsubst %.c,%.o,$(wildcard filters/*.h)) $(wildcard *.h)
 
 all: bin/main bin/test_main bin/test_main bin/test_mixer

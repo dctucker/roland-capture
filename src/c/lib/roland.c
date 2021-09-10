@@ -46,8 +46,9 @@ int capmix_make_send_sysex(uint8_t *buffer, capmix_Addr addr, uint8_t *data, int
 	//uint8_t *data = malloc(4+data_len);
 	int start=7;
 
+	uint8_t addr_b[] = { capmix_addr_bytes(addr) };
 	for(i=0; i < 4; i++)
-		buffer[start+i] = (addr >> (8*(4-i))) & 0xff;
+		buffer[start+i] = addr_b[i];
 
 	for(j=0; j < data_len; i++, j++)
 		buffer[start+i] = data[j];
