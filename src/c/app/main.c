@@ -9,7 +9,7 @@ void handler(struct capmix_event event)
 	char name[128];
 	char value[16];
 
-	capmix_addr_name(event.addr, name);
+	capmix_format_addr(event.addr, name);
 	capmix_format_type(event.type_info->type, event.unpacked, value);
 
 	printf("cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
@@ -47,7 +47,7 @@ int main(int argc, const char **argv)
 		int sysex_len;
 		uint8_t  sysex_buf[16];
 
-		capmix_Addr addr = capmix_name_addr(control);
+		capmix_Addr addr = capmix_parse_addr(control);
 		if( addr == capmix_None )
 		{
 			fprintf(stderr, "Unknown control: %s\n", control);

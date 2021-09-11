@@ -5,7 +5,7 @@
 #include "capture.h"
 #include "strings.h"
 
-#define DEF_MEMAREA(NAME) capmix_MemMap NAME ## _area[]
+#define DEF_MEMAREA(NAME) static capmix_MemMap NAME ## _area[]
 #define MEMAREA(NAME) .area=(const capmix_MemMap **const)& NAME ## _area
 #define ENDA { .offset=capmix_None }
 #define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
@@ -16,7 +16,7 @@
 #define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name = capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
 #define REVERB( OFFSET ) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.reverb_types[OFFSET>>8], MEMAREA(reverb_params) }
 
-const struct capmix_str capmix_str = {
+static const struct capmix_str capmix_str = {
 	.top_map = {
 		[3] = "patchbay",
 		[4] = "reverb",
@@ -260,7 +260,7 @@ DEF_MEMAREA(master) = {
 
 #define LINE 0xe
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
-const capmix_MemMap memory_map[] = {
+static const capmix_MemMap memory_map[] = {
 	[0x0] = { .offset = 0x00000002 , .name = "initial_setting" },
 	[0x3] = OFFSET_AREA(O_PATCHBAY , patchbay),
 	[0x4] = OFFSET_AREA(O_REVERB   , reverb),
@@ -305,7 +305,7 @@ void              capmix_print_map(struct capmix_memory_area *map, char *prefix,
 	}
 }
 
-capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part)
+static capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part)
 {
 	for( int i = 0; map[i].offset != capmix_None; i++ )
 	{
@@ -318,7 +318,7 @@ capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part)
 	return NULL;
 }
 
-capmix_Addr       capmix_name_addr(const char *desc)
+capmix_Addr       capmix_parse_addr(const char *desc)
 {
 	capmix_Addr ret = 0;
 	capmix_MemMap *map = (capmix_MemMap *)(memory_map);
@@ -340,7 +340,7 @@ capmix_Addr       capmix_name_addr(const char *desc)
 	return ret;
 }
 
-void              capmix_addr_name(capmix_Addr addr, char *desc)
+void              capmix_format_addr(capmix_Addr addr, char *desc)
 {
 	// 0x0006120e -> daw_monitor.b.channel.3.volume
 	*desc = '\0';

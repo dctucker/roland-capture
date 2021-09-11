@@ -2,12 +2,11 @@
 #include <stdio.h>
 #include "mixer.h"
 
-char input_page_controls[6][16][256];
-const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
-const char *input_labels[]      = CCA( "stereo","mute","solo","reverb","pan","volume" );
-const char *output_labels[]     = CCA( "stereo","mute","solo","","pan","volume" );
+static const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
+static const char *input_labels[]      = CCA( "stereo","mute","solo","reverb","pan","volume" );
+static const char *output_labels[]     = CCA( "stereo","mute","solo","","pan","volume" );
 
-const capmix_MixerPage capmix_mixer_pages[] = {
+static const capmix_MixerPage capmix_mixer_pages[] = {
 	[PInputA] = {
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.a",
@@ -178,6 +177,12 @@ const capmix_MixerPage capmix_mixer_pages[] = {
 		},
 	},
 };
+
+
+const capmix_MixerPage *  capmix_get_page(enum capmix_pages page)
+{
+	return &capmix_mixer_pages[page];
+}
 
 void capmix_print_page(const capmix_MixerPage *page)
 {

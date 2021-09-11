@@ -1,13 +1,13 @@
 #include "lib/comm.h"
 #include <alsa/asoundlib.h>
 
-snd_rawmidi_t *midi_in;
-snd_rawmidi_t *midi_out;
+static snd_rawmidi_t *midi_in;
+static snd_rawmidi_t *midi_out;
 
 const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
-unsigned char buf[8192];
-int msglen = 0;
-void (*capmix_listener)(uint8_t *, int) = NULL;
+static unsigned char buf[8192];
+static int msglen = 0;
+static void (*capmix_listener)(uint8_t *, int) = NULL;
 
 int capmix_setup_midi( void (*listener)(uint8_t *, int) )
 {
@@ -19,7 +19,7 @@ int capmix_setup_midi( void (*listener)(uint8_t *, int) )
 		return 0;
 	}
     capmix_listener = listener;
-	printf("Opened %s (%x, %x)\n", port_name, midi_in, midi_out);
+	warn("Opened %s (%x, %x)\n", port_name, midi_in, midi_out);
 	return 1;
 }
 
@@ -48,7 +48,7 @@ int capmix_send_midi(uint8_t *data, int len)
 	int err;
 	if( (err = snd_rawmidi_write(midi_out, data, len)) < 0 )
 	{
-		fprintf(stderr, "cannot send data: %s", snd_strerror(err));
+		warn("cannot send data: %s", snd_strerror(err));
 		return 0;
 	}
 	return err;
