@@ -7,7 +7,7 @@ static uint8_t sysex_buf[16];
 static uint8_t data_buf[8];
 static int connected;
 
-struct capmix_event capmix_event_factory(uint8_t *msgbuf, int msglen)
+static struct capmix_event capmix_event_factory(uint8_t *msgbuf, int msglen)
 {
 	int datalen = msglen - 13;
 	capmix_RolandSysex *sysex = capmix_parse_sysex(msgbuf, msglen);
@@ -29,7 +29,7 @@ struct capmix_event capmix_event_factory(uint8_t *msgbuf, int msglen)
 	};
 }
 
-void (*capmix_event_handler)(struct capmix_event) = NULL;
+static void (*capmix_event_handler)(struct capmix_event) = NULL;
 
 static void listener(uint8_t *buf, int len)
 {

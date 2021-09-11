@@ -15,7 +15,7 @@ bool test_mixers()
 {
 	for(int i = 0; i < N_Pages-1; i++)
 	{
-		const capmix_MixerPage *mixer_page = &capmix_mixer_pages[i];
+		const capmix_MixerPage *mixer_page = capmix_get_page(i);
 		TEST( test_mixer(mixer_page) );
 		printf("\n");
 		for(int i=0; i <= mixer_page->rows; i++)

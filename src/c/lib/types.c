@@ -3,10 +3,10 @@
 #include <string.h>
 #include "types.h"
 
-#define UNPACK(NAME) capmix_Unpacked capmix_unpack_##NAME(capmix_type_info *type_info, capmix_fixed value)
-#define PARSE(NAME)  capmix_Unpacked capmix_parse_##NAME (capmix_type_info *type_info, const char *str)
-#define FORMAT(NAME) void            capmix_format_##NAME(capmix_type_info *type_info, capmix_Unpacked unpacked, char *str)
-#define PACK(NAME)   void            capmix_pack_##NAME  (capmix_type_info *type_info, capmix_Unpacked unpacked, uint8_t *buf)
+#define UNPACK(NAME) static capmix_Unpacked capmix_unpack_##NAME (capmix_type_info *type_info, capmix_fixed value)
+#define PARSE(NAME)  static capmix_Unpacked capmix_parse_##NAME  (capmix_type_info *type_info, const char *str)
+#define FORMAT(NAME) static void            capmix_format_##NAME (capmix_type_info *type_info, capmix_Unpacked unpacked, char *str)
+#define PACK(NAME)   static void            capmix_pack_##NAME   (capmix_type_info *type_info, capmix_Unpacked unpacked, uint8_t *buf)
 
 #define TYPE_NAME(NAME) [ T##NAME ] = #NAME
 
@@ -198,7 +198,7 @@ FORMAT(enum)
 	uint32_t v = unpacked.as_int;
 	if( v > type_info->max )
 	{
-		sprintf(stderr, "\nvalue too large 0x%x\n", v);
+		warn("\nvalue too large 0x%x\n", v);
 		sprintf(str, "?");
 		return;
 	}
@@ -217,7 +217,7 @@ void             capmix_format_packed     (capmix_ValueType type, uint8_t *data,
 }
 */
 
-capmix_type_info capmix_types[NTypes] = {
+static capmix_type_info capmix_types[NTypes] = {
 	[TValue] = {
 		.type = TValue,
 		.name = "Value",

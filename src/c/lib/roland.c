@@ -4,7 +4,7 @@
 #define DATA_START 7
 uint8_t capture_sysex[] = { 0xf0, 0x41, 0x10, 0x00, 0x00, 0x6b };
 
-uint8_t checksum(uint8_t *data, int len)
+static uint8_t checksum(uint8_t *data, int len)
 {
 	uint8_t sum = 0;
 	for(int i=0; i < len; i++)
@@ -14,7 +14,7 @@ uint8_t checksum(uint8_t *data, int len)
 	return (0x80 - (sum % 0x80)) & 0x7f;
 }
 
-int capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
+static int capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 {
 	int i;
 	for(i=0; i < sizeof(capture_sysex); i++)

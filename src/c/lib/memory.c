@@ -2,7 +2,7 @@
 
 capmix_Memory memory;
 
-capmix_Coord capmix_addr_coord(capmix_Addr addr)
+static capmix_Coord capmix_addr_coord(capmix_Addr addr)
 {
 	return (capmix_Coord){
 		.section = ((addr & 0x0f000000) >> 4) | (addr & 0x000f0000),
