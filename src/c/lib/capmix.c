@@ -34,7 +34,8 @@ static void (*capmix_event_handler)(struct capmix_event) = NULL;
 static void listener(uint8_t *buf, int len)
 {
 	struct capmix_event event = capmix_event_factory(buf, len);
-	capmix_event_handler(event);
+	if( event.sysex != NULL )
+		capmix_event_handler(event);
 }
 
 int capmix_connect( void (*event_handler)(struct capmix_event) )
@@ -87,3 +88,9 @@ void capmix_disconnect()
 	return capmix_cleanup_midi();
 }
 
+capmix_Unpacked capmix_recall(capmix_Addr addr)
+{
+	capmix_ValueType type = capmix_addr_type(addr);
+	uint8_t *data = capmix_memory_get(addr);
+	return capmix_unpack_type(type, data);
+}

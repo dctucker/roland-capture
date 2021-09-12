@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "roland.h"
 
 #define DATA_START 7
@@ -65,7 +66,7 @@ capmix_RolandSysex * capmix_parse_sysex(uint8_t *buffer, int len)
 	{
 		if( sysex->header[i] != capture_sysex[i] )
 		{
-			//printf("Expected %x, got %x\n", sysex->header[i], capture_sysex[i]);
+			printf("Expected %x, got %x\n", sysex->header[i], capture_sysex[i]);
 			return NULL;
 		}
 	}

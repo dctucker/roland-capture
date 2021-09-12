@@ -3,8 +3,8 @@
 #include "mixer.h"
 
 static const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
-static const char *input_labels[]      = CCA( "stereo","mute","solo","reverb","pan","volume" );
-static const char *output_labels[]     = CCA( "stereo","mute","solo","","pan","volume" );
+static const char *input_labels[]      = CCA( "Stereo","Mute","Solo","Reverb","Pan","Volume" );
+static const char *output_labels[]     = CCA( "Stereo","Mute","Solo","","Pan","Volume" );
 
 static const capmix_MixerPage capmix_mixer_pages[] = {
 	[PInputA] = {

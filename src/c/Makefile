@@ -1,13 +1,15 @@
 IDIR = .
 ODIR = obj
-CFLAGS=-I$(IDIR) -fvisibility=hidden
-# -g -save-temps
+CFLAGS=-I$(IDIR) -fvisibility=hidden -g
+#-save-temps
 LIBS=-lasound -lm
 
 OBJDIR = obj
 VPATH = $(OBJDIR)
 OBJ = lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o
 DEPS = lib/$(patsubst %.c,%.o,$(wildcard filters/*.h)) $(wildcard *.h)
+
+LCAPMIX = -L$(OBJDIR)/lib -lcapmix '-Wl,-R,$$ORIGIN/../lib'
 
 all: bin/main bin/test_main bin/test_main bin/test_mixer
 
@@ -28,19 +30,27 @@ lib/libcapmix.so: $(OBJ)
 	cd $(OBJDIR)/lib ; ln -sf libcapmix.so.1.0.0 libcapmix.so.1
 	cd $(OBJDIR)/lib ; ln -sf libcapmix.so.1.0.0 libcapmix.so
 
-bin/main: lib/libcapmix.so
-	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ app/main.c -L$(OBJDIR)/lib -lcapmix '-Wl,-R,$$ORIGIN/../lib'
+#bin/main: lib/libcapmix.so
+#	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ app/main.c $(LCAPMIX)
 
+bin/capmixer: lib/libcapmix.so lib/mixer.o app/capmixer.c
+	$(CC) $(CFLAGS) -lmenu -lncurses -o $@ $(OBJDIR)/lib/mixer.o app/capmixer.c $(LCAPMIX)
 
-#libcapmix.a: lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o
+#libcapmix.a:
 #	#$(CC) $(CFLAGS) -c $^
 #	#$(CC) $(LIBS) $(CFLAGS) -c lib/capmix.c lib/comm.c lib/capture.c lib/roland.c lib/memory.c lib/types.c
 #	#strip --strip-unneeded $^
-#	ld -Ur -o libcapmix.o $^
-#	objcopy --strip-all --keep-symbols api.txt -R .note -R .comment libcapmix.o libcapmix-s.o
-#	$(AR) rcs "$(LIBS)" $@ libcapmix-s.o
-#bin/main: libcapmix.a app/main.o # static library
-#	$(CC) $(LIBS) $(CFLAGS) -o $@ app/main.o -L. -lcapmix
+#	ld -Ur -o $(OBJDIR)/lib/libcapmix.o  $(addprefix $(OBJDIR)/,lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o)
+#	objcopy --strip-all --keep-symbols api.txt -R .note -R .comment $(OBJDIR)/lib/libcapmix.o $(OBJDIR)/lib/libcapmix-s.o
+#	$(AR) rcs "$(LIBS)" $(OBJDIR)/lib/libcapmix.a $(OBJDIR)/lib/libcapmix-s.o
+
+bin/main: $(OBJ) app/main.c
+	$(CC) $(LIBS) $(CFLAGS) -o bin/main $(addprefix $(OBJDIR)/,$(OBJ)) app/main.c
+	# -L$(OBJDIR)/lib -lcapmix
+
+#bin/main: $(OBJ) app/main.c # static library
+#	$(CC) $(LIBS) $(CFLAGS) -o bin/main app/main.c
+#	# -L$(OBJDIR)/lib -lcapmix
 
 .phony: clean run test
 run:
