@@ -357,6 +357,7 @@ void              capmix_format_addr(capmix_Addr addr, char *desc)
 
 	while( countdown != 0 )
 	{
+		if( map == NULL ) break;
 		capmix_MemMap *candidate = NULL;
 
 		//printf("%x %s\n", countdown, desc);
@@ -406,6 +407,7 @@ capmix_ValueType  capmix_addr_type(capmix_Addr addr)
 	capmix_ValueType type;
 	while( countdown != 0 )
 	{
+		if( map == NULL ) break;
 		capmix_MemMap *candidate = NULL;
 
 		//printf("%x %s\n", countdown, desc);
