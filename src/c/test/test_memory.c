@@ -47,5 +47,5 @@ int main(int argc, char *argv[])
 	TEST( test_readback( data, 4, 0x00060004) );
 	TEST( test_readback( data, 4, 0x00061104) );
 
-	return done();
+	DONE;
 }

@@ -392,7 +392,7 @@ void              capmix_format_addr(capmix_Addr addr, char *desc)
 	}
 }
 
-const char *  capmix_addr_suffix(capmix_Addr addr)
+const char *      capmix_addr_suffix(capmix_Addr addr)
 {
 	int section;
 	if( addr >> 15 == 0x51 )
@@ -446,12 +446,12 @@ capmix_ValueType  capmix_addr_type(capmix_Addr addr)
 	else
 		section = addr >> 16;
 
-	capmix_Addr countdown = addr;
+	int countdown = addr;
 	capmix_MemMap *map = (capmix_MemMap *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 
 	capmix_ValueType type = TValue;
-	while( countdown != 0 )
+	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
 		capmix_MemMap *candidate = NULL;

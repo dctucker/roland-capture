@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #define TEST(x) printf("\033[s  "); if( !(x) ) fail(); else pass()
+#define DONE return done()
 #define None capmix_None
 
 int n_failed = 0;
@@ -24,6 +25,6 @@ void pass()
 
 int done()
 {
-	printf("\nPassed: %d, Failed: %d\n", n_passed, n_failed);
+	printf("Passed: %d, Failed: %d\n\n", n_passed, n_failed);
 	return n_failed == 0 ? 0 : 1;
 }

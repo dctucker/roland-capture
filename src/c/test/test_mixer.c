@@ -62,11 +62,11 @@ void run_mixer_tests()
 
 int main()
 {
-	bool b;
+	printf("\nTesting mixer...\n");
 	run_mixer_tests();
 
 	//init_mixer_pages();
 	//printf("init_mixer_pages");
 
-	return done();
+	DONE;
 }

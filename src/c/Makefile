@@ -11,7 +11,7 @@ OBJ = lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.
 DEPS = lib/$(patsubst %.c,%.o,$(wildcard filters/*.h)) $(wildcard *.h)
 
 LCAPMIX = -L$(OBJDIR)/lib -lcapmix '-Wl,-R,$$ORIGIN/../lib'
-TESTS = bin/test_main bin/test_memory bin/test_mixer
+TESTS = bin/test_memory bin/test_mixer bin/test_capture bin/test_types
 BINARIES = bin/main bin/capmixer $(TESTS)
 
 all: $(BINARIES)
@@ -24,14 +24,20 @@ tests: $(TESTS)
 test/%.o: test/%.c test/%.h
 	$(CC) -c -o $(OBJDIR)/$@ $< $(CFLAGS)
 
-bin/test_main: $(OBJ) test/test_main.o test/test.h
-	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(addprefix $(OBJDIR)/,$(OBJ)) test/test_main.c
+#bin/test_main: test/test.h $(OBJ) test/test_main.c
+#	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(addprefix $(OBJDIR)/,$(OBJ)) test/test_main.c
 
-bin/test_mixer: $(OBJ) lib/mixer.o test/test_mixer.o test/test.h
+bin/test_mixer: test/test.h $(OBJ) lib/mixer.o test/test_mixer.c
 	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/mixer.o test/test_mixer.c
 
-bin/test_memory: $(OBJ) lib/memory.o test/test_memory.o test/test.h
+bin/test_memory: test/test.h $(OBJ) lib/memory.o test/test_memory.c
 	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/memory.o test/test_memory.c
+
+bin/test_capture: test/test.h $(OBJ) lib/capture.o test/test_capture.c
+	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/types.o $(OBJDIR)/lib/capture.o test/test_capture.c
+
+bin/test_types: test/test.h $(OBJ) lib/types.o test/test_types.o
+	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/types.o test/test_types.c
 
 lib/libcapmix.so: $(OBJ)
 	$(CC) $(LIBS) $(CFLAGS) -fPIC $(STRIP) -shared -Wl,-soname,libcapmix.so.1 -o $(OBJDIR)/lib/libcapmix.so.1.0.0 -lc $(addprefix $(OBJDIR)/,$(OBJ))
