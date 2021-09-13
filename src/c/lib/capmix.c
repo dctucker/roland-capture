@@ -40,6 +40,7 @@ static void listener(uint8_t *buf, int len)
 
 int capmix_connect( void (*event_handler)(struct capmix_event) )
 {
+	capmix_memory_init();
 	capmix_event_handler = event_handler;
 	connected = capmix_setup_midi(listener);
 	return connected;
@@ -92,5 +93,14 @@ capmix_Unpacked capmix_recall(capmix_Addr addr)
 {
 	capmix_ValueType type = capmix_addr_type(addr);
 	uint8_t *data = capmix_memory_get(addr);
+	if( *data == 0xff )
+		return capmix_UnsetInt;
 	return capmix_unpack_type(type, data);
+}
+
+void capmix_store(capmix_Addr addr, capmix_Unpacked unpacked)
+{
+	capmix_ValueType type = capmix_addr_type(addr);
+	int len = capmix_pack_type(type, unpacked, data_buf);
+	capmix_memory_set(addr, data_buf, len);
 }

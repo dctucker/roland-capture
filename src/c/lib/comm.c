@@ -8,13 +8,15 @@ static snd_seq_t *seq;
 #define MIDI_BYTES_PER_SEC (31250 / (1 + 8 + 2))
 
 //const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
-const char *port_name = "24:1";
+//const char *port_name = "24:1";
+const char *port_name = "STUDIO-CAPTURE:1";
 static unsigned char buf[8192];
 static unsigned int msglen = 0;
 static unsigned int sysex_start = sizeof(buf);
 static void (*capmix_listener)(uint8_t *, int) = NULL;
 static int output_queue;
 static int port_in, port_out;
+static snd_seq_addr_t device_port;
 
 int n_descriptors;
 struct pollfd *descriptors;
@@ -22,36 +24,33 @@ struct pollfd *descriptors;
 int capmix_setup_midi( void (*listener)(uint8_t *, int) )
 {
 	int err;
-	TRY_SEQ( snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0), "Unable to open sequencer")
-	TRY_SEQ( snd_seq_set_client_name(seq, "aseqdump")             , "Unable to set client name")
+	TRY_SEQ( snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0), "Unable to open sequencer" )
+	TRY_SEQ( snd_seq_set_client_name(seq, "aseqdump")             , "Unable to set client name" )
 
 	//input port
 	TRY_SEQ( snd_seq_create_simple_port(seq, "libcapmix",
 		 SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
-		 SND_SEQ_PORT_TYPE_MIDI_GENERIC |
-		 SND_SEQ_PORT_TYPE_APPLICATION) , "Unable to create port")
+		 SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION) , "Unable to create port" )
 	port_in = err;
 
 	//output port
 	TRY_SEQ( snd_seq_create_simple_port(seq, "libcapmix",
 		 SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
-		 SND_SEQ_PORT_TYPE_MIDI_GENERIC |
-		 SND_SEQ_PORT_TYPE_APPLICATION) , "Unable to create port")
+		 SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION) , "Unable to create port" )
 	port_out = err;
 	
 	//connect application to device
-	static snd_seq_addr_t port;
-	TRY_SEQ( snd_seq_parse_address(seq, &port, port_name)                , "Port not found")
-	TRY_SEQ( snd_seq_connect_from(seq, port_in, port.client, port.port)  , "Unable to connect input port")
-	TRY_SEQ( snd_seq_connect_to(  seq, port_out, port.client, port.port) , "Unable to connect output port")
-	TRY_SEQ( snd_seq_nonblock(seq, 1)                                    , "Unable to set nonblock mode")
+	TRY_SEQ( snd_seq_parse_address(seq, &device_port, port_name)                , "Port not found")
+	TRY_SEQ( snd_seq_connect_from(seq, port_in , device_port.client, device_port.port) , "Unable to connect input port" )
+	TRY_SEQ( snd_seq_connect_to  (seq, port_out, device_port.client, device_port.port) , "Unable to connect output port" )
+	TRY_SEQ( snd_seq_nonblock(seq, 1)                                           , "Unable to set nonblock mode" )
 
 	//setup poll descriptors for read
 	n_descriptors = snd_seq_poll_descriptors_count(seq, POLLIN);
 	descriptors = malloc(sizeof(*descriptors) * n_descriptors);
 
     capmix_listener = listener;
-	warn("Opened %s\n", port_name);
+	warn("Opened %s (%d,%d)\n", port_name, port_in, port_out);
 	return 1;
 }
 

@@ -3,6 +3,7 @@ ODIR = obj
 CFLAGS=-I$(IDIR) -fvisibility=hidden -g
 #-save-temps
 LIBS=-lasound -lm
+STRIP=-s
 
 OBJDIR = obj
 VPATH = $(OBJDIR)
@@ -25,15 +26,18 @@ bin/test_main: $(OBJ) test/test_main.o
 bin/test_mixer: $(OBJ) lib/mixer.o test/test_mixer.o
 	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/mixer.o test/test_mixer.c
 
+bin/test_memory: $(OBJ) lib/memory.o test/test_memory.o
+	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/memory.o test/test_memory.c
+
 lib/libcapmix.so: $(OBJ)
-	$(CC) $(LIBS) $(CFLAGS) -fPIC -s -shared -Wl,-soname,libcapmix.so.1 -o $(OBJDIR)/lib/libcapmix.so.1.0.0 -lc $(addprefix $(OBJDIR)/,$(OBJ))
+	$(CC) $(LIBS) $(CFLAGS) -fPIC $(STRIP) -shared -Wl,-soname,libcapmix.so.1 -o $(OBJDIR)/lib/libcapmix.so.1.0.0 -lc $(addprefix $(OBJDIR)/,$(OBJ))
 	cd $(OBJDIR)/lib ; ln -sf libcapmix.so.1.0.0 libcapmix.so.1
 	cd $(OBJDIR)/lib ; ln -sf libcapmix.so.1.0.0 libcapmix.so
 
 #bin/main: lib/libcapmix.so
 #	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ app/main.c $(LCAPMIX)
 
-bin/capmixer: lib/libcapmix.so lib/mixer.o app/capmixer.c
+bin/capmixer-dynamic: lib/libcapmix.so lib/mixer.o app/capmixer.c
 	$(CC) $(CFLAGS) -lmenu -lncurses -o $@ $(OBJDIR)/lib/mixer.o app/capmixer.c $(LCAPMIX)
 
 #libcapmix.a:
@@ -51,6 +55,9 @@ bin/main: $(OBJ) app/main.c
 #bin/main: $(OBJ) app/main.c # static library
 #	$(CC) $(LIBS) $(CFLAGS) -o bin/main app/main.c
 #	# -L$(OBJDIR)/lib -lcapmix
+
+bin/capmixer-static: $(OBJ) lib/mixer.o app/capmixer.c
+	$(CC) $(CFLAGS) $(LIBS) -lmenu -lncurses -o $@ $(addprefix $(OBJDIR)/,$(OBJ)) $(OBJDIR)/lib/mixer.o app/capmixer.c
 
 .phony: clean run test
 run:

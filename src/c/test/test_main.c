@@ -117,11 +117,13 @@ int main(int argc, char *argv[])
 	TEST( test_name_addr(0x00040000, "reverb.type") );
 	TEST( test_format_addr("reverb.type", 0x00040000) );
 
+	TEST( test_name_addr(0x00060000, "input_monitor.a.channel.1.stereo") );
 	TEST( test_name_addr(0x00071208, "daw_monitor.b.channel.3.volume") );
 	TEST( test_name_addr(0x0006230e, "input_monitor.c.channel.4.reverb") );
 	TEST( test_name_addr(None, "daw_monitor.d.channel.5.reverb") );
 	TEST( test_name_addr(None, "daw_monitor.e.reverb") );
 	TEST( test_format_addr("input_monitor.b.channel.3.reverb", 0x0006120e) );
+	TEST( test_format_addr("input_monitor.a.channel.1.stereo", 0x00060000) );
 
 	TEST( test_volume_format("+12",  0x800000) );
 	TEST( test_volume_format("+0",   0x200000) );

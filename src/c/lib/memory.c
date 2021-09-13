@@ -2,11 +2,12 @@
 
 capmix_Memory memory;
 
-static capmix_Coord capmix_addr_coord(capmix_Addr addr)
+capmix_Coord capmix_addr_coord(capmix_Addr addr)
 {
+	int upper = ((addr & 0x0f000000) >> 4) | (addr & 0x000f0000);
 	return (capmix_Coord){
-		.section = ((addr & 0x0f000000) >> 4) | (addr & 0x000f0000),
-		.offset  = ((addr & 0x0000ff00) >> 3) | (addr & 0x000000ff),
+		.section = upper >> 16,
+		.offset  = ((addr & 0x0000ff00) >> 3) | (addr & 0x0000001f),
 	};
 }
 
