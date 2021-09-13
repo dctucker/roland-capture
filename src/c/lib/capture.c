@@ -16,27 +16,30 @@
 #define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name = capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
 #define REVERB( OFFSET ) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.reverb_types[OFFSET>>8], MEMAREA(reverb_params) }
 
+static const char *const stereo = "stereo";
+static const char *const volume = "volume";
+
 static const struct capmix_str capmix_str = {
 	.top_map = {
-		[3] = "patchbay",
-		[4] = "reverb",
-		[5] = "preamp",
-		[6] = "input_monitor",
-		[7] = "daw_monitor",
-		[8] = "master",
+		[0x3] = "patchbay",
+		[0x4] = "reverb",
+		[0x5] = "preamp",
+		[0x6] = "input_monitor",
+		[0x7] = "daw_monitor",
+		[0x8] = "master",
 	},
 	.patchbay = { "1-2", "3-4", "5-6", "7-8", "9-10", },
 	.type = "type",
 	.reverb_types = {
-		[1] = "echo",
-		[2] = "room",
-		[3] = "small_hall",
-		[4] = "large_hall",
-		[5] = "plate",
+		[0x1] = "echo",
+		[0x2] = "room",
+		[0x3] = "small_hall",
+		[0x4] = "large_hall",
+		[0x5] = "plate",
 	},
 	.reverb_params = {
-		[0x01] = "pre_delay" ,
-		[0x02] = "time"      ,
+		[0x1] = "pre_delay" ,
+		[0x2] = "time"      ,
 	},
 	.preamp_params = {
 		[0x0] = "+48"       ,
@@ -44,7 +47,7 @@ static const struct capmix_str capmix_str = {
 		[0x2] = "phase"     ,
 		[0x3] = "hi-z"      ,
 		[0x4] = "sens"      ,
-		[0x5] = "stereo"    ,
+		[0x5] = stereo      ,
 		[0x6] = "bypass"    ,
 		[0x7] = "gate"      ,
 		[0x8] = "attack"    ,
@@ -58,12 +61,12 @@ static const struct capmix_str capmix_str = {
 	.channel = "channel",
 	.channels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", },
 	.channel_params = {
-		[0x0] = "stereo",
+		[0x0] = stereo,
 		[0x1] = "attenuation",
 		[0x2] = "solo",
 		[0x3] = "mute",
 		[0x4] = "pan",
-		[0x8] = "volume",
+		[0x8] = volume,
 		[0xe] = "reverb",
 	},
 	.master = "master",
@@ -76,8 +79,8 @@ static const struct capmix_str capmix_str = {
 		[0x1] = "right",
 	},
 	.master_params = {
-		[0x0] = "stereo",
-		[0x1] = "volume",
+		[0x0] = stereo,
+		[0x1] = volume,
 	},
 	.reverb_return = "reverb_return",
 	.link = "link",
@@ -350,24 +353,21 @@ void              capmix_format_addr(capmix_Addr addr, char *desc)
 	else
 		section = addr >> 16;
 
-	capmix_Addr countdown = addr;
+	int countdown = addr;
 	capmix_MemMap *map = (capmix_MemMap *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 	strcat(desc, memory_map[section].name);
 
-	while( countdown != 0 )
+	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
 		capmix_MemMap *candidate = NULL;
-
-		//printf("%x %s\n", countdown, desc);
 
 		capmix_Addr min_offset = capmix_None;
 		for( int i = 0; map[i].offset != capmix_None; i++ )
 		{
 			if( map[i].name == NULL ) continue;
 
-			//printf("  checking map %s %x\n", map[i].name, map[i].offset);
 			if( map[i].offset <= countdown)
 			{
 				if( countdown - map[i].offset < min_offset )
@@ -392,6 +392,52 @@ void              capmix_format_addr(capmix_Addr addr, char *desc)
 	}
 }
 
+const char *  capmix_addr_suffix(capmix_Addr addr)
+{
+	int section;
+	if( addr >> 15 == 0x51 )
+		section = LINE;
+	else
+		section = addr >> 16;
+
+	int countdown = addr;
+	capmix_MemMap *map = (capmix_MemMap *)(memory_map[section].area);
+	countdown -= memory_map[section].offset;
+
+	const char *name = "";
+	while( countdown >= 0 )
+	{
+		if( map == NULL ) break;
+		capmix_MemMap *candidate = NULL;
+
+		capmix_Addr min_offset = capmix_None;
+		for( int i = 0; map[i].offset != capmix_None; i++ )
+		{
+			if( map[i].name == NULL ) continue;
+
+			if( map[i].offset <= countdown)
+			{
+				if( countdown - map[i].offset < min_offset )
+				{
+					min_offset = countdown - map[i].offset;
+					candidate = &(map[i]);
+				}
+			}
+		}
+		
+		if( candidate == NULL ) return TValue;
+
+		countdown -= candidate->offset; // 0x120e
+		name = candidate->name;
+		map = (capmix_MemMap *)(candidate->area);
+	}
+	if( map != NULL && map->name != NULL )
+	{
+		name = map->name;
+	}
+	return name;
+}
+
 capmix_ValueType  capmix_addr_type(capmix_Addr addr)
 {
 	int section;
@@ -404,20 +450,17 @@ capmix_ValueType  capmix_addr_type(capmix_Addr addr)
 	capmix_MemMap *map = (capmix_MemMap *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 
-	capmix_ValueType type;
+	capmix_ValueType type = TValue;
 	while( countdown != 0 )
 	{
 		if( map == NULL ) break;
 		capmix_MemMap *candidate = NULL;
-
-		//printf("%x %s\n", countdown, desc);
 
 		capmix_Addr min_offset = capmix_None;
 		for( int i = 0; map[i].offset != capmix_None; i++ )
 		{
 			if( map[i].name == NULL ) continue;
 
-			//printf("  checking map %s %x\n", map[i].name, map[i].offset);
 			if( map[i].offset <= countdown)
 			{
 				if( countdown - map[i].offset < min_offset )

@@ -15,7 +15,7 @@ typedef struct memory_coord {
 	int offset;
 } capmix_Coord;
 
-static capmix_Coord  capmix_addr_coord(capmix_Addr addr);
+capmix_Coord         capmix_addr_coord(capmix_Addr addr);
 void                 capmix_memory_init();
 int                  capmix_memory_erase(capmix_Addr addr, int len);
 uint8_t *            capmix_memory_get(capmix_Addr addr);

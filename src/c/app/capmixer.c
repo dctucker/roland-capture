@@ -120,11 +120,40 @@ void on_keyboard(int c)
 	}
 }
 
+#define ON_SUFFIX(X,Y,Z) if( strcmp(suffix, X) == 0 ){ if( yes ) sprintf(str, Y); else sprintf(str, Z); return; }
+void format_boolean( capmix_Addr addr, int yes, char *str )
+{
+	if( yes == capmix_Unset )
+		yes = 0;
+	const char *suffix = capmix_addr_suffix(addr);
+	ON_SUFFIX( "mute"   , "MUTE"   , "m"        )
+	ON_SUFFIX( "solo"   , "SOLO"   , "s"        )
+	ON_SUFFIX( "stereo" , "STEREO" , "--mono--" )
+	ON_SUFFIX( "+48"    , "+48V"   , "0VDC"     )
+	ON_SUFFIX( "lo-cut" , "LO CUT" , "low"      )
+	ON_SUFFIX( "phase"  , "-PHASE" , "+"        )
+	ON_SUFFIX( "bypass" , "BYPASS" , "comp"     )
+	ON_SUFFIX( "hi-z"   , "HI-Z"   , "lo-z"     )
+}
+
+void format_value( capmix_Addr addr, capmix_Unpacked unpacked, char *str )
+{
+	capmix_ValueType type = capmix_addr_type(addr);
+	switch(type)
+	{
+		case TBoolean:
+			format_boolean(addr, unpacked.as_int, str);
+			break;
+		default:
+			capmix_format_type(addr, unpacked, str);
+	}
+}
+
 void interface_refresh(WINDOW *menu_win)
 {
 	char text [SPACING*2+1];
 	char value[SPACING*2+1];
-	int padlen;
+	int pad_l, pad_r;
 	int dx = SPACING;
 	int start_x = 0, start_y = 0;
 
@@ -152,21 +181,29 @@ void interface_refresh(WINDOW *menu_win)
 		int rowlen = 0;
 		for(int j=0; j < page->cols; j++)
 		{
-			rowlen = j;
-			if( page->controls[i][j] == 0 )
-				break;
+			if( page->controls[i][j] != 0 )
+				rowlen++;
 		}
 		dx = SPACING;
-		if( rowlen <= page->cols / 2 )
+		if( rowlen > 0 && rowlen == page->cols / 2 )
 			dx *= 2;
 		for(int j=0; j < page->cols; j++)
 		{
 			capmix_Addr addr = page->controls[i][j];
-			if( addr == 0 ) continue;
-
-			capmix_format_type( capmix_addr_type(addr), capmix_recall(addr), value );
-			padlen = (dx - strlen(value)) / 2;
-			sprintf(text, "%*s%s%*s", padlen, "", "?", padlen, "");
+			if( addr == 0 )
+			{
+				sprintf(value, " ");
+			}
+			else
+			{
+				format_value( addr, capmix_recall(addr), value ); // print formatted
+				//capmix_Unpacked v = capmix_recall(addr); sprintf(value, "%x", v); // print raw value
+				//sprintf(value, "%s", capmix_addr_suffix(addr)); // print suffix
+			}
+			int len = strlen(value);
+			pad_l = (dx - len) / 2;
+			pad_r = (dx - len) / 2 + ((dx - len) % 2);
+			sprintf(text, "%*s%s%*s", pad_l, "", value, pad_r, "");
 
 			if( i == cursor.y && j == cursor.x )
 			{
@@ -191,9 +228,14 @@ void interface_refresh(WINDOW *menu_win)
 	wrefresh(menu_win);
 }
 
+void on_capmix_event(struct capmix_event)
+{
+}
+
 int main(int argc, char ** argv)
 {
-	page = capmix_get_page(PInputA);
+	capmix_connect(on_capmix_event);
+	page = capmix_get_page(PLine);
 
 	//FILE *f = fopen("/dev/tty", "r+");
 	//SCREEN *screen = newterm(NULL, f, f);
@@ -213,7 +255,7 @@ int main(int argc, char ** argv)
 	clear();
 	noecho();
 	cbreak();
-	curs_set(0);
+	//curs_set(0);
 
 	init_pair(1, 15, 0);
 	init_pair(2, 8, 0);
