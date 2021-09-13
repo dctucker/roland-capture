@@ -139,6 +139,8 @@ void format_boolean( capmix_Addr addr, int yes, char *str )
 void format_value( capmix_Addr addr, capmix_Unpacked unpacked, char *str )
 {
 	capmix_ValueType type = capmix_addr_type(addr);
+	sprintf(str, "%s", capmix_type_name(type));
+	return;
 	switch(type)
 	{
 		case TBoolean:
@@ -190,16 +192,15 @@ void interface_refresh(WINDOW *menu_win)
 		for(int j=0; j < page->cols; j++)
 		{
 			capmix_Addr addr = page->controls[i][j];
-			if( addr == 0 )
+			if( addr != 0 )
 			{
-				sprintf(value, " ");
-			}
-			else
-			{
-				format_value( addr, capmix_recall(addr), value ); // print formatted
-				//capmix_Unpacked v = capmix_recall(addr); sprintf(value, "%x", v); // print raw value
+				format_value( addr, capmix_memory_get_unpacked(addr), value ); // print formatted
+				//capmix_Unpacked v = capmix_memory_get_unpacked(addr); sprintf(value, "%x", v); // print raw value
 				//sprintf(value, "%s", capmix_addr_suffix(addr)); // print suffix
 			}
+			else
+				sprintf(value, " ");
+
 			int len = strlen(value);
 			pad_l = (dx - len) / 2;
 			pad_r = (dx - len) / 2 + ((dx - len) % 2);
@@ -235,7 +236,7 @@ void on_capmix_event(struct capmix_event)
 int main(int argc, char ** argv)
 {
 	capmix_connect(on_capmix_event);
-	page = capmix_get_page(PLine);
+	page = capmix_get_page(PInputB);
 
 	//FILE *f = fopen("/dev/tty", "r+");
 	//SCREEN *screen = newterm(NULL, f, f);

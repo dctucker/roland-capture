@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
 	TEST( test_name_addr(None, "daw_monitor.e.reverb") );
 	TEST( test_format_addr("input_monitor.b.channel.3.reverb", 0x0006120e) );
 	TEST( test_format_addr("input_monitor.a.channel.1.stereo", 0x00060000) );
+	TEST( test_addr_type(TBoolean, 0x00060000) );
 
 	TEST( test_volume_format("+12",  0x800000) );
 	TEST( test_volume_format("+0",   0x200000) );
@@ -169,7 +170,7 @@ int main(int argc, char *argv[])
 	TEST( test_parse(capmix_UnpackedInt(0x7), TRatio, "2.5") );
 	TEST( test_parse(capmix_UnpackedInt(1), TBoolean, "on") );
 	TEST( test_parse(capmix_UnpackedInt(0), TBoolean, "off") );
-
-	printf("Done.\n\n"); return exit_code;
+	
+	return done();
 }
 

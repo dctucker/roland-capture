@@ -1,6 +1,6 @@
 #include "memory.h"
 
-capmix_Memory memory;
+static capmix_Memory memory;
 
 capmix_Coord capmix_addr_coord(capmix_Addr addr)
 {
@@ -44,6 +44,5 @@ int capmix_memory_set(capmix_Addr addr, uint8_t *data, int len)
 	uint8_t *mem = &(memory.section[coord.section].buffer[coord.offset]);
 	for(int i=0; i < len; i++)
 		mem[i] = data[i];
-	return 1;
+	return len;
 }
-

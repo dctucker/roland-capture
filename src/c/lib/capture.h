@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include "types.h"
+#include "memory.h"
 
 #define capmix_None (0xffffffff)
 
@@ -48,8 +49,7 @@ struct capmix_str {
 void                     capmix_print_map(capmix_MemMap *map, char *prefix, capmix_Addr old_offset);
 static capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part);
 
-__attribute__ ((visibility("default"))) uint32_t          capmix_parse_addr  (const char *desc);
-__attribute__ ((visibility("default"))) void              capmix_format_addr (capmix_Addr addr, char *desc);
-__attribute__ ((visibility("default"))) capmix_ValueType  capmix_addr_type   (capmix_Addr addr);
-__attribute__ ((visibility("default"))) const char *      capmix_addr_suffix (capmix_Addr addr);
-
+_API uint32_t          capmix_parse_addr  (const char *desc);
+_API void              capmix_format_addr (capmix_Addr addr, char *desc);
+_API capmix_ValueType  capmix_addr_type   (capmix_Addr addr);
+_API const char *      capmix_addr_suffix (capmix_Addr addr);

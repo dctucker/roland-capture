@@ -29,6 +29,6 @@ enum capmix_pages {
 	N_Pages,
 };
 
-void                      capmix_print_page (const capmix_MixerPage *);
-const capmix_MixerPage *  capmix_get_page   (enum capmix_pages);
-//extern const capmix_MixerPage capmix_mixer_pages[];
+const capmix_MixerPage *  capmix_get_page(enum capmix_pages page);
+
+//extern const capmix_MixerPage  capmix_mixer_pages[];
