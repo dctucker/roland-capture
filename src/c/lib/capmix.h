@@ -12,16 +12,11 @@ struct capmix_event {
 	capmix_Unpacked unpacked;
 };
 
-__attribute__ ((visibility("default")))  int                  capmix_connect(void (*)(struct capmix_event) );
-__attribute__ ((visibility("default")))  int                  capmix_listen();
-__attribute__ ((visibility("default")))  struct capmix_event  capmix_get(capmix_Addr);
-__attribute__ ((visibility("default")))  struct capmix_event  capmix_put(capmix_Addr, capmix_Unpacked);
-__attribute__ ((visibility("default")))  void                 capmix_disconnect();
+_API int                  capmix_connect(void (*)(struct capmix_event) );
+_API int                  capmix_listen();
+_API struct capmix_event  capmix_get(capmix_Addr);
+_API struct capmix_event  capmix_put(capmix_Addr, capmix_Unpacked);
+_API void                 capmix_disconnect();
 
-__attribute__ ((visibility("default")))  capmix_Unpacked      capmix_recall(capmix_Addr);
-
-/*
-__attribute__ ((visibility("default"))) uint32_t          capmix_parse_addr  (const char *desc);
-__attribute__ ((visibility("default"))) void              capmix_format_addr (capmix_Addr addr, char *desc);
-__attribute__ ((visibility("default"))) capmix_ValueType  capmix_addr_type   (capmix_Addr addr);
-*/
+_API capmix_Unpacked      capmix_memory_get_unpacked (capmix_Addr);
+_API void                 capmix_memory_set_unpacked (capmix_Addr, capmix_Unpacked unpacked);

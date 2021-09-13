@@ -183,26 +183,3 @@ const capmix_MixerPage *  capmix_get_page(enum capmix_pages page)
 {
 	return &capmix_mixer_pages[page];
 }
-
-void capmix_print_page(const capmix_MixerPage *page)
-{
-	printf("\n");
-	for(int col = 0; col < page->cols; col++)
-	{
-		printf("%s\t", page->headers[col]);
-	}
-	printf("\n");
-	for(int row = 0; row < page->rows; row++)
-	{
-		for(int col = 0; col < page->cols; col++)
-		{
-			capmix_Addr control = page->controls[row][col];
-			if( control == 0 )
-				printf("\t");
-			else
-				printf("%x\t", control);
-		}
-		printf("%s\n", page->labels[row]);
-	}
-	printf("\n");
-}

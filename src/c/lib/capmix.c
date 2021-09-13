@@ -89,7 +89,12 @@ void capmix_disconnect()
 	return capmix_cleanup_midi();
 }
 
-capmix_Unpacked capmix_recall(capmix_Addr addr)
+void capmix_store(capmix_Addr addr, capmix_Unpacked unpacked)
+{
+	capmix_memory_set_unpacked(addr, unpacked);
+}
+
+capmix_Unpacked capmix_memory_get_unpacked(capmix_Addr addr)
 {
 	capmix_ValueType type = capmix_addr_type(addr);
 	uint8_t *data = capmix_memory_get(addr);
@@ -98,7 +103,7 @@ capmix_Unpacked capmix_recall(capmix_Addr addr)
 	return capmix_unpack_type(type, data);
 }
 
-void capmix_store(capmix_Addr addr, capmix_Unpacked unpacked)
+void capmix_memory_set_unpacked(capmix_Addr addr, capmix_Unpacked unpacked)
 {
 	capmix_ValueType type = capmix_addr_type(addr);
 	int len = capmix_pack_type(type, unpacked, data_buf);
