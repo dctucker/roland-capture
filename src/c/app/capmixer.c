@@ -17,7 +17,7 @@ int startx = 0;
 int starty = 0;
 int quitting = 0;
 
-const capmix_MixerPage *page;
+const capmix_mixer_page_t *page;
 const char *page_indicator = "i o [abcd] k l n p r y";
 int page_indicator_len = 22;
 
@@ -229,7 +229,7 @@ void  interface_refresh(WINDOW *menu_win)
 	wrefresh(menu_win);
 }
 
-void  on_capmix_event(struct capmix_event)
+void  on_capmix_event(capmix_event_t event)
 {
 }
 
