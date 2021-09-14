@@ -21,7 +21,7 @@ static snd_seq_addr_t device_port;
 int n_descriptors;
 struct pollfd *descriptors;
 
-int capmix_setup_midi( void (*listener)(uint8_t *, int) )
+int   capmix_setup_midi( void (*listener)(uint8_t *, int) )
 {
 	int err;
 	TRY_SEQ( snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0), "Unable to open sequencer" )
@@ -54,7 +54,7 @@ int capmix_setup_midi( void (*listener)(uint8_t *, int) )
 	return 1;
 }
 
-int capmix_read_midi()
+int   capmix_read_midi()
 {
 	int err;
 	snd_seq_poll_descriptors(seq, descriptors, n_descriptors, POLLIN);
@@ -85,7 +85,7 @@ int capmix_read_midi()
 	fflush(stdout);
 }
 
-int capmix_send_midi(uint8_t *data, int len)
+int   capmix_send_midi(uint8_t *data, int len)
 {
 	int err;
 	snd_seq_event_t event;
@@ -101,7 +101,7 @@ int capmix_send_midi(uint8_t *data, int len)
 	return 0;
 }
 
-void capmix_cleanup_midi()
+void  capmix_cleanup_midi()
 {
 	int err;
 	err = snd_seq_drain_output(seq);

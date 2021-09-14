@@ -17,7 +17,7 @@ void print_page(const capmix_MixerPage *page)
 	{
 		for(int col = 0; col < page->cols; col++)
 		{
-			capmix_Addr control = page->controls[row][col];
+			capmix_addr_t control = page->controls[row][col];
 			if( control == 0 )
 				printf("\t");
 			else
@@ -52,7 +52,7 @@ bool test_mixer(const capmix_MixerPage *mixer_page)
 
 void run_mixer_tests()
 {
-	for(int i = 0; i < N_Pages-1; i++)
+	for(int i = 0; i < N_Pages; i++)
 	{
 		const capmix_MixerPage *mixer_page = capmix_get_page(i);
 		TEST( test_mixer(mixer_page) );

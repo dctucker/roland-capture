@@ -19,11 +19,11 @@
 #define O_MON_D     0x00004000
 
 typedef struct capmix_memory_area {
-	capmix_Addr offset;
-	capmix_ValueType type;
+	capmix_addr_t offset;
+	capmix_type_t type;
 	const char *const name;
 	const struct capmix_memory_area **const area;
-} capmix_MemMap;
+} capmix_mem_t;
 
 struct capmix_str {
 	const char
@@ -46,10 +46,10 @@ struct capmix_str {
 	;
 };
 
-void                     capmix_print_map(capmix_MemMap *map, char *prefix, capmix_Addr old_offset);
-static capmix_MemMap *   capmix_lookup_map(capmix_MemMap *map, char *part);
+void                   capmix_print_map(capmix_mem_t *map, char *prefix, capmix_addr_t old_offset);
+static capmix_mem_t *  capmix_lookup_map(capmix_mem_t *map, char *part);
 
 _API uint32_t          capmix_parse_addr  (const char *desc);
-_API void              capmix_format_addr (capmix_Addr addr, char *desc);
-_API capmix_ValueType  capmix_addr_type   (capmix_Addr addr);
-_API const char *      capmix_addr_suffix (capmix_Addr addr);
+_API void              capmix_format_addr (capmix_addr_t addr, char *desc);
+_API capmix_type_t     capmix_addr_type   (capmix_addr_t addr);
+_API const char *      capmix_addr_suffix (capmix_addr_t addr);

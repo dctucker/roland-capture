@@ -5,7 +5,11 @@
 
 #include "lib/capmix.h"
 
-void handler(struct capmix_event event)
+static volatile int quitting = 0;
+static int sysex_len;
+static uint8_t  sysex_buf[16];
+
+void   handler(struct capmix_event event)
 {
 	char name[128];
 	char value[16];
@@ -21,15 +25,10 @@ void handler(struct capmix_event event)
 	printf("\n");
 }
 
-
-static volatile int quitting = 0;
-static int sysex_len;
-static uint8_t  sysex_buf[16];
-
-int get(const char *control)
+int   get(const char *control)
 {
 	int i;
-	capmix_Addr addr = capmix_parse_addr(control);
+	capmix_addr_t addr = capmix_parse_addr(control);
 	if( addr == capmix_None )
 	{
 		fprintf(stderr, "Unknown control: %s\n", control);
@@ -53,18 +52,18 @@ int get(const char *control)
 	return 0;
 }
 
-int set(const char *control, const char *value)
+int   set(const char *control, const char *value)
 {
     int i = 0;
-	capmix_Addr addr = capmix_parse_addr(control);
+	capmix_addr_t addr = capmix_parse_addr(control);
 	if( addr == capmix_None )
 	{
 		fprintf(stderr, "Unknown control: %s\n", control);
 		return 1;
 	}
 
-	capmix_ValueType type = capmix_addr_type(addr);
-	capmix_Unpacked unpacked = capmix_parse_type(type, value);
+	capmix_type_t type = capmix_addr_type(addr);
+	capmix_unpacked_t unpacked = capmix_parse_type(type, value);
 	if( unpacked.as_int == capmix_Unset )
 	{
 		fprintf(stderr, "Unable to parse value: %s\n", value);
@@ -85,12 +84,12 @@ int set(const char *control, const char *value)
 	return 0;
 }
 
-void sigint_handler(int _)
+void  sigint_handler(int _)
 {
 	quitting = 1;
 }
 
-int main(int argc, const char **argv)
+int   main(int argc, const char **argv)
 {
 	signal(SIGINT, sigint_handler);
 	/*
