@@ -2,24 +2,24 @@
 #include <poll.h>
 #include <alsa/asoundlib.h>
 
-static snd_seq_t *seq;
-
+#ifndef DOXYGEN_SKIP
 #define TRY_SEQ(X, MSG) if( (err = X) < 0 ){ warn( MSG ": %s", snd_strerror(err) ); return 0; }
 #define MIDI_BYTES_PER_SEC (31250 / (1 + 8 + 2))
+#endif
 
 //const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
 //const char *port_name = "24:1";
-const char *port_name = "STUDIO-CAPTURE:1";
-static unsigned char buf[8192];
-static unsigned int msglen = 0;
-static unsigned int sysex_start = sizeof(buf);
-static void (*capmix_listener)(uint8_t *, int) = NULL;
-static int output_queue;
-static int port_in, port_out;
-static snd_seq_addr_t device_port;
+const char *          port_name = "STUDIO-CAPTURE:1";
+static unsigned char  buf[8192];
+static unsigned int   msglen = 0;
+static unsigned int   sysex_start = sizeof(buf);
+static void         (*capmix_listener)(uint8_t *, int) = NULL;
 
-int n_descriptors;
-struct pollfd *descriptors;
+static        snd_seq_t *seq;
+static int    port_in, port_out;
+static        snd_seq_addr_t device_port;
+static int    n_descriptors;
+static struct pollfd *descriptors;
 
 int   capmix_setup_midi( void (*listener)(uint8_t *, int) )
 {

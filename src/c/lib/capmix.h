@@ -4,16 +4,18 @@
 #include "types.h"
 #include "capture.h"
 
-struct capmix_event {
-	int sysex_data_length;
-	capmix_sysex_t *sysex;
-	capmix_addr_t addr;
-	capmix_type_info *type_info;
-	capmix_unpacked_t unpacked;
-};
-typedef struct capmix_event capmix_event_t;
+/**
+ * @brief structure describing an event of receiving a SysEx message from the device
+ */
+typedef struct capmix_event {
+	int sysex_data_length;       ///< length in bytes of the SysEx message
+	capmix_sysex_t *sysex;       ///< structure describing the SysEx message
+	capmix_addr_t addr;          ///< the device address this message considers
+	capmix_type_info *type_info; ///< structure describing the type of the data stored at this location in device memory
+	capmix_unpacked_t unpacked;  ///< the value stored in device memory
+} capmix_event_t;
 
-_API int                capmix_connect(void (*)(struct capmix_event) );
+_API int                capmix_connect(void (*)(capmix_event_t) );
 _API int                capmix_listen();
 _API capmix_event_t     capmix_get(capmix_addr_t);
 _API capmix_event_t     capmix_put(capmix_addr_t, capmix_unpacked_t);

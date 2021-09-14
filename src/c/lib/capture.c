@@ -5,15 +5,24 @@
 #include "capture.h"
 #include "strings.h"
 
+/// define an area in device memory by name
 #define DEF_MEMAREA(NAME) static capmix_mem_t NAME ## _area[]
+/// assign the child area to the given named area
 #define MEMAREA(NAME) .area=(const capmix_mem_t **const)& NAME ## _area
+/// end of memory map, required for each memory area
 #define ENDA { .offset=capmix_None }
+/// describes a leaf node within the memory map
 #define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
+/// describes a leaf node within the memory map using a predefined capmix_str entry
 #define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE }
 
+/// define a child area in memory for the preamp
 #define PREAMP( OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) }
+/// define a child area in memory for an input channel
 #define CHANNEL(OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) }
+/// define a child area in memory for a monitor mix
 #define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name = capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
+/// define a child area in memory for a reverb type
 #define REVERB( OFFSET )      [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.reverb_types[OFFSET>>8], MEMAREA(reverb_params) }
 
 static const char *const stereo = "stereo";
@@ -86,6 +95,7 @@ static const struct capmix_str capmix_str = {
 	.link = "link",
 };
 
+#ifndef DOXYGEN_SKIP
 DEF_MEMAREA(patchbay) = {
 	CMEMNODE(0x0, Patch, patchbay),
 	CMEMNODE(0x1, Patch, patchbay),
@@ -260,8 +270,11 @@ DEF_MEMAREA(master) = {
 	[0x1] = { .offset=0x00010000, .name=capmix_str.master_channels[1], MEMAREA(master_daw_monitors) },
 	ENDA
 };
+#endif
 
+/// constant value for the logically separate line input section
 #define LINE 0xe
+/// describe a top-level section of memory by name
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 static const capmix_mem_t memory_map[] = {
 	[0x0] = { .offset = 0x00000002 , .name = "initial_setting" },

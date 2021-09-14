@@ -6,7 +6,7 @@ static const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9
 static const char *input_labels[]      = CCA( "Stereo","Mute","Solo","Reverb","Pan","Volume" );
 static const char *output_labels[]     = CCA( "Stereo","Mute","Solo","","Pan","Volume" );
 
-static const capmix_MixerPage capmix_mixer_pages[] = {
+static const capmix_mixer_page_t capmix_mixer_pages[] = {
 	[PInputA] = {
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.a",
@@ -179,7 +179,7 @@ static const capmix_MixerPage capmix_mixer_pages[] = {
 };
 
 
-const capmix_MixerPage *  capmix_get_page(enum capmix_pages page)
+const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages page)
 {
 	return &capmix_mixer_pages[page];
 }

@@ -3,12 +3,13 @@
 #include <string.h>
 #include "types.h"
 
+#ifndef DOXYGEN_SKIP
 #define UNPACK(NAME) static capmix_unpacked_t capmix_unpack_##NAME (capmix_type_info *type_info, capmix_fixed value)
 #define PARSE(NAME)  static capmix_unpacked_t capmix_parse_##NAME  (capmix_type_info *type_info, const char *str)
 #define FORMAT(NAME) static int               capmix_format_##NAME (capmix_type_info *type_info, capmix_unpacked_t unpacked, char *str)
 #define PACK(NAME)   static int               capmix_pack_##NAME   (capmix_type_info *type_info, capmix_unpacked_t unpacked, uint8_t *buf)
-
 #define TYPE_NAME(NAME) [ T##NAME ] = #NAME
+#endif
 
 /**
  * \brief convert fixed value into an array where each byte represents four bits (0x1234 -> {0x01,0x02,0x03,0x04})
@@ -85,6 +86,7 @@ capmix_fixed      capmix_pan_to_fixed     (float pan)
 	return (int)(16384. + (16384. * (pan / 100.))) & 0xffff;
 }
 
+#ifndef DOXYGEN_SKIP
 UNPACK(byte)
 {
 	return capmix_UnpackedInt(value & 0x7f);
@@ -276,6 +278,7 @@ int capmix_pack_unset                       (capmix_type_info *type_info, capmix
 {
 	return 0;
 }
+#endif
 
 static capmix_type_info capmix_types[NTypes] = {
 	[TValue] = {
@@ -493,6 +496,7 @@ capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 	return fx;
 }
 
+#ifndef DOXYGEN_SKIP
 #define MARSHALL( OP, DEFAULT ) \
 	capmix_type_t t = type;\
 	capmix_type_info *type_info = &capmix_types[t];\
@@ -501,6 +505,7 @@ capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 		if( t == TValue ){\
 			DEFAULT; }\
 		type_info = &capmix_types[t]; }
+#endif
 
 capmix_unpacked_t  capmix_unpack_type       (capmix_type_t type, uint8_t *data)
 {

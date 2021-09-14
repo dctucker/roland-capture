@@ -88,4 +88,5 @@ weigh:
 	du -h obj/**/* **/*.o bin/**/* bin/* *.a | sort -h
 
 clean:
+	rm -rf doc/html
 	rm -f obj/**/* bin/test_* bin/* **/*.o **/*.so* *.a *.o *.so* **/*.s **/*.i

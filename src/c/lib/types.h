@@ -4,35 +4,37 @@
 
 typedef uint32_t capmix_fixed;
 
+#ifndef DOXYGEN_SKIP
 #define warn(...) fprintf(stderr, __VA_ARGS__)
 #define CCA(members...) (const char *[]){ members, 0 }
 #define capmix_addr_bytes(ADDR) (ADDR>>24) & 0xff, (ADDR>>16) & 0xff, (ADDR>>8) & 0xff, ADDR & 0xff
 #define capmix_bytes_addr(ADDR) ((capmix_addr_t)((ADDR[0] << 24) | (ADDR[1]<<16) | (ADDR[2]<<8) | ADDR[3]))
 #define _API __attribute__ ((visibility("default")))
+#endif
 
 typedef uint32_t capmix_addr_t;
 
 typedef enum capmix_type_t {
 	TValue = 0,
-	TByte,        // TValue
-	TBoolean,     // TByte
-	TVolume,      // TValue
-	TPan,         // TValue
-	TScaled,      // TByte
-	TSens,        // TScaled
-	TThreshold,   // TScaled
-	TGain,        // TScaled
-	TGate,        // TScaled
-	TEnum,        // TByte
-	TRatio,       // TEnum
-	TAttack,      // TEnum
-	TRelease,     // TEnum
-	TKnee,        // TEnum
-	TAttenuation, // TEnum
-	TReverbType,  // TEnum
-	TPreDelay,    // TEnum
-	TPatch,       // TEnum
-	TReverbTime,  // TValue?
+	TByte,        ///< Simple one-byte value. Parent: `TValue`
+	TBoolean,     ///< An on/off switch. Parent: `TByte`
+	TVolume,      ///< Six-byte logarithmic volume value. Parent: `TValue`
+	TPan,         ///< Four-byte pan value. Parent: `TValue`
+	TScaled,      ///< Single-byte value scaled to fit a range. Parent: `TByte`
+	TSens,        ///< Scaled preamp sensitivity value. Parent: `TScaled`
+	TThreshold,   ///< Scaled compressor threshold value. Parent: `TScaled`
+	TGain,        ///< Scaled compressor post-gain value. Parent: `TScaled`
+	TGate,        ///< Scaled gate threshold value. Parent: `TScaled`
+	TEnum,        ///< Byte value representing one of a list of options. Parent: `TByte`
+	TRatio,       ///< Enumerated compressor ratio. Parent: `TEnum`
+	TAttack,      ///< Enumerated compressor attack time. Parent: `TEnum`
+	TRelease,     ///< Enumerated compressor release time. Parent: `TEnum`
+	TKnee,        ///< Enumerated compressor knee hard/soft values. Parent: `TEnum`
+	TAttenuation, ///< Enumerated line input attenuation {-20, -10, +4}. Parent: `TEnum`
+	TReverbType,  ///< Enumerated value representing reverb type. Parent: `TEnum`
+	TPreDelay,    ///< Enumerated reverb pre-delay time . Parent: `TEnum`
+	TPatch,       ///< Enumerated value representing selected source for a given output. Parent: `TEnum`
+	TReverbTime,  ///< Scaled reverb time. Parent: `TScaled`
 	NTypes, // dummy
 } capmix_type_t;
 

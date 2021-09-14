@@ -9,7 +9,7 @@ static volatile int quitting = 0;
 static int sysex_len;
 static uint8_t  sysex_buf[16];
 
-void   handler(struct capmix_event event)
+void   handler(capmix_event_t event)
 {
 	char name[128];
 	char value[16];
@@ -36,7 +36,7 @@ int   get(const char *control)
 	}
 
 	int ok = capmix_connect(handler);
-	struct capmix_event e = capmix_get(addr);
+	capmix_event_t e = capmix_get(addr);
 
 	for(i=0; i < e.sysex_data_length + 13; i++) printf("0x%02x ", ((uint8_t *)e.sysex)[i]);
 	printf("\n");
@@ -70,7 +70,7 @@ int   set(const char *control, const char *value)
 		return 1;
 	}
 	int ok = capmix_connect(handler);
-	struct capmix_event e = capmix_put(addr, unpacked);
+	capmix_event_t e = capmix_put(addr, unpacked);
 
 	for(i=0; i < e.sysex_data_length + 13; i++) printf("0x%02x ", ((uint8_t *)e.sysex)[i]);
 	printf("\n");

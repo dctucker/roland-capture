@@ -26,24 +26,22 @@ typedef struct capmix_memory_area {
 } capmix_mem_t;
 
 struct capmix_str {
-	const char
-		*const top_map[16],
-		*const patchbay[5],
-		*const type,
-		*const reverb_types[6],
-		*const preamp_params[15],
-		*const reverb_params[3],
-		*const monitors[4],
-		*const channel,
-		*const channels[16],
-		*const channel_params[15],
-		*const master,
-		*const master_channels[2],
-		*const left_right[2],
-		*const master_params[2],
-		*const reverb_return,
-		*const link
-	;
+	const char *const top_map[16];
+	const char *const patchbay[5];
+	const char *const type;
+	const char *const reverb_types[6];
+	const char *const preamp_params[15];
+	const char *const reverb_params[3];
+	const char *const monitors[4];
+	const char *const channel;
+	const char *const channels[16];
+	const char *const channel_params[15];
+	const char *const master;
+	const char *const master_channels[2];
+	const char *const left_right[2];
+	const char *const master_params[2];
+	const char *const reverb_return;
+	const char *const link;
 };
 
 void                   capmix_print_map(capmix_mem_t *map, char *prefix, capmix_addr_t old_offset);
