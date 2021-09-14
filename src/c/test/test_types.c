@@ -8,27 +8,27 @@ bool test_true          (bool pass, const char *message)
 	return pass;
 }
 
-bool test_parse        (capmix_Unpacked expected, capmix_ValueType type, const char *str)
+bool test_parse        (capmix_unpacked_t expected, capmix_type_t type, const char *str)
 {
 	const char *name = capmix_type_name(type);
 	printf("parse_type %s %s -> ", name, str);
-	capmix_Unpacked unpacked = capmix_parse_type(type, str);
+	capmix_unpacked_t unpacked = capmix_parse_type(type, str);
 	printf("0x%x / %f", unpacked.as_int, unpacked.as_float);
 	printf("  expected 0x%x", expected.as_int );
 	return expected.as_int == unpacked.as_int || expected.as_float == unpacked.as_float;
 }
 
-bool test_type         (const char *expected, capmix_ValueType type, int8_t *bytes)
+bool test_type         (const char *expected, capmix_type_t type, int8_t *bytes)
 {
 	char str[256];
 	capmix_fixed fx = capmix_fixed_from_packed(type, bytes);
-	capmix_Unpacked unpacked = capmix_unpack_type(type, bytes);
+	capmix_unpacked_t unpacked = capmix_unpack_type(type, bytes);
 	capmix_format_type(type, unpacked, str);
 	printf("typed value 0x%x -> %s  expected %s", fx, str, expected);
 	return strcmp(str, expected) == 0;
 }
 
-bool test_format       (const char *expected, capmix_ValueType type, capmix_Unpacked unpacked)
+bool test_format       (const char *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
 	char str[256];
 	capmix_format_type(type, unpacked, str);
@@ -36,7 +36,7 @@ bool test_format       (const char *expected, capmix_ValueType type, capmix_Unpa
 	return strcmp(str, expected) == 0;
 }
 
-bool test_pack         (const int8_t *expected, capmix_ValueType type, capmix_Unpacked unpacked)
+bool test_pack         (const int8_t *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
 	char str[256];
 	char buf[6];

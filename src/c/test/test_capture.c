@@ -3,14 +3,14 @@
 #include "lib/capture.h"
 #include "test.h"
 
-bool test_name_addr   (capmix_Addr expected, const char *desc)
+bool test_name_addr   (capmix_addr_t expected, const char *desc)
 {
-	capmix_Addr actual = capmix_parse_addr(desc);
+	capmix_addr_t actual = capmix_parse_addr(desc);
 	printf("%s -> 0x%08x  expected 0x%08x", desc, actual, expected);
 	return actual == expected;
 }
 
-bool test_format_addr (const char *expected, capmix_Addr addr)
+bool test_format_addr (const char *expected, capmix_addr_t addr)
 {
 	char actual[256];
 	capmix_format_addr(addr, actual);
@@ -18,9 +18,9 @@ bool test_format_addr (const char *expected, capmix_Addr addr)
 	return strcmp(actual, expected) == 0;
 }
 
-bool test_addr_type   (capmix_ValueType expected, capmix_Addr addr)
+bool test_addr_type   (capmix_type_t expected, capmix_addr_t addr)
 {
-	capmix_ValueType type = capmix_addr_type(addr);
+	capmix_type_t type = capmix_addr_type(addr);
 	const char *name = capmix_type_name(type);
 	const char *expected_name = capmix_type_name(expected);
 	printf("addr_type %08x -> %s  expected %s", addr, name, expected_name);

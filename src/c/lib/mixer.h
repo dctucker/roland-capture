@@ -9,7 +9,7 @@ typedef struct capmix_mixer_page {
 	const char *name;
 	const char **headers;
 	const char **labels;
-	capmix_Addr controls[8][16];
+	capmix_addr_t controls[8][16];
 } capmix_MixerPage;
 
 enum capmix_pages {
@@ -26,8 +26,8 @@ enum capmix_pages {
 	PReverb,
 	PLine,
 	PPatchbay,
-	N_Pages,
 };
+#define N_Pages PPatchbay
 
 const capmix_MixerPage *  capmix_get_page(enum capmix_pages page);
 

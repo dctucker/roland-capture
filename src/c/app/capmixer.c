@@ -21,58 +21,58 @@ const capmix_MixerPage *page;
 const char *page_indicator = "i o [abcd] k l n p r y";
 int page_indicator_len = 22;
 
-void up()
+void  up()
 {
 	if( cursor.y > 0 )
 		cursor.y -= 1;
 }
 
-void down()
+void  down()
 {
 	if( cursor.y < page->rows - 1)
 		cursor.y += 1;
 }
 
-void left()
+void  left()
 {
 	if( cursor.x > 0 )
 		cursor.x -= 1;
 }
 
-void right()
+void  right()
 {
 	if( cursor.x < page->cols - 1 )
 		cursor.x += 1;
 }
 
-void monitor(char mon){}
-void decrement(){}
-void increment(){}
-void zero(){}
-void preamp(){}
-void compressor(){}
-void line(){}
-void inputs(){}
-void outputs(){}
-void toggle_io(){}
-void prev_subpage(){}
-void next_subpage(){}
-void reverb(){}
-void patchbay(){}
-void channel(char ch){}
+void  monitor(char mon){}
+void  decrement(){}
+void  increment(){}
+void  zero(){}
+void  preamp(){}
+void  compressor(){}
+void  line(){}
+void  inputs(){}
+void  outputs(){}
+void  toggle_io(){}
+void  prev_subpage(){}
+void  next_subpage(){}
+void  reverb(){}
+void  patchbay(){}
+void  channel(char ch){}
 
-void quit()
+void  quit()
 {
 	quitting = 1;
 }
 
-void unrecognized(int c)
+void  unrecognized(int c)
 {
 	mvprintw(24, 0, "Charcter pressed is = %3d Hopefully it can be printed as '%c'", c, c);
 	refresh();
 }
 
-void on_keyboard(int c)
+void  on_keyboard(int c)
 {
 	switch(c)
 	{
@@ -121,7 +121,7 @@ void on_keyboard(int c)
 }
 
 #define ON_SUFFIX(X,Y,Z) if( strcmp(suffix, X) == 0 ){ if( yes ) sprintf(str, Y); else sprintf(str, Z); return; }
-void format_boolean( capmix_Addr addr, int yes, char *str )
+void  format_boolean( capmix_addr_t addr, int yes, char *str )
 {
 	if( yes == capmix_Unset )
 		yes = 0;
@@ -136,9 +136,9 @@ void format_boolean( capmix_Addr addr, int yes, char *str )
 	ON_SUFFIX( "hi-z"   , "HI-Z"   , "lo-z"     )
 }
 
-void format_value( capmix_Addr addr, capmix_Unpacked unpacked, char *str )
+void  format_value( capmix_addr_t addr, capmix_unpacked_t unpacked, char *str )
 {
-	capmix_ValueType type = capmix_addr_type(addr);
+	capmix_type_t type = capmix_addr_type(addr);
 	sprintf(str, "%s", capmix_type_name(type));
 	return;
 	switch(type)
@@ -151,7 +151,7 @@ void format_value( capmix_Addr addr, capmix_Unpacked unpacked, char *str )
 	}
 }
 
-void interface_refresh(WINDOW *menu_win)
+void  interface_refresh(WINDOW *menu_win)
 {
 	char text [SPACING*2+1];
 	char value[SPACING*2+1];
@@ -191,11 +191,11 @@ void interface_refresh(WINDOW *menu_win)
 			dx *= 2;
 		for(int j=0; j < page->cols; j++)
 		{
-			capmix_Addr addr = page->controls[i][j];
+			capmix_addr_t addr = page->controls[i][j];
 			if( addr != 0 )
 			{
 				format_value( addr, capmix_memory_get_unpacked(addr), value ); // print formatted
-				//capmix_Unpacked v = capmix_memory_get_unpacked(addr); sprintf(value, "%x", v); // print raw value
+				//capmix_unpacked_t v = capmix_memory_get_unpacked(addr); sprintf(value, "%x", v); // print raw value
 				//sprintf(value, "%s", capmix_addr_suffix(addr)); // print suffix
 			}
 			else
@@ -229,11 +229,11 @@ void interface_refresh(WINDOW *menu_win)
 	wrefresh(menu_win);
 }
 
-void on_capmix_event(struct capmix_event)
+void  on_capmix_event(struct capmix_event)
 {
 }
 
-int main(int argc, char ** argv)
+int   main(int argc, char ** argv)
 {
 	capmix_connect(on_capmix_event);
 	page = capmix_get_page(PInputB);

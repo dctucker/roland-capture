@@ -2,15 +2,15 @@
 #include "lib/memory.h"
 #include "test.h"
 
-bool test_addr_coord(capmix_Coord expected, capmix_Addr addr)
+bool test_addr_coord(capmix_coord_t expected, capmix_addr_t addr)
 {
-	capmix_Coord coord = capmix_addr_coord(addr);
+	capmix_coord_t coord = capmix_addr_coord(addr);
 	printf("0x%08x -> { section = 0x%x, offset = 0x%x }", addr, coord.section, coord.offset);
 	return coord.section == expected.section
 		&& coord.offset  == expected.offset;
 }
 
-bool test_readback( char *data, int len, capmix_Addr addr )
+bool test_readback( char *data, int len, capmix_addr_t addr )
 {
 	bool ret = 1;
 	int      actual_len  = capmix_memory_set( addr, data, len );
@@ -34,7 +34,7 @@ bool test_readback( char *data, int len, capmix_Addr addr )
 	return ret;
 }
 
-#define COORD(SEC,OFF) (capmix_Coord){.section=SEC,.offset=OFF}
+#define COORD(SEC,OFF) (capmix_coord_t){.section=SEC,.offset=OFF}
 int main(int argc, char *argv[])
 {
 	bool b;

@@ -5,7 +5,7 @@
 #define DATA_START 7
 uint8_t capture_sysex[] = { 0xf0, 0x41, 0x10, 0x00, 0x00, 0x6b };
 
-static uint8_t checksum(uint8_t *data, int len)
+static uint8_t    checksum(uint8_t *data, int len)
 {
 	uint8_t sum = 0;
 	for(int i=0; i < len; i++)
@@ -15,7 +15,7 @@ static uint8_t checksum(uint8_t *data, int len)
 	return (0x80 - (sum % 0x80)) & 0x7f;
 }
 
-static int capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
+static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 {
 	int i;
 	for(i=0; i < sizeof(capture_sysex); i++)
@@ -29,7 +29,7 @@ static int capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 	return i;
 }
 
-int capmix_make_receive_sysex(uint8_t *buffer, capmix_Addr addr, capmix_Addr size)
+int               capmix_make_receive_sysex(uint8_t *buffer, capmix_addr_t addr, capmix_addr_t size)
 {
 	uint8_t data[] = { capmix_addr_bytes(addr), capmix_addr_bytes(size) };
 	int i,j;
@@ -41,7 +41,7 @@ int capmix_make_receive_sysex(uint8_t *buffer, capmix_Addr addr, capmix_Addr siz
 	return capmix_make_sysex(buffer, 0x11, 8);
 }
 
-int capmix_make_send_sysex(uint8_t *buffer, capmix_Addr addr, uint8_t *data, int data_len)
+int               capmix_make_send_sysex(uint8_t *buffer, capmix_addr_t addr, uint8_t *data, int data_len)
 {
 	int i,j;
 	//uint8_t *data = malloc(4+data_len);
@@ -57,10 +57,9 @@ int capmix_make_send_sysex(uint8_t *buffer, capmix_Addr addr, uint8_t *data, int
 	return capmix_make_sysex(buffer, 0x12, 4+data_len);
 }
 
-//#include <stdio.h>
-capmix_RolandSysex * capmix_parse_sysex(uint8_t *buffer, int len)
+capmix_sysex_t *  capmix_parse_sysex(uint8_t *buffer, int len)
 {
-	capmix_RolandSysex *sysex = (capmix_RolandSysex *)buffer;
+	capmix_sysex_t *sysex = (capmix_sysex_t *)buffer;
 
 	for(int i=0; i < 6; i++)
 	{

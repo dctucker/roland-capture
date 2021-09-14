@@ -4,3 +4,4 @@ bin
 *.i
 *.s
 obj
+doc/html

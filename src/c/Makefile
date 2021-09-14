@@ -71,7 +71,10 @@ bin/capmixer-static: $(OBJ) lib/mixer.o app/capmixer.c
 
 bin/capmixer: bin/capmixer-static bin/capmixer-dynamic
 
-.PHONY: clean run test
+.PHONY: clean run test doc
+doc:
+	doxygen doc/doxygen.cfg
+
 run:
 	bin/main
 

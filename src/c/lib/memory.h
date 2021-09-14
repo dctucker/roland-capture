@@ -13,10 +13,10 @@ typedef struct capmix_memory {
 typedef struct memory_coord {
 	int section;
 	int offset;
-} capmix_Coord;
+} capmix_coord_t;
 
-capmix_Coord          capmix_addr_coord          (capmix_Addr addr);
+capmix_coord_t        capmix_addr_coord          (capmix_addr_t addr);
 void                  capmix_memory_init         ();
-int                   capmix_memory_erase        (capmix_Addr addr, int len);
-uint8_t *             capmix_memory_get          (capmix_Addr addr);
-int                   capmix_memory_set          (capmix_Addr addr, uint8_t *data, int len);
+int                   capmix_memory_erase        (capmix_addr_t addr, int len);
+uint8_t *             capmix_memory_get          (capmix_addr_t addr);
+int                   capmix_memory_set          (capmix_addr_t addr, uint8_t *data, int len);
