@@ -5,37 +5,33 @@
 #include "capture.h"
 #include "strings.h"
 
-/// define an area in device memory by name
-#define DEF_MEMAREA(NAME) static capmix_mem_t NAME ## _area[]
-/// assign the child area to the given named area
-#define MEMAREA(NAME) .area=(const capmix_mem_t **const)& NAME ## _area
-/// end of memory map, required for each memory area
-#define ENDA { .offset=capmix_None }
-/// describes a leaf node within the memory map
-#define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
-/// describes a leaf node within the memory map using a predefined capmix_str_t entry
-#define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE }
+#define DEF_MEMAREA(NAME) static capmix_mem_t NAME ## _area[] ///< define an area in device memory by name
+#define MEMAREA(NAME) .area=(const capmix_mem_t **const)& NAME ## _area ///< assign the child area to the given named area
+#define ENDA { .offset=capmix_None } ///< end of memory map, required for each memory area
+#define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE } ///< describes a leaf node within the memory map
+#define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE } ///< describes a leaf node within the memory map using a predefined capmix_str_t entry
 
-/// define a child area in memory for the preamp
-#define PREAMP( OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) }
-/// define a child area in memory for an input channel
-#define CHANNEL(OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) }
-/// define a child area in memory for a monitor mix
-#define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name = capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) }
-/// define a child area in memory for a reverb type
-#define REVERB( OFFSET )      [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.reverb_types[OFFSET>>8], MEMAREA(reverb_params) }
+#define PREAMP( OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) } ///< define a child area in memory for the preamp
+#define CHANNEL(OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) } ///< define a child area in memory for an input channel
+#define MONITOR(OFFSET, AREA) [OFFSET>>12] = { .offset=OFFSET, .name = capmix_str.monitors[OFFSET>>12], MEMAREA(AREA) } ///< define a child area in memory for a monitor mix
+#define REVERB( OFFSET )      [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.reverb_types[OFFSET>>8], MEMAREA(reverb_params) } ///< define a child area in memory for a reverb type
+#define LINE 0xe ///< constant value for the logically separate line input section
 
 static const char *const stereo = "stereo";
 static const char *const volume = "volume";
 
 static const capmix_str_t capmix_str = {
 	.top_map = {
+		[0x0] = "initial_setting",
 		[0x3] = "patchbay",
 		[0x4] = "reverb",
 		[0x5] = "preamp",
 		[0x6] = "input_monitor",
 		[0x7] = "daw_monitor",
 		[0x8] = "master",
+		[LINE]= "line",
+		[0xa] = "meters_active",
+		[0xf] = "load_settings",
 	},
 	.patchbay = { "1-2", "3-4", "5-6", "7-8", "9-10", },
 	.type = "type",
@@ -272,29 +268,19 @@ DEF_MEMAREA(master) = {
 };
 #endif
 
-/// constant value for the logically separate line input section
-#define LINE 0xe
 /// describe a top-level section of memory by name
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 static const capmix_mem_t memory_map[] = {
-	[0x0] = { .offset = 0x00000002 , .name = "initial_setting" },
-	[0x3] = OFFSET_AREA(O_PATCHBAY , patchbay),
-	[0x4] = OFFSET_AREA(O_REVERB   , reverb),
-	[0x5] = OFFSET_AREA(O_PREAMP   , preamp),
-	[LINE]= OFFSET_AREA(O_LINE     , line), // this is upsetting
-	[0x6] = OFFSET_AREA(O_INPUT_MON, input_monitor),
-	[0x7] = OFFSET_AREA(O_DAW_MON  , daw_monitor),
-	[0x8] = OFFSET_AREA(O_MASTER   , master),
-	/*
-	[0x8] = { .offset = O_MASTER, .name = "master", .area = (const *capmix_mem_t[3]){
-			[0x0] = (const capmix_mem_t *const)&{ .offset=0x00000000, .name=capmix_str.master_channels[0], MEMAREA(master_direct_monitors) },
-			[0x1] = (const capmix_mem_t *const)&{ .offset=0x00010000, .name=capmix_str.master_channels[1], MEMAREA(master_daw_monitors) },
-			ENDA
-		}
-	},
-	*/
-	[0xa] = { .offset = 0x000a0000 , .name = "meters_active" },
-	[0xf] = { .offset = 0x01000000 , .name = "load_settings" },
+	[0x0] = { .offset = 0x00000002 , .name = capmix_str.top_map[0x0] },
+	[0x3] = { .offset = O_PATCHBAY , .name = capmix_str.top_map[0x3] , MEMAREA(patchbay)      },
+	[0x4] = { .offset = O_REVERB   , .name = capmix_str.top_map[0x4] , MEMAREA(reverb)        },
+	[0x5] = { .offset = O_PREAMP   , .name = capmix_str.top_map[0x5] , MEMAREA(preamp)        },
+	[LINE]= { .offset = O_LINE     , .name = capmix_str.top_map[LINE], MEMAREA(line)          }, // this is upsetting
+	[0x6] = { .offset = O_INPUT_MON, .name = capmix_str.top_map[0x6] , MEMAREA(input_monitor) },
+	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
+	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
+	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] },
+	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] },
 	ENDA
 };
 

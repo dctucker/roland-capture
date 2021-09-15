@@ -20,7 +20,7 @@ void   handler(capmix_event_t event)
 	printf("cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
 	printf("name=%s ", name);
 	printf("type=%s ", event.type_info->name);
-	printf("unpacked=0x%x ", event.unpacked.as_int);
+	printf("unpacked=0x%x ", event.unpacked.discrete);
 	printf("value=%s ", value);
 	printf("\n");
 }
@@ -64,7 +64,7 @@ int   set(const char *control, const char *value)
 
 	capmix_type_t type = capmix_addr_type(addr);
 	capmix_unpacked_t unpacked = capmix_parse_type(type, value);
-	if( unpacked.as_int == capmix_Unset )
+	if( unpacked.discrete == capmix_Unset )
 	{
 		fprintf(stderr, "Unable to parse value: %s\n", value);
 		return 1;

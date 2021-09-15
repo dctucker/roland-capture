@@ -13,9 +13,9 @@ bool test_parse        (capmix_unpacked_t expected, capmix_type_t type, const ch
 	const char *name = capmix_type_name(type);
 	printf("parse_type %s %s -> ", name, str);
 	capmix_unpacked_t unpacked = capmix_parse_type(type, str);
-	printf("0x%x / %f", unpacked.as_int, unpacked.as_float);
-	printf("  expected 0x%x", expected.as_int );
-	return expected.as_int == unpacked.as_int || expected.as_float == unpacked.as_float;
+	printf("0x%x / %f", unpacked.discrete, unpacked.continuous);
+	printf("  expected 0x%x", expected.discrete );
+	return expected.discrete == unpacked.discrete || expected.continuous == unpacked.continuous;
 }
 
 bool test_type         (const char *expected, capmix_type_t type, int8_t *bytes)
@@ -31,8 +31,10 @@ bool test_type         (const char *expected, capmix_type_t type, int8_t *bytes)
 bool test_format       (const char *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
 	char str[256];
-	capmix_format_type(type, unpacked, str);
-	printf("format %s 0x%x -> %s  expected %s", capmix_type_name(type), unpacked.as_int, str, expected);
+	SILENT(
+		capmix_format_type(type, unpacked, str);
+	)
+	printf("format %s 0x%x -> %s  expected %s", capmix_type_name(type), unpacked.discrete, str, expected);
 	return strcmp(str, expected) == 0;
 }
 
@@ -101,7 +103,7 @@ int main(int argc, char *argv[])
 	TEST( test_parse(capmix_UnpackedFloat(-50.0), TPan, "L50") );
 	TEST( test_parse(capmix_UnpackedFloat(0), TPan, "C") );
 	TEST( test_parse(capmix_UnpackedInt(capmix_Unset), TPan, "30") );
-	TEST( test_true(capmix_UnpackedInt(capmix_Unset).as_float != capmix_UnpackedFloat(0.0).as_float, "UnpackedInt(capmix_Unset) != UnpackedFloat(0.0)") );
+	TEST( test_true(capmix_UnpackedInt(capmix_Unset).continuous != capmix_UnpackedFloat(0.0).continuous, "UnpackedInt(capmix_Unset) != UnpackedFloat(0.0)") );
 	TEST( test_parse(capmix_UnpackedInt(0x7), TRatio, "2.5") );
 	TEST( test_parse(capmix_UnpackedInt(1), TBoolean, "on") );
 	TEST( test_parse(capmix_UnpackedInt(0), TBoolean, "off") );

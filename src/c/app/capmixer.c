@@ -144,7 +144,7 @@ void  format_value( capmix_addr_t addr, capmix_unpacked_t unpacked, char *str )
 	switch(type)
 	{
 		case TBoolean:
-			format_boolean(addr, unpacked.as_int, str);
+			format_boolean(addr, unpacked.discrete, str);
 			break;
 		default:
 			capmix_format_type(addr, unpacked, str);
