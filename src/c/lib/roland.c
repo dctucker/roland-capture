@@ -5,16 +5,27 @@
 #define DATA_START 7
 uint8_t capture_sysex[] = { 0xf0, 0x41, 0x10, 0x00, 0x00, 0x6b };
 
+/**
+ * @brief calculate the checksum for a given data buffer
+ * @param data the buffer to sum
+ * @param len the number of bytes to sum
+ * @return a seven-bit unsigned value
+ */
 static uint8_t    checksum(uint8_t *data, int len)
 {
 	uint8_t sum = 0;
 	for(int i=0; i < len; i++)
-	{
 		sum += data[i];
-	}
 	return (0x80 - (sum % 0x80)) & 0x7f;
 }
 
+/**
+ * @brief attach status, header, command, checksum to a buffer containing data to be included in a SysEx message
+ * @param buffer the buffer to write into
+ * @param cmd the command to include in the message (0x11 = receive, 0x12 = send)
+ * @param len length of the data segment
+ * @return the number of bytes the message occupies
+ */
 static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 {
 	int i;
@@ -29,6 +40,12 @@ static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 	return i;
 }
 
+/**
+ * @brief populate a buffer with a SysEx Data Receive message
+ * @param addr the device memory address to request
+ * @param size the number of bytes to request from device memory
+ * @return the number of bytes the message occupies
+ */
 int               capmix_make_receive_sysex(uint8_t *buffer, capmix_addr_t addr, capmix_addr_t size)
 {
 	uint8_t data[] = { capmix_addr_bytes(addr), capmix_addr_bytes(size) };
@@ -41,6 +58,13 @@ int               capmix_make_receive_sysex(uint8_t *buffer, capmix_addr_t addr,
 	return capmix_make_sysex(buffer, 0x11, 8);
 }
 
+/**
+ * @brief populate a buffer with a SysEx Data Receive message
+ * @param addr the device memory address to overwrite
+ * @param data the data to write into device memory
+ * @param size the number of bytes included in the data to be written
+ * @return the number of bytes the message occupies
+ */
 int               capmix_make_send_sysex(uint8_t *buffer, capmix_addr_t addr, uint8_t *data, int data_len)
 {
 	int i,j;
@@ -57,6 +81,12 @@ int               capmix_make_send_sysex(uint8_t *buffer, capmix_addr_t addr, ui
 	return capmix_make_sysex(buffer, 0x12, 4+data_len);
 }
 
+/**
+ * @brief validate a SysEx message from a buffer
+ * @param buffer the buffer to scan for a SysEx message
+ * @param len the number of bytes in the buffer
+ * @return a pointer to the structure for the validated SysEx message, or NULL if invalid
+ */
 capmix_sysex_t *  capmix_parse_sysex(uint8_t *buffer, int len)
 {
 	capmix_sysex_t *sysex = (capmix_sysex_t *)buffer;
@@ -72,4 +102,3 @@ capmix_sysex_t *  capmix_parse_sysex(uint8_t *buffer, int len)
 
 	return sysex;
 }
-

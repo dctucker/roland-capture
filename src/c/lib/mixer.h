@@ -4,7 +4,7 @@
 #include "lib/capture.h"
 
 /// structure describing the visual layout of a page in the mixer
-typedef struct capmix_mixer_page {
+typedef struct capmix_mixer_page_s {
 	int rows;                      ///< number of rows with controls
 	int cols;                      ///< maximum number of columns with controls
 	const char *name;              ///< human-readable name of this page

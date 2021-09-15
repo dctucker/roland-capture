@@ -13,7 +13,7 @@
 #define ENDA { .offset=capmix_None }
 /// describes a leaf node within the memory map
 #define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE }
-/// describes a leaf node within the memory map using a predefined capmix_str entry
+/// describes a leaf node within the memory map using a predefined capmix_str_t entry
 #define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE }
 
 /// define a child area in memory for the preamp
@@ -28,7 +28,7 @@
 static const char *const stereo = "stereo";
 static const char *const volume = "volume";
 
-static const struct capmix_str capmix_str = {
+static const capmix_str_t capmix_str = {
 	.top_map = {
 		[0x3] = "patchbay",
 		[0x4] = "reverb",
@@ -298,7 +298,7 @@ static const capmix_mem_t memory_map[] = {
 	ENDA
 };
 
-void                    capmix_print_map(struct capmix_memory_area *map, char *prefix, capmix_addr_t old_offset)
+void                    capmix_print_map(capmix_mem_t *map, char *prefix, capmix_addr_t old_offset)
 {
 	for(int i = 0; map[i].offset != 0xffffffff; i++ )
 	{

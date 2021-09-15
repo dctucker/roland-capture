@@ -178,7 +178,11 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 	},
 };
 
-
+/**
+ * @brief get a page from the mixer page array
+ * @param page the identifier of the page to be returned
+ * @return pointer to the mixer page
+ */
 const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages page)
 {
 	return &capmix_mixer_pages[page];
