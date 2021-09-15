@@ -5,8 +5,8 @@
 
 static uint8_t sysex_buf[16];
 static uint8_t data_buf[8];
-static int connected;
-static void (*capmix_event_handler)(capmix_event_t) = NULL;
+static int     connected;
+static void   (*capmix_event_handler)(capmix_event_t) = NULL;
 
 /**
  * @brief create a capmix_event_t for a given MIDI message buffer
@@ -23,7 +23,7 @@ static capmix_event_t   capmix_event_factory(uint8_t *msgbuf, int msglen)
 	capmix_memory_set(addr, sysex->data, datalen);
 
 	capmix_type_t type = capmix_addr_type(addr);
-	capmix_type_info *type_info = capmix_type(type);
+	capmix_type_info_t *type_info = capmix_type(type);
 	
 	capmix_unpacked_t unpacked = capmix_unpack_type(type, sysex->data);
 

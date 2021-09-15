@@ -21,6 +21,11 @@ static        snd_seq_addr_t device_port;
 static int    n_descriptors;
 static struct pollfd *descriptors;
 
+/**
+ * @brief call the operating system to set up MIDI communication with the device
+ * @param listener pointer to a callback function that receives a data buffer and the length of the buffer when MIDI messages are received
+ * @return 1 on succes, 0 on failure
+ */
 int   capmix_setup_midi( void (*listener)(uint8_t *, int) )
 {
 	int err;
@@ -85,6 +90,11 @@ int   capmix_read_midi()
 	fflush(stdout);
 }
 
+/**
+ * @brief send MIDI data to the device
+ * @param data the data buffer containing MIDI message to send
+ * @param len length of the data buffer in bytes
+ */
 int   capmix_send_midi(uint8_t *data, int len)
 {
 	int err;
@@ -100,6 +110,10 @@ int   capmix_send_midi(uint8_t *data, int len)
 
 	return 0;
 }
+
+/**
+ * @brief termniate the MIDI connection to the device and free up resources
+ */
 
 void  capmix_cleanup_midi()
 {

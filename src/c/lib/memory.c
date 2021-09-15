@@ -1,7 +1,12 @@
 #include "memory.h"
 
-static capmix_Memory memory;
+static capmix_memory_t memory;
 
+/**
+ * @brief convert a device memory address to a coordinate in our local memory
+ * @param addr the device memory address to convert
+ * @return the coordinate in local memory
+ */
 capmix_coord_t  capmix_addr_coord(capmix_addr_t addr)
 {
 	int upper = ((addr & 0x0f000000) >> 4) | (addr & 0x000f0000);
@@ -11,6 +16,9 @@ capmix_coord_t  capmix_addr_coord(capmix_addr_t addr)
 	};
 }
 
+/**
+ * @brief initialize all local memory to unset
+ */
 void            capmix_memory_init()
 {
 	for(int s=0; s < N_MEMSECTION; s++)
@@ -18,6 +26,12 @@ void            capmix_memory_init()
 			memory.section[s].buffer[o] = capmix_Unset;
 }
 
+/**
+ * @brief initialize memory for a given device memory address
+ * @param addr the address in device memory to erase
+ * @param len the number of bytes to erase
+ * @return the number of bytes erased, 0 on failure
+ */
 int             capmix_memory_erase(capmix_addr_t addr, int len)
 {
 	capmix_coord_t coord = capmix_addr_coord(addr);
@@ -26,9 +40,14 @@ int             capmix_memory_erase(capmix_addr_t addr, int len)
 	uint8_t *mem = &(memory.section[coord.section].buffer[coord.offset]);
 	for(int i=0; i < len; i++)
 		mem[i] = capmix_Unset;
-	return 1;
+	return len;
 }
 
+/**
+ * @brief get a value from local memory given a device memory address
+ * @param addr the address in device memory to read
+ * @return pointer to a position in local memory
+ */
 uint8_t *       capmix_memory_get(capmix_addr_t addr)
 {
 	capmix_coord_t coord = capmix_addr_coord(addr);
@@ -36,6 +55,13 @@ uint8_t *       capmix_memory_get(capmix_addr_t addr)
 	return mem;
 }
 
+/**
+ * @brief set values in local memory at a given device memory address
+ * @param addr the address in device memory
+ * @param data the buffer containing data to be written
+ * @param len the length in bytes of the data to be written
+ * @return the number of bytes that have been set, 0 on failure
+ */
 int             capmix_memory_set(capmix_addr_t addr, uint8_t *data, int len)
 {
 	capmix_coord_t coord = capmix_addr_coord(addr);

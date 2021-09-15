@@ -4,28 +4,32 @@
 #include "types.h"
 #include "memory.h"
 
-#define capmix_None (0xffffffff)
+/// top and intermediate level device memory offsets
+enum memory_offset_e {
+	O_PATCHBAY  = 0x00030000, ///< patchbay offset
+	O_REVERB    = 0x00040000, ///< reverb offset
+	O_PREAMP    = 0x00050000, ///< preamp offset
+	O_LINE      = 0x00051000, ///< line input offset
+	O_INPUT_MON = 0x00060000, ///< input monitor offset
+	O_DAW_MON   = 0x00070000, ///< DAW output monitor offset
+	O_MASTER    = 0x00080000, ///< master channel offset
+	O_MON_A     = 0x00001000, ///< monitor A offset
+	O_MON_B     = 0x00002000, ///< monitor B offset
+	O_MON_C     = 0x00003000, ///< monitor C offset
+	O_MON_D     = 0x00004000, ///< monitor D offset
+	capmix_None = 0xffffffff, ///< indicates end of memory area
+};
 
-#define O_PATCHBAY  0x00030000
-#define O_REVERB    0x00040000
-#define O_PREAMP    0x00050000
-#define O_LINE      0x00051000
-#define O_INPUT_MON 0x00060000
-#define O_DAW_MON   0x00070000
-#define O_MASTER    0x00080000
-#define O_MON_A     0x00001000
-#define O_MON_B     0x00002000
-#define O_MON_C     0x00003000
-#define O_MON_D     0x00004000
-
-typedef struct capmix_memory_area {
-	capmix_addr_t offset;
-	capmix_type_t type;
-	const char *const name;
-	const struct capmix_memory_area **const area;
+/// tree structure for describing areas of device memory
+typedef struct capmix_memory_area_s {
+	capmix_addr_t offset;   ///< device memory address offset of current area
+	capmix_type_t type;     ///< type of value stored at this address
+	const char *const name; ///< name of this area of memory
+	const struct capmix_memory_area_s **const area; ///< areas of memory contained within this area
 } capmix_mem_t;
 
-struct capmix_str {
+/// collection of strings used in memory area names
+typedef struct capmix_str_s {
 	const char *const top_map[16];
 	const char *const patchbay[5];
 	const char *const type;
@@ -42,7 +46,7 @@ struct capmix_str {
 	const char *const master_params[2];
 	const char *const reverb_return;
 	const char *const link;
-};
+} capmix_str_t;
 
 void                   capmix_print_map(capmix_mem_t *map, char *prefix, capmix_addr_t old_offset);
 static capmix_mem_t *  capmix_lookup_map(capmix_mem_t *map, char *part);

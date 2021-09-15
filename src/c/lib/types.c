@@ -4,18 +4,26 @@
 #include "types.h"
 
 #ifndef DOXYGEN_SKIP
-#define UNPACK(NAME) static capmix_unpacked_t capmix_unpack_##NAME (capmix_type_info *type_info, capmix_fixed value)
-#define PARSE(NAME)  static capmix_unpacked_t capmix_parse_##NAME  (capmix_type_info *type_info, const char *str)
-#define FORMAT(NAME) static int               capmix_format_##NAME (capmix_type_info *type_info, capmix_unpacked_t unpacked, char *str)
-#define PACK(NAME)   static int               capmix_pack_##NAME   (capmix_type_info *type_info, capmix_unpacked_t unpacked, uint8_t *buf)
+#define UNPACK(NAME) static capmix_unpacked_t capmix_unpack_##NAME (capmix_type_info_t *type_info, capmix_fixed value)
+#define PARSE(NAME)  static capmix_unpacked_t capmix_parse_##NAME  (capmix_type_info_t *type_info, const char *str)
+#define FORMAT(NAME) static int               capmix_format_##NAME (capmix_type_info_t *type_info, capmix_unpacked_t unpacked, char *str)
+#define PACK(NAME)   static int               capmix_pack_##NAME   (capmix_type_info_t *type_info, capmix_unpacked_t unpacked, uint8_t *buf)
 #define TYPE_NAME(NAME) [ T##NAME ] = #NAME
+#define MARSHALL( OP, DEFAULT ) \
+	capmix_type_t t = type;\
+	capmix_type_info_t *type_info = &capmix_types[t];\
+	while( type_info->OP == NULL ){\
+		t = type_info->parent;\
+		if( t == TValue ){\
+			DEFAULT; }\
+		type_info = &capmix_types[t]; }
 #endif
 
 /**
- * \brief convert fixed value into an array where each byte represents four bits (0x1234 -> {0x01,0x02,0x03,0x04})
- * \param val the value to be converted
- * \param n   the number of bytes to produce
- * \param buf the buffer to write into
+ * @brief convert fixed value into an array where each byte represents four bits (`0x1234` -> `{0x01,0x02,0x03,0x04}`)
+ * @param val the value to be converted
+ * @param n   the number of bytes to produce
+ * @param buf the buffer to write into
  */
 void              capmix_fixed_to_nibbles (capmix_fixed val, int n, uint8_t *buf)
 {
@@ -28,10 +36,10 @@ void              capmix_fixed_to_nibbles (capmix_fixed val, int n, uint8_t *buf
 	}
 }
 /**
- * \brief convert an array of bytes into a fixed value ({0x0a,0x0b,0x0c,0x0d} -> 0xabcd)
- * \param buf the buffer to read
- * \param len the number of bytes to read in the buffer
- * \return a capmix_fixed integer
+ * @brief convert an array of bytes into a fixed value (`{0x0a,0x0b,0x0c,0x0d}` -> `0xabcd`)
+ * @param buf the buffer to read
+ * @param len the number of bytes to read in the buffer
+ * @return a capmix_fixed integer
  */
 capmix_fixed      capmix_nibbles_to_fixed (uint8_t *buf, int len)
 {
@@ -46,9 +54,9 @@ capmix_fixed      capmix_nibbles_to_fixed (uint8_t *buf, int len)
 }
 
 /**
- * \brief convert a signed floating point value representing dB into a fixed integer value
- * \param db the value in decibels to be converted ranging from -INFINITY to +12
- * \return a capmix_fixed integer where +12 dB is represented as 0x800000, +0 dB as 0x200000, -3 dB as 0x100000, and -INFINITY as 0x000000
+ * @brief convert a signed floating point value representing dB into a fixed integer value
+ * @param db the value in decibels to be converted ranging from -inf to +12
+ * @return a capmix_fixed integer where +12 dB is represented as `0x800000`, +0 dB as `0x200000`, -3 dB as `0x100000`, and -INFINITY as `0x000000`
  */
 capmix_fixed      capmix_db_to_fixed      (float db)
 {
@@ -56,9 +64,9 @@ capmix_fixed      capmix_db_to_fixed      (float db)
 	return (int)(pow(10., db/20.) * 0x200000);
 }
 /**
- * \brief convert a fixed integer value into a floating point value representing dB
- * \param fx the fixed value to be converted
- * \return a signed floating point value representing decibels ranging from -INFINITY to +12
+ * @brief convert a fixed integer value into a floating point value representing dB
+ * @param fx the fixed value to be converted
+ * @return a signed floating point value representing decibels ranging from -inf to +12
  */
 float             capmix_fixed_to_db      (capmix_fixed fx)
 {
@@ -68,18 +76,18 @@ float             capmix_fixed_to_db      (capmix_fixed fx)
 	return 20.*log10(ratio);
 }
 /**
- * \brief convert a signed floating point value representing left-right pan into a fixed integer value
- * \param db the floating point value to be converted ranging from -100 on the left to +100 on the right
- * \return a capmix_fixed integer where L 100% is represented as 0x0000, Center as 0x4000, and Right 100% as 0x8000
+ * @brief convert a signed floating point value representing left-right pan into a fixed integer value
+ * @param db the floating point value to be converted ranging from -100 on the left to +100 on the right
+ * @return a capmix_fixed integer where Left 100% is represented as `0x0000`, Center as `0x4000`, and Right 100% as `0x8000`
  */
 float             capmix_fixed_to_pan     (capmix_fixed fx)
 {
 	return round(100. * (fx - 16384.) / 16384.);
 }
 /**
- * \brief convert a fixed integer value into a signed floating point value representing left-right pan
- * \param fx the capmix_fixed integer to be converted where L 100% is represented as 0x0000, Center as 0x4000, and Right 100% as 0x8000
- * \return a signed floating point value ranging from -100 on the left to +100 on the right
+ * @brief convert a fixed integer value into a signed floating point value representing left-right pan
+ * @param fx the capmix_fixed integer to be converted where L 100% is represented as 0x0000, Center as 0x4000, and Right 100% as 0x8000
+ * @return a signed floating point value ranging from -100 on the left to +100 on the right
  */
 capmix_fixed      capmix_pan_to_fixed     (float pan)
 {
@@ -262,25 +270,26 @@ void             capmix_format_packed       (capmix_type_t type, uint8_t *data, 
 }
 */
 
-capmix_unpacked_t capmix_unpack_unset       (capmix_type_info *type_info, capmix_fixed fx)
+capmix_unpacked_t capmix_unpack_unset       (capmix_type_info_t *type_info, capmix_fixed fx)
 {
 	return capmix_UnsetInt;
 }
-capmix_unpacked_t capmix_parse_unset        (capmix_type_info *type_info, const char *data)
+capmix_unpacked_t capmix_parse_unset        (capmix_type_info_t *type_info, const char *data)
 {
 	return capmix_UnsetInt;
 }
-int capmix_format_unset                     (capmix_type_info *type_info, capmix_unpacked_t unpacked, char *str)
+int capmix_format_unset                     (capmix_type_info_t *type_info, capmix_unpacked_t unpacked, char *str)
 {
 	str[0] = '?'; str[1] = '\0'; return 1;
 }
-int capmix_pack_unset                       (capmix_type_info *type_info, capmix_unpacked_t unpacked, uint8_t *buf)
+int capmix_pack_unset                       (capmix_type_info_t *type_info, capmix_unpacked_t unpacked, uint8_t *buf)
 {
 	return 0;
 }
 #endif
 
-static capmix_type_info capmix_types[NTypes] = {
+/// the canonical array of type information used in this module
+static capmix_type_info_t capmix_types[NTypes] = {
 	[TValue] = {
 		.type = TValue,
 		.name = "Value",
@@ -472,14 +481,31 @@ static capmix_type_info capmix_types[NTypes] = {
 	},
 };
 
-capmix_type_info *  capmix_type(capmix_type_t type)
+/**
+ * @brief get the type descriptor for a given type identifier
+ * @param type the identifier of the type to be described
+ * @return structure representing the constraints of the given type
+ */
+capmix_type_info_t *  capmix_type(capmix_type_t type)
 {
 	return &capmix_types[type];
 }
+
+/**
+ * @brief convenience function to return the string name of the given type identifier
+ * @param type the identifier of the type to be described
+ * @return the string holding the type's name
+ */
 const char *        capmix_type_name         (capmix_type_t type)
 {
 	return capmix_types[type].name;
 }
+
+/**
+ * @brief convenience function to return the number of bytes required to store the type's packed value
+ * @param type the identifier of the type to be described
+ * @return the number of bytes needed to pack the type's value
+ */
 int                 capmix_type_size         (capmix_type_t type)
 {
 	switch(type)
@@ -489,6 +515,13 @@ int                 capmix_type_size         (capmix_type_t type)
 		default      : return 1;
 	}
 }
+
+/**
+ * @brief convert a packed value received from the device into a fixed 32-bit value
+ * @param type the type of the value to be converted
+ * @param data the buffer holding the value to be converted
+ * @return a fixed 32-bit value
+ */
 capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 {
 	int len = capmix_type_size(type);
@@ -496,21 +529,16 @@ capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 	return fx;
 }
 
-#ifndef DOXYGEN_SKIP
-#define MARSHALL( OP, DEFAULT ) \
-	capmix_type_t t = type;\
-	capmix_type_info *type_info = &capmix_types[t];\
-	while( type_info->OP == NULL ){\
-		t = type_info->parent;\
-		if( t == TValue ){\
-			DEFAULT; }\
-		type_info = &capmix_types[t]; }
-#endif
-
+/**
+ * @brief unpacks raw data received from the device
+ * @param type the type of the value to be unpacked
+ * @param data the buffer holding the value to be converted
+ * @return the unpacked value
+ */
 capmix_unpacked_t  capmix_unpack_type       (capmix_type_t type, uint8_t *data)
 {
 	capmix_type_t t = type;
-	capmix_type_info *type_info = &capmix_types[t];
+	capmix_type_info_t *type_info = &capmix_types[t];
 	while( type_info->unpack == NULL )
 	{
 		t = type_info->parent;
@@ -520,10 +548,17 @@ capmix_unpacked_t  capmix_unpack_type       (capmix_type_t type, uint8_t *data)
 	capmix_fixed fx = capmix_fixed_from_packed(type, data);
 	return type_info->unpack(&capmix_types[type], fx);
 }
+
+/**
+ * @brief parse a string into an unpacked value for a given type
+ * @param type the type of the value to be parsed
+ * @param str the string to be parsed
+ * @return the unpacked value
+ */
 capmix_unpacked_t  capmix_parse_type        (capmix_type_t type, const char *str)
 {
 	capmix_type_t t = type;
-	capmix_type_info *type_info = &capmix_types[t];
+	capmix_type_info_t *type_info = &capmix_types[t];
 	while( type_info->parse == NULL )
 	{
 		t = type_info->parent;
@@ -531,10 +566,18 @@ capmix_unpacked_t  capmix_parse_type        (capmix_type_t type, const char *str
 	}
 	return type_info->parse(&capmix_types[type], str);
 }
+
+/**
+ * @brief format a string representation of the given unpacked value
+ * @param type the type of the value to be printed
+ * @param unpacked the value to format
+ * @param str the string buffer to printed into
+ * @return the length of the string produced
+ */
 int                capmix_format_type       (capmix_type_t type, capmix_unpacked_t unpacked, char *str)
 {
 	capmix_type_t t = type;
-	capmix_type_info *type_info = &capmix_types[t];
+	capmix_type_info_t *type_info = &capmix_types[t];
 	if( unpacked.as_int == capmix_Unset )
 		return capmix_format_unset(type_info, unpacked, str);
 	while( type_info->format == NULL )
@@ -545,10 +588,18 @@ int                capmix_format_type       (capmix_type_t type, capmix_unpacked
 	type_info->format(&capmix_types[type], unpacked, str);
 	return strlen(str);
 }
+
+/**
+ * @brief write a packed value into a buffer for the given type
+ * @param type the type of the value to be written
+ * @param unpacked the value to be packed
+ * @param buf the buffer to be written into
+ * @return the length of the data written into the buffer
+ */
 int                capmix_pack_type         (capmix_type_t type, capmix_unpacked_t unpacked, uint8_t *buf)
 {
 	capmix_type_t t = type;
-	capmix_type_info *type_info = &capmix_types[t];
+	capmix_type_info_t *type_info = &capmix_types[t];
 	if( unpacked.as_int == capmix_Unset )
 		return capmix_pack_unset(type_info, unpacked, buf);
 	while( type_info->pack == NULL )
