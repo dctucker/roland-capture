@@ -108,15 +108,15 @@ PARSE(byte)
 }
 FORMAT(byte)
 {
-	if( unpacked.as_int == capmix_Unset )
+	if( unpacked.discrete == capmix_Unset )
 		sprintf(str, "?");
 	else
-		sprintf(str, "0x%02x", unpacked.as_int);
+		sprintf(str, "0x%02x", unpacked.discrete);
 	return strlen(str);
 }
 PACK(byte)
 {
-	buf[0] = unpacked.as_int & 0x7f;
+	buf[0] = unpacked.discrete & 0x7f;
 	return type_info->size;
 }
 
@@ -134,7 +134,7 @@ PARSE(boolean)
 }
 FORMAT(boolean)
 {
-	if( unpacked.as_int )
+	if( unpacked.discrete )
 		sprintf(str, "ON");
 	else
 		sprintf(str, "off");
@@ -142,7 +142,7 @@ FORMAT(boolean)
 }
 PACK(boolean)
 {
-	buf[0] = unpacked.as_int == 0 ? 0 : 1;
+	buf[0] = unpacked.discrete == 0 ? 0 : 1;
 	return type_info->size;
 }
 
@@ -160,12 +160,12 @@ PARSE(volume)
 }
 FORMAT(volume)
 {
-	sprintf(str, "%+1.0f", unpacked.as_float);
+	sprintf(str, "%+1.0f", unpacked.continuous);
 	return strlen(str);
 }
 PACK(volume)
 {
-	float value = unpacked.as_float;
+	float value = unpacked.continuous;
 	capmix_fixed fx = capmix_db_to_fixed(value);
 	if( fx > 0x7fffff ) fx = 0x7fffff;
 	if( value != -INFINITY && round(value) == 0 )
@@ -197,7 +197,7 @@ PARSE(pan)
 }
 FORMAT(pan)
 {
-	float pan = unpacked.as_float;
+	float pan = unpacked.continuous;
 	if( pan < 0 )
 		sprintf(str, "L%1.0f", fabs(pan));
 	else if( pan > 0 )
@@ -208,7 +208,7 @@ FORMAT(pan)
 }
 PACK(pan)
 {
-	float value = unpacked.as_float;
+	float value = unpacked.continuous;
 	capmix_fixed fx = capmix_pan_to_fixed(value);
 	capmix_fixed_to_nibbles(fx, 4, buf);
 	return type_info->size;
@@ -216,20 +216,20 @@ PACK(pan)
 
 UNPACK(scaled)
 {
-	return capmix_UnpackedFloat(type_info->min_f + type_info->step_f * value);
+	return capmix_UnpackedFloat(type_info->min.continuous + type_info->step.continuous * value);
 }
 //PARSE(scaled) // # TODO
 FORMAT(scaled)
 {
-	if( type_info->step == 1. )
-		sprintf(str, "%1.0f", unpacked.as_float);
+	if( type_info->step.continuous == 1. )
+		sprintf(str, "%1.0f", unpacked.continuous);
 	else
-		sprintf(str, "%1.1f", unpacked.as_float);
+		sprintf(str, "%1.1f", unpacked.continuous);
 	return strlen(str);
 }
 PACK(scaled)
 {
-	uint8_t value = (unpacked.as_float - type_info->min_f) / type_info->step_f;
+	uint8_t value = (unpacked.continuous - type_info->min.continuous) / type_info->step.continuous;
 	*buf = value;
 	return type_info->size;
 }
@@ -237,7 +237,7 @@ PACK(scaled)
 //UNPACK(enum) // unpack_byte
 PARSE(enum)
 {
-	for(int i=0; i < type_info->max; i++)
+	for(int i=0; i < type_info->max.discrete; i++)
 	{
 		const char *name = type_info->enum_names[i];
 		if( strcmp(str, name) == 0 )
@@ -247,10 +247,10 @@ PARSE(enum)
 }
 FORMAT(enum)
 {
-	uint32_t v = unpacked.as_int;
-	if( v > type_info->max )
+	uint32_t v = unpacked.discrete;
+	if( v > type_info->max.discrete )
 	{
-		warn("\nvalue too large 0x%x\n", v);
+		//warn("\nvalue too large 0x%x\n", v);
 		sprintf(str, "?");
 		return 1;
 	}
@@ -294,87 +294,89 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TValue,
 		.name = "Value",
 		.unpack = capmix_unpack_unset,
-		.parse = capmix_parse_unset,
+		.parse  = capmix_parse_unset,
 		.format = capmix_format_unset,
-		.pack = capmix_pack_unset,
+		.pack   = capmix_pack_unset,
 	},
 	[TByte] = {
 		.type = TByte,
 		.name = "Byte",
 		.parent = TValue,
-		.min = 0x0, .max = 0x7f, .step = 0x1,
+		.min = { .discrete = 0x0 }, .max = { .discrete = 0x7f }, .step = { .discrete = 0x1 },
 		.unpack = capmix_unpack_byte,
-		.parse = capmix_parse_byte,
+		.parse  = capmix_parse_byte,
 		.format = capmix_format_byte,
-		.pack = capmix_pack_byte,
+		.pack   = capmix_pack_byte,
 	},
 	[TBoolean] = {
 		.type = TBoolean,
 		.name = "Boolean",
 		.parent = TByte,
-		.min = 0x0, .max = 0x1, .step = 0x1,
+		.min = { .discrete = 0x0 }, .max = { .discrete = 0x1 }, .step = { .discrete = 0x1 },
 		.unpack = capmix_unpack_boolean,
-		.parse = capmix_parse_boolean,
+		.parse  = capmix_parse_boolean,
 		.format = capmix_format_boolean,
+		//.pack = capmix_pack_byte,
 	},
 	[TVolume] = {
 		.type = TVolume,
 		.name = "Volume",
 		.parent = TValue,
-		.min_f = -71., .max_f = 12., .step_f = 1.,
+		.min = { .continuous = -71. }, .max = { .continuous = 12. }, .step = { .continuous = 1. },
 		.unpack = capmix_unpack_volume,
-		.parse = capmix_parse_volume,
+		.parse  = capmix_parse_volume,
 		.format = capmix_format_volume,
-		.pack = capmix_pack_volume,
+		.pack   = capmix_pack_volume,
 	},
 	[TPan] = {
 		.type = TPan,
 		.name = "Pan",
 		.parent = TValue,
-		.min_f = -100., .max_f = 100., .step_f = 1.,
+		.min = { .continuous = -100. }, .max = { .continuous = 100. }, .step = { .continuous = 1. },
 		.unpack = capmix_unpack_pan,
-		.parse = capmix_parse_pan,
+		.parse  = capmix_parse_pan,
 		.format = capmix_format_pan,
-		.pack = capmix_pack_pan,
+		.pack   = capmix_pack_pan,
 	},
 
 	[TScaled] = {
 		.type = TScaled,
 		.name = "Scaled",
-		.parent = TByte,
-		.unpack = capmix_unpack_scaled,
+		.parent  = TByte,
+		.unpack  = capmix_unpack_scaled,
 		//.parse = capmix_parse_byte,
-		.format = capmix_format_scaled,
+		.format  = capmix_format_scaled,
+		//.pack  = capmix_pack_byte,
 	},
 	[TSens] = {
 		.type = TSens,
 		.name = "Sens",
 		.parent = TScaled,
-		.min_f =   1., .max_f =  58., .step_f = 0.5,
+		.min = { .continuous =   1. }, .max = { .continuous =  58. }, .step = { .continuous = 0.5 },
 	},
 	[TThreshold] = {
 		.type = TThreshold,
 		.name = "Threshold",
 		.parent = TScaled,
-		.min_f = -40., .max_f =   0., .step_f = 1.,
+		.min = { .continuous = -40. }, .max = { .continuous =   0. }, .step = { .continuous = 1. },
 	},
 	[TGain] = {
 		.type = TGain,
 		.name = "Gain",
 		.parent = TScaled,
-		.min_f = -40., .max_f =  40., .step_f = 1.,
+		.min = { .continuous = -40. }, .max = { .continuous =  40. }, .step = { .continuous = 1. },
 	},
 	[TGate] = {
 		.type = TGate,
 		.name = "Gate",
 		.parent = TScaled,
-		.min_f = -70., .max_f = -20., .step_f = 1.,
+		.min = { .continuous = -70. }, .max = { .continuous = -20. }, .step = { .continuous = 1. },
 	},
 	[TReverbTime] = {
 		.type = TReverbTime,
 		.name = "ReverbTime",
 		.parent = TScaled,
-		.min_f =  0.1, .max_f =  5., .step_f = 0.1,
+		.min = { .continuous = 0.1 }, .max = { .continuous = 5.}, .step = { .continuous = 0.1 },
 	},
 
 	[TEnum] = {
@@ -382,15 +384,15 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.name = "Enum",
 		.parent = TByte,
 		//.unpack = capmix_unpack_byte,
-		.parse = capmix_parse_enum,
-		.format = capmix_format_enum,
-		//.pack = capmix_pack_byte,
+		.parse    = capmix_parse_enum,
+		.format   = capmix_format_enum,
+		//.pack   = capmix_pack_byte,
 	},
 	[TRatio] = {
 		.type = TRatio,
 		.name = "Ratio",
 		.parent = TEnum,
-		.min = 0, .max = 13, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 13 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			"1", "1.12", "1.25", "1.4", "1.6", "1.8", "2", "2.5", "3.2", "4", "5.6", "8", "16", "inf",
 		},
@@ -399,7 +401,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TAttack,
 		.name = "Attack",
 		.parent = TEnum,
-		.min = 0, .max = 124, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 124 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			 "0.0",  "0.1",  "0.2",  "0.3",  "0.4",  "0.5",  "0.6",  "0.7",  "0.8",  "0.9",
 			 "1.0",  "1.1",  "1.2",  "1.3",  "1.4",  "1.5",  "1.6",  "1.7",  "1.8",  "1.9",
@@ -418,7 +420,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TRelease,
 		.name = "Release",
 		.parent = TEnum,
-		.min = 0, .max = 124, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 124 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			 "0",      "1",    "2",    "3",    "4",    "5",    "6",    "7",    "8",    "9",
 			 "10",    "11",   "12",   "13",   "14",   "15",   "16",   "17",   "18",   "19",
@@ -437,7 +439,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TKnee,
 		.name = "Knee",
 		.parent = TEnum,
-		.min = 0, .max = 9, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 9 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			"HARD", "SOFT1", "SOFT2", "SOFT3", "SOFT4", "SOFT5", "SOFT6", "SOFT7", "SOFT8", "SOFT9",
 		},
@@ -446,7 +448,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TAttenuation,
 		.name = "Attenuation",
 		.parent = TEnum,
-		.min = 0, .max = 2, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 2 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			"-20","-10","+4",
 		},
@@ -455,7 +457,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TReverbType,
 		.name = "ReverbType",
 		.parent = TEnum,
-		.min = 0, .max = 5, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 5 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			"off", "echo", "room", "small_hall", "large_hall", "plate",
 		},
@@ -464,7 +466,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TPreDelay,
 		.name = "PreDelay",
 		.parent = TEnum,
-		.min = 0, .max = 12, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 12 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			"0.0", "0.1", "0.2", "0.4", "0.8", "1.6", "3.2", "6.4", "10", "20", "40", "80", "160",
 		},
@@ -473,7 +475,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TPatch,
 		.name = "Patch",
 		.parent = TEnum,
-		.min = 0, .max = 8, .step = 1,
+		.min = { .discrete = 0 }, .max = { .discrete = 8 }, .step = { .discrete = 1 },
 		.enum_names = (const char *[]){
 			"MIX A", "MIX B", "MIX C", "MIX D",
 			"WAVE 1/2", "WAVE 3/4", "WAVE 5/6", "WAVE 7/8", "WAVE 9/10",
@@ -578,7 +580,7 @@ int                capmix_format_type       (capmix_type_t type, capmix_unpacked
 {
 	capmix_type_t t = type;
 	capmix_type_info_t *type_info = &capmix_types[t];
-	if( unpacked.as_int == capmix_Unset )
+	if( unpacked.discrete == capmix_Unset )
 		return capmix_format_unset(type_info, unpacked, str);
 	while( type_info->format == NULL )
 	{
@@ -600,7 +602,7 @@ int                capmix_pack_type         (capmix_type_t type, capmix_unpacked
 {
 	capmix_type_t t = type;
 	capmix_type_info_t *type_info = &capmix_types[t];
-	if( unpacked.as_int == capmix_Unset )
+	if( unpacked.discrete == capmix_Unset )
 		return capmix_pack_unset(type_info, unpacked, buf);
 	while( type_info->pack == NULL )
 	{
