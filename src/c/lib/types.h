@@ -14,7 +14,7 @@ typedef uint32_t capmix_fixed;  ///< 32-bit value representing the value of a gi
 typedef uint32_t capmix_addr_t; ///< 32-bit value holding a four-byte device address
 
 /// constants to identify each control's value type
-typedef enum capmix_type_t {
+typedef enum capmix_type_e {
 	TValue = 0,   ///< Unknown or invalid type. Use with caution.
 	TByte,        ///< Simple one-byte value. Parent: `TValue`
 	TBoolean,     ///< An on/off switch. Parent: `TByte`
@@ -51,25 +51,25 @@ typedef union capmix_unpacked_u
 } capmix_unpacked_t;
 
 typedef struct capmix_type_info_s capmix_type_info_t;                                           ///< structure holding the constraints, taxonomy, and marshalling for a given type
-typedef capmix_unpacked_t (* unpacker_t  )(capmix_type_info_t *, capmix_fixed);                 ///< pointer to a function that unpacks fixed values
-typedef capmix_unpacked_t (* parser_t    )(capmix_type_info_t *, const char *);                 ///< pointer to a function that parses strings into unpacked values
-typedef int               (* formatter_t )(capmix_type_info_t *, capmix_unpacked_t, char *);    ///< pointer to a function that formats strings from unpacked values
-typedef int               (* packer_t    )(capmix_type_info_t *, capmix_unpacked_t, uint8_t *); ///< pointer to a function that packs bytes from unpacked values
+typedef capmix_unpacked_t (* capmix_unpacker_t  )(capmix_type_info_t *, capmix_fixed);                 ///< pointer to a function that unpacks fixed values
+typedef capmix_unpacked_t (* capmix_parser_t    )(capmix_type_info_t *, const char *);                 ///< pointer to a function that parses strings into unpacked values
+typedef int               (* capmix_formatter_t )(capmix_type_info_t *, capmix_unpacked_t, char *);    ///< pointer to a function that formats strings from unpacked values
+typedef int               (* capmix_packer_t    )(capmix_type_info_t *, capmix_unpacked_t, uint8_t *); ///< pointer to a function that packs bytes from unpacked values
 
 /// structure holding the constraints, taxonomy, and marshalling for a given type
 struct capmix_type_info_s {
-	capmix_type_t type;       ///< primary key, identifies the type to be described
-	capmix_type_t parent;     ///< the supertype from which this type inherits
-	capmix_unpacked_t min;    ///< minimum unpacked value
-	capmix_unpacked_t max;    ///< maximum unpacked value
-	capmix_unpacked_t step;   ///< granularity of the unpacked value
-	int size;                 ///< number of bytes stored in device memory for this type
-	unpacker_t  unpack;       ///< pointer to the function that unpacks fixed values for this type
-	parser_t    parse;        ///< pointer to the function that parses strings into unpacked values for this type
-	formatter_t format;       ///< pointer to the function that formats strings from unpacked values for this type
-	packer_t    pack;         ///< pointer to the function that packs bytes from unpacked values for this type
-	const char *const name;   ///< string representing the type's name
-	const char **enum_names;  ///< array of strings describing discrete values for enumerated types
+	capmix_type_t type;        ///< primary key, identifies the type to be described
+	capmix_type_t parent;      ///< the supertype from which this type inherits
+	capmix_unpacked_t min;     ///< minimum unpacked value
+	capmix_unpacked_t max;     ///< maximum unpacked value
+	capmix_unpacked_t step;    ///< granularity of the unpacked value
+	int size;                  ///< number of bytes stored in device memory for this type
+	capmix_unpacker_t  unpack; ///< pointer to the function that unpacks fixed values for this type
+	capmix_parser_t    parse;  ///< pointer to the function that parses strings into unpacked values for this type
+	capmix_formatter_t format; ///< pointer to the function that formats strings from unpacked values for this type
+	capmix_packer_t    pack;   ///< pointer to the function that packs bytes from unpacked values for this type
+	const char *const name;    ///< string representing the type's name
+	const char **enum_names;   ///< array of strings describing discrete values for enumerated types
 };
 
 capmix_fixed            capmix_nibbles_to_fixed  (uint8_t *, int );
