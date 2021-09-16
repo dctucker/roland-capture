@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "roland.h"
 
-#define DATA_START 7
 uint8_t capture_sysex[] = { 0xf0, 0x41, 0x10, 0x00, 0x00, 0x6b };
 
 /**
@@ -35,7 +34,7 @@ static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 	}
 	buffer[i++] = cmd;
 	i += data_len;
-	buffer[i++] = checksum(&(buffer[DATA_START]), data_len);
+	buffer[i++] = checksum(&(buffer[sizeof(capture_sysex)+1]), data_len);
 	buffer[i++] = 0xf7;
 	return i;
 }

@@ -1,8 +1,11 @@
 #pragma once
 
-#include "roland.h"
-#include "types.h"
 #include "capture.h"
+
+/**
+ * @defgroup API
+ * @brief The functions intended to be used in the context of a shared library
+ */
 
 /**
  * @brief structure describing an event of receiving a SysEx message from the device

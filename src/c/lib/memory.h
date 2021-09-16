@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "common.h"
 
 #define N_MEMSECTION 32 ///< 2^5 sections. We are able to reduce the address space locally because it appears the top two address bytes only use four bits each.
 #define N_MEMBUF   2048 ///< 2^11 bytes in each section. The third byte of an address only uses five bits, and the least significant byte never seems to exceed five bits (reverb is at 0x0e + 6)

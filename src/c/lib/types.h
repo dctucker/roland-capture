@@ -1,18 +1,20 @@
 #pragma once
 
-#include <inttypes.h>
-
-#ifndef DOXYGEN_SKIP
-#define warn(...) fprintf(stderr, __VA_ARGS__)
-#define CCA(members...) (const char *[]){ members, 0 }
-#define capmix_addr_bytes(ADDR) (ADDR>>24) & 0xff, (ADDR>>16) & 0xff, (ADDR>>8) & 0xff, ADDR & 0xff
-#define capmix_bytes_addr(ADDR) ((capmix_addr_t)((ADDR[0] << 24) | (ADDR[1]<<16) | (ADDR[2]<<8) | ADDR[3]))
-#define _API __attribute__ ((visibility("default")))
-#endif
+#include "common.h"
 
 typedef uint32_t capmix_fixed;  ///< 32-bit value representing the value of a given mixer control such as volume which is the largest with six raw bytes, 24 bits of which are significant, so we can compress this for ease-of-use
-typedef uint32_t capmix_addr_t; ///< 32-bit value holding a four-byte device address
 
+/**
+ * @defgroup Types
+ * @brief Some documentation goes here
+ */
+/**
+ * @defgroup ValueTypes
+ * @ingroup Types
+ * @brief Some documentation goes here
+ */
+
+/// @ingroup ValueTypes
 /// constants to identify each control's value type
 typedef enum capmix_type_e {
 	TValue = 0,   ///< Unknown or invalid type. Use with caution.
@@ -37,18 +39,6 @@ typedef enum capmix_type_e {
 	TReverbTime,  ///< Scaled reverb time. Parent: `TScaled`
 	NTypes,       ///< dummy value to represent the number of enumerated types
 } capmix_type_t;
-
-#define capmix_Unset            0xff                                            ///< unintialized memory gets this value to represent unknowns
-#define capmix_UnpackedFloat(F) (capmix_unpacked_t){ .continuous = (F) }        ///< convenience macro to represent continuous values
-#define capmix_UnpackedInt(I)   (capmix_unpacked_t){ .discrete = (I) }          ///< convenience macro to represent discrete values
-#define capmix_UnsetInt         (capmix_unpacked_t){ .discrete = capmix_Unset } ///< convenience macro for unset values
-
-/// unpacked values are what we use internally to represent the position of mixer controls
-typedef union capmix_unpacked_u
-{
-	uint32_t discrete;   ///< for discrete values such as reverb type
-	float    continuous; ///< for continuous values such as pan and volume
-} capmix_unpacked_t;
 
 typedef struct capmix_type_info_s capmix_type_info_t;                                           ///< structure holding the constraints, taxonomy, and marshalling for a given type
 typedef capmix_unpacked_t (* capmix_unpacker_t  )(capmix_type_info_t *, capmix_fixed);                 ///< pointer to a function that unpacks fixed values
@@ -76,10 +66,10 @@ capmix_fixed            capmix_nibbles_to_fixed  (uint8_t *, int );
 void                    capmix_fixed_to_nibbles  (capmix_fixed, int, uint8_t *);
 capmix_fixed            capmix_fixed_from_packed (capmix_type_t, uint8_t *);
 
-_API capmix_unpacked_t  capmix_unpack_type  (capmix_type_t, uint8_t *);
-_API capmix_unpacked_t  capmix_parse_type   (capmix_type_t, const char *);
-_API int                capmix_format_type  (capmix_type_t, capmix_unpacked_t, char *);
-_API int                capmix_pack_type    (capmix_type_t, capmix_unpacked_t, uint8_t *);
+_API capmix_unpacked_t  capmix_unpack_type  (capmix_type_t, uint8_t *); ///< @ingroup API
+_API capmix_unpacked_t  capmix_parse_type   (capmix_type_t, const char *); ///< @ingroup API
+_API int                capmix_format_type  (capmix_type_t, capmix_unpacked_t, char *); ///< @ingroup API
+_API int                capmix_pack_type    (capmix_type_t, capmix_unpacked_t, uint8_t *); ///< @ingroup API
 
 capmix_type_info_t *    capmix_type         (capmix_type_t type);
 _API const char *       capmix_type_name    (capmix_type_t);

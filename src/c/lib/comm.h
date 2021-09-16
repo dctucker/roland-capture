@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib/types.h"
+typedef void (capmix_listener_t)(uint8_t *, int);
 
 int   capmix_setup_midi();
 int   capmix_read_midi();

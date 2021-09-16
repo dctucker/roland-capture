@@ -8,7 +8,7 @@ STRIP=-s
 OBJDIR = obj
 VPATH = $(OBJDIR)
 OBJ = lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o
-DEPS = lib/$(patsubst %.c,%.o,$(wildcard filters/*.h)) $(wildcard *.h)
+DEPS = lib/$(patsubst %.c,%.o,$(wildcard types/*.h)) $(wildcard *.h)
 
 LCAPMIX = -L$(OBJDIR)/lib -lcapmix '-Wl,-R,$$ORIGIN/../lib'
 TESTS = bin/test_memory bin/test_mixer bin/test_capture bin/test_types

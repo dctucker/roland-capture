@@ -5,3 +5,5 @@ bin
 *.s
 obj
 doc/html
+doc/xml
+doc/_build
