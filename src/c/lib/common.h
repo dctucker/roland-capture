@@ -41,3 +41,9 @@ typedef union capmix_unpacked_u
 #define capmix_addr_bytes(ADDR) (ADDR>>24) & 0xff, (ADDR>>16) & 0xff, (ADDR>>8) & 0xff, ADDR & 0xff
 #define capmix_bytes_addr(ADDR) ((capmix_addr_t)((ADDR[0] << 24) | (ADDR[1]<<16) | (ADDR[2]<<8) | ADDR[3]))
 #endif
+
+typedef struct cursor_s {
+	int x;
+	int y;
+} cursor_t;
+

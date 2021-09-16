@@ -83,6 +83,7 @@ capmix_event_t          capmix_get(capmix_addr_t addr)
 {
 	capmix_type_t type = capmix_addr_type(addr);
 	int type_len = capmix_type_size(type);
+	if( type_len > 1 ) type_len /= 2;
 	int sysex_len = capmix_make_receive_sysex(sysex_buf, addr, type_len);
 	if( connected )
 		capmix_send_midi(sysex_buf, sysex_len);

@@ -1,19 +1,19 @@
-//#include <unistd.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ncurses.h>
 #include <string.h>
 #include "lib/capmix.h"
 #include "lib/mixer.h"
 
-#define WIDTH 90
+#define WIDTH 120
 #define HEIGHT 20
 #define SPACING 5
 
+#define log(...) { wprintw(log_win, __VA_ARGS__); wprintw(log_win, "\n"); wrefresh(log_win); }
+
 WINDOW *menu_win;
-struct cursor {
-	int x;
-	int y;
-} cursor;
+WINDOW *log_win;
+cursor_t cursor;
 
 int startx = 0;
 int starty = 0;
@@ -76,11 +76,10 @@ void  quit()
 
 void  unrecognized(int c)
 {
-	mvprintw(24, 0, "Charcter pressed is = %3d Hopefully it can be printed as '%c'", c, c);
-	refresh();
+	log("Charcter pressed is = %3d Hopefully it can be printed as '%c'", c, c);
 }
 
-void  on_keyboard(int c)
+int  on_keyboard(int c)
 {
 	switch(c)
 	{
@@ -124,9 +123,10 @@ void  on_keyboard(int c)
 		case '$'           :  channel(14);      break;
 		case '%'           :  channel(15);      break;
 		case '^'           :  channel(16);      break;
-		case ERR           :  break;
+		case ERR           :  return 0;
 		default            :  unrecognized(c);
 	}
+	return 1;
 }
 
 #define ON_SUFFIX(X,Y,Z) if( strcmp(suffix, X) == 0 ){ if( yes ) sprintf(str, Y); else sprintf(str, Z); return; }
@@ -159,19 +159,62 @@ void  format_value( capmix_addr_t addr, capmix_unpacked_t unpacked, char *str )
 	}
 }
 
-void request_control_data(capmix_addr_t addr, int i, int j)
+void  request_control_data(capmix_addr_t addr, int i, int j)
 {
+	int delay_usec = 20e3;
 	if( addr )
 	{
 		capmix_get(addr);
-		//usleep(2000);
+		usleep(delay_usec);
 	}
 	capmix_listen();
 }
 
-void request_mixer_data()
+void  request_mixer_data()
 {
 	capmix_mixer_foreach(page, request_control_data);
+}
+
+void  render_control(WINDOW *menu_win, capmix_addr_t addr)
+{
+	char text [SPACING*2+1];
+	char value[SPACING*2+1];
+	int start_x = 0, start_y = 3;
+	cursor_t pos = capmix_mixer_addr_xy(page, addr);
+
+	int rowlen = capmix_mixer_rowlen(page, pos.y);
+	int dx = SPACING;
+	if( rowlen > 0 && rowlen == page->cols / 2 )
+		dx *= 2;
+
+	if( addr != 0 )
+	{
+		format_value( addr, capmix_memory_get_unpacked(addr), value ); // print formatted
+		//capmix_unpacked_t v = capmix_memory_get_unpacked(addr); sprintf(value, "%x", v); // print raw value
+		//sprintf(value, "%s", capmix_addr_suffix(addr)); // print suffix
+	}
+	else
+		sprintf(value, " ");
+
+	int len = strlen(value);
+	int pad_l = (dx - len) / 2;
+	int pad_r = (dx - len) / 2 + ((dx - len) % 2);
+	sprintf(text, "%*s%s%*s", pad_l, "", value, pad_r, "");
+
+	if( pos.y == cursor.y && pos.x == cursor.x )
+	{
+		wattron(menu_win, A_REVERSE);
+		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, text);
+		wattroff(menu_win, A_REVERSE);
+	}
+	else
+	{
+		wattron(menu_win, COLOR_PAIR(1));
+		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, text);
+		wattroff(menu_win, COLOR_PAIR(1));
+	}
+	wrefresh(menu_win);
+	wmove(menu_win, pos.y + start_y, dx * pos.x + start_x);
 }
 
 void  interface_refresh(WINDOW *menu_win)
@@ -180,6 +223,7 @@ void  interface_refresh(WINDOW *menu_win)
 	char value[SPACING*2+1];
 	int pad_l, pad_r;
 	int dx = SPACING;
+	int cdx;
 	int start_x = 0, start_y = 0;
 
 	//box(menu_win, 0, 0);
@@ -227,18 +271,14 @@ void  interface_refresh(WINDOW *menu_win)
 	start_y += 1;
 	for(int i=0; i < page->rows; i++)
 	{
-		int rowlen = 0;
-		for(int j=0; j < page->cols; j++)
-		{
-			if( page->controls[i][j] != 0 )
-				rowlen++;
-		}
+		int rowlen = capmix_mixer_rowlen(page, i);
 		dx = SPACING;
 		if( rowlen > 0 && rowlen == page->cols / 2 )
 			dx *= 2;
 		for(int j=0; j < page->cols; j++)
 		{
 			capmix_addr_t addr = page->controls[i][j];
+
 			if( addr != 0 )
 			{
 				format_value( addr, capmix_memory_get_unpacked(addr), value ); // print formatted
@@ -258,6 +298,7 @@ void  interface_refresh(WINDOW *menu_win)
 				wattron(menu_win, A_REVERSE);
 				mvwprintw(menu_win, start_y + i, start_x + j * dx, text);
 				wattroff(menu_win, A_REVERSE);
+				cdx = dx;
 			}
 			else
 			{
@@ -274,6 +315,7 @@ void  interface_refresh(WINDOW *menu_win)
 		wattroff(menu_win, A_BOLD);
 	}
 	wrefresh(menu_win);
+	wmove(menu_win, cursor.y + start_y, cdx * cursor.x + start_x);
 }
 
 void  on_capmix_event(capmix_event_t event)
@@ -284,19 +326,32 @@ void  on_capmix_event(capmix_event_t event)
 	capmix_format_addr(event.addr, name);
 	capmix_format_type(event.type_info->type, event.unpacked, value);
 
-	fprintf(stderr, "cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
-	fprintf(stderr, "name=%s ", name);
-	fprintf(stderr, "type=%s ", event.type_info->name);
-	fprintf(stderr, "unpacked=0x%x ", event.unpacked.discrete);
-	fprintf(stderr, "value=%s ", value);
-	fprintf(stderr, "\n");
+	//wmove(log_win, 9, 0);
+	wprintw(log_win, "cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
+	wprintw(log_win, "name=%s ", name);
+	wprintw(log_win, "type=%s ", event.type_info->name);
+	wprintw(log_win, "unpacked=0x%x ", event.unpacked.discrete);
+	wprintw(log_win, "value=%s ", value);
+	wprintw(log_win, "\n");
+	wrefresh(log_win);
+
+	render_control(menu_win, event.addr);
+	capmix_listen();
 }
 
 void set_page( enum capmix_pages_e p )
 {
+	int cursor_prev_y = cursor.y;
+	cursor.y = -1;
+
 	page = capmix_get_page(p);
-	request_mixer_data();
+
 	wclear(menu_win);
+	interface_refresh(menu_win);
+
+	request_mixer_data();
+
+	cursor.y = cursor_prev_y;
 }
 
 int   main(int argc, char ** argv)
@@ -319,7 +374,6 @@ int   main(int argc, char ** argv)
 	clear();
 	noecho();
 	cbreak();
-	halfdelay(1);
 	//curs_set(0);
 
 	init_pair(1, 15, 0);
@@ -329,20 +383,27 @@ int   main(int argc, char ** argv)
 	startx = 0;
 	starty = 0;
 
+	log_win = newwin(10, WIDTH, starty+HEIGHT, startx);
+	scrollok(log_win, 1);
+
 	menu_win = newwin(HEIGHT, WIDTH, starty, startx);
 	keypad(menu_win, TRUE);
+	nodelay(menu_win, 1);
 
 	set_page(PInputA);
-	refresh();
 
+	interface_refresh(menu_win);
 
 	int c;
 	while( ! quitting )
 	{
-		while( capmix_listen() );
-		interface_refresh(menu_win);
 		c = wgetch(menu_win);
-		on_keyboard(c);
+		if( on_keyboard(c) )
+		{
+			interface_refresh(menu_win);
+			//log("refreshing");
+		}
+		capmix_listen();
 	}
 
 	clrtoeol();

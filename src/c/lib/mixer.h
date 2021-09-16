@@ -34,3 +34,5 @@ const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page);
 
 void capmix_mixer_foreach(const capmix_mixer_page_t *page, void (*func)(capmix_addr_t, int, int));
 //extern const capmix_mixer_page_t  capmix_mixer_pages[];
+cursor_t capmix_mixer_addr_xy( const capmix_mixer_page_t *page, capmix_addr_t addr );
+int capmix_mixer_rowlen( const capmix_mixer_page_t *page, int row );
