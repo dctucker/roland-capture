@@ -1,7 +1,6 @@
 #pragma once
 
-#include "lib/types.h"
-#include "lib/capture.h"
+#include "common.h"
 
 /// structure describing the visual layout of a page in the mixer
 typedef struct capmix_mixer_page_s {
@@ -13,7 +12,7 @@ typedef struct capmix_mixer_page_s {
 	capmix_addr_t controls[8][16]; ///< memory address matrix
 } capmix_mixer_page_t;
 
-enum capmix_pages {
+enum capmix_pages_e {
 	PInputA,     ///< Direct Input Monitor A
 	PInputB,     ///< Direct Input Monitor B
 	PInputC,     ///< Direct Input Monitor C
@@ -27,10 +26,9 @@ enum capmix_pages {
 	PReverb,     ///< Reverb Settings
 	PLine,       ///< Line Inputs
 	PPatchbay,   ///< Output routing Patchbay
+	N_Pages,     ///< total number of mixer pages
 };
-/// Total number of mixer pages
-#define N_Pages PPatchbay
 
-const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages page);
+const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page);
 
 //extern const capmix_mixer_page_t  capmix_mixer_pages[];

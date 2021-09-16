@@ -1,9 +1,10 @@
-#include "lib/comm.h"
 #include <poll.h>
 #include <alsa/asoundlib.h>
+#include "common.h"
+#include "comm.h"
 
 #ifndef DOXYGEN_SKIP
-#define TRY_SEQ(X, MSG) if( (err = X) < 0 ){ warn( MSG ": %s", snd_strerror(err) ); return 0; }
+#define TRY_SEQ(X, MSG) if( (err = X) < 0 ){ warn( MSG ": %s\n", snd_strerror(err) ); return 0; }
 #define MIDI_BYTES_PER_SEC (31250 / (1 + 8 + 2))
 #endif
 
@@ -13,24 +14,24 @@ const char *          port_name = "STUDIO-CAPTURE:1";
 static unsigned char  buf[8192];
 static unsigned int   msglen = 0;
 static unsigned int   sysex_start = sizeof(buf);
-static void         (*capmix_listener)(uint8_t *, int) = NULL;
+static capmix_listener_t *capmix_listener = NULL;
 
-static        snd_seq_t *seq;
-static int    port_in, port_out;
-static        snd_seq_addr_t device_port;
-static int    n_descriptors;
-static struct pollfd *descriptors;
+static snd_seq_t *      seq;
+static int              port_in, port_out;
+static snd_seq_addr_t   device_port;
+static int              n_descriptors;
+static struct pollfd *  descriptors;
 
 /**
  * @brief call the operating system to set up MIDI communication with the device
  * @param listener pointer to a callback function that receives a data buffer and the length of the buffer when MIDI messages are received
  * @return 1 on succes, 0 on failure
  */
-int   capmix_setup_midi( void (*listener)(uint8_t *, int) )
+int   capmix_setup_midi( capmix_listener_t *listener )
 {
 	int err;
 	TRY_SEQ( snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0), "Unable to open sequencer" )
-	TRY_SEQ( snd_seq_set_client_name(seq, "aseqdump")             , "Unable to set client name" )
+	TRY_SEQ( snd_seq_set_client_name(seq, "libcapmix")            , "Unable to set client name" )
 
 	//input port
 	TRY_SEQ( snd_seq_create_simple_port(seq, "libcapmix",
@@ -114,7 +115,6 @@ int   capmix_send_midi(uint8_t *data, int len)
 /**
  * @brief termniate the MIDI connection to the device and free up resources
  */
-
 void  capmix_cleanup_midi()
 {
 	int err;

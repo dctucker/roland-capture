@@ -1,6 +1,6 @@
-#include "memory.h"
-#include "comm.h"
 #include "capmix.h"
+#include "memory.h"
+#include "roland.h"
 #include "comm.h"
 
 static uint8_t sysex_buf[16];
@@ -50,6 +50,7 @@ static void             listener(uint8_t *buf, int len)
 
 /**
  * @brief establish a connection with the audio device
+ * @ingroup API
  * @param event_handler the callback function that will receive events
  * @return 1 on success, 0 when no connection could be established
  */
@@ -63,6 +64,7 @@ int                     capmix_connect( void (*event_handler)(capmix_event_t) )
 
 /**
  * @brief listen for SysEx messages and attempt to read from the device
+ * @ingroup API
  * @return number of bytes read on success, 0 if no bytes read, or negative on error
  */
 int                     capmix_listen()
@@ -73,6 +75,7 @@ int                     capmix_listen()
 
 /**
  * @brief send a message to the device requesting data for the given device memory address
+ * @ingroup API
  * @param addr address in device memory to read
  * @return event structure describing the message sent to the device (not the response)
  */
@@ -93,6 +96,7 @@ capmix_event_t          capmix_get(capmix_addr_t addr)
 
 /**
  * @brief send a message to the device requesting data for the given device memory address
+ * @ingroup API
  * @param addr the address in device memory to affect
  * @param unpacked the value to store in device memory
  * @return event structure describing the message sent to the device (not the response)
@@ -116,6 +120,7 @@ capmix_event_t          capmix_put(capmix_addr_t addr, capmix_unpacked_t unpacke
 
 /**
  * @brief disconnect from the device and clean up handles
+ * @ingroup API
  */
 void                    capmix_disconnect()
 {
@@ -124,6 +129,7 @@ void                    capmix_disconnect()
 
 /**
  * @brief access local memory to return the current value for a given device address
+ * @ingroup API
  * @param addr the device memory address
  * @return unpacked value according to local memory
  */
@@ -138,6 +144,7 @@ capmix_unpacked_t         capmix_memory_get_unpacked(capmix_addr_t addr)
 
 /**
  * @brief update local memory to store a value for a given device address
+ * @ingroup API
  * @param addr the device memory address
  * @param unpacked the value to store in local memory
  */

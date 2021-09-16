@@ -320,6 +320,12 @@ static capmix_mem_t *   capmix_lookup_map(capmix_mem_t *map, char *part)
 	return NULL;
 }
 
+/**
+ * @brief parse a string into a device memory address
+ * @param desc the string to parse
+ * @return the device memory address
+ * @ingroup API
+ */
 capmix_addr_t           capmix_parse_addr(const char *desc)
 {
 	capmix_addr_t ret = 0;
@@ -342,6 +348,12 @@ capmix_addr_t           capmix_parse_addr(const char *desc)
 	return ret;
 }
 
+/**
+ * @brief write a string describing the given device memory address
+ * @param[in] the device memory address to describe
+ * @param[out] the string buffer to write into
+ * @ingroup API
+ */
 void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 {
 	// 0x0006120e -> daw_monitor.b.channel.3.volume
@@ -391,6 +403,12 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 	}
 }
 
+/**
+ * @brief returns the leaf-level name of the given device memory address
+ * @param addr the device memory address to describe
+ * @return the string that describes this address
+ * @ingroup API
+ */
 const char *            capmix_addr_suffix(capmix_addr_t addr)
 {
 	int section;
@@ -437,6 +455,12 @@ const char *            capmix_addr_suffix(capmix_addr_t addr)
 	return name;
 }
 
+/**
+ * @brief get the value type of a device memory address
+ * @param addr the device memory address to describe
+ * @return the type identifier
+ * @ingroup API
+ */
 capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 {
 	int section;

@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include "mixer.h"
 
-static const char *channel_headers[]   = CCA( "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16" );
-static const char *input_labels[]      = CCA( "Stereo","Mute","Solo","Reverb","Pan","Volume" );
-static const char *output_labels[]     = CCA( "Stereo","Mute","Solo","","Pan","Volume" );
+static const char *channel_headers[]   = { "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16", NULL };
+static const char *input_labels[]      = { "Stereo","Mute","Solo","Reverb","Pan","Volume", NULL };
+static const char *output_labels[]     = { "Stereo","Mute","Solo","","Pan","Volume", NULL };
 
 static const capmix_mixer_page_t capmix_mixer_pages[] = {
 	[PInputA] = {
@@ -176,6 +176,20 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 			{ 0x0    , 0x40501, 0x40502 }, // plate
 		},
 	},
+	[PPatchbay] = {
+		.rows = 6, .cols = 1,
+		.name = "patchbay",
+		.headers = CCA( "Source" ),
+		.labels = CCA( "Output", "1-2", "3-4", "5-6", "7-8", "9-10" ),
+		.controls = {
+			0x0,
+			0x30000,
+			0x30001,
+			0x30002,
+			0x30003,
+			0x30004,
+		},
+	},
 };
 
 /**
@@ -183,7 +197,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
  * @param page the identifier of the page to be returned
  * @return pointer to the mixer page
  */
-const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages page)
+const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page)
 {
 	return &capmix_mixer_pages[page];
 }
