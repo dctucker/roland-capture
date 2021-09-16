@@ -2,16 +2,6 @@
 
 #include "common.h"
 
-/// structure describing the visual layout of a page in the mixer
-typedef struct capmix_mixer_page_s {
-	int rows;                      ///< number of rows with controls
-	int cols;                      ///< maximum number of columns with controls
-	const char *name;              ///< human-readable name of this page
-	const char **headers;          ///< header shown above each column
-	const char **labels;           ///< header shown next to each row
-	capmix_addr_t controls[8][16]; ///< memory address matrix
-} capmix_mixer_page_t;
-
 enum capmix_pages_e {
 	PInputA,     ///< Direct Input Monitor A
 	PInputB,     ///< Direct Input Monitor B
@@ -28,6 +18,17 @@ enum capmix_pages_e {
 	PPatchbay,   ///< Output routing Patchbay
 	N_Pages,     ///< total number of mixer pages
 };
+
+/// structure describing the visual layout of a page in the mixer
+typedef struct capmix_mixer_page_s {
+	enum capmix_pages_e id;        ///< primary key, identifies a mixer page
+	int rows;                      ///< number of rows with controls
+	int cols;                      ///< maximum number of columns with controls
+	const char *name;              ///< human-readable name of this page
+	const char **headers;          ///< header shown above each column
+	const char **labels;           ///< header shown next to each row
+	capmix_addr_t controls[8][16]; ///< memory address matrix
+} capmix_mixer_page_t;
 
 const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page);
 

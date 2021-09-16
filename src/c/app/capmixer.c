@@ -8,6 +8,7 @@
 #define HEIGHT 20
 #define SPACING 5
 
+WINDOW *menu_win;
 struct cursor {
 	int x;
 	int y;
@@ -17,9 +18,16 @@ int startx = 0;
 int starty = 0;
 int quitting = 0;
 
-const capmix_mixer_page_t *page;
-const char *page_indicator = "i o [abcd] k l n p r y";
-int page_indicator_len = 22;
+static const capmix_mixer_page_t *page;
+static const char page_indicator[] = "i o [abcd] k l n p r y";
+int page_indicator_len = sizeof(page_indicator);
+
+
+void set_page( enum capmix_pages_e p )
+{
+	page = capmix_get_page(p);
+	wclear(menu_win);
+}
 
 void  up()
 {
@@ -45,21 +53,25 @@ void  right()
 		cursor.x += 1;
 }
 
-void  monitor(char mon){}
+void  monitor(char mon)
+{
+}
 void  decrement(){}
 void  increment(){}
 void  zero(){}
-void  preamp(){}
-void  compressor(){}
-void  line(){}
-void  inputs(){}
-void  outputs(){}
-void  toggle_io(){}
-void  prev_subpage(){}
-void  next_subpage(){}
-void  reverb(){}
-void  patchbay(){}
-void  channel(char ch){}
+void  preamp        (){ set_page(PPreamp); }
+void  compressor    (){ set_page(PCompressor); }
+void  line          (){ set_page(PLine); }
+void  inputs        (){ set_page(PInputA); }
+void  outputs       (){ set_page(POutputA); }
+void  toggle_io     (){ }
+void  prev_subpage  (){ }
+void  next_subpage  (){ }
+void  reverb        (){ set_page(PReverb); }
+void  patchbay      (){ set_page(PPatchbay); }
+void  channel       (char ch)
+{
+}
 
 void  quit()
 {
@@ -139,8 +151,7 @@ void  format_boolean( capmix_addr_t addr, int yes, char *str )
 void  format_value( capmix_addr_t addr, capmix_unpacked_t unpacked, char *str )
 {
 	capmix_type_t type = capmix_addr_type(addr);
-	sprintf(str, "%s", capmix_type_name(type));
-	return;
+	//sprintf(str, "%s", capmix_type_name(type)); return;
 	switch(type)
 	{
 		case TBoolean:
@@ -162,7 +173,31 @@ void  interface_refresh(WINDOW *menu_win)
 	//box(menu_win, 0, 0);
 	for(int j=0; j < page_indicator_len; j++)
 	{
-		mvwprintw(menu_win, start_y, start_x + j, "%c", page_indicator[j]);
+		char c = page_indicator[j];
+		int highlight = 0;
+		switch(page->id)
+		{
+			case PInputA: case PInputB: case PInputC: case PInputD:
+				if( c == 'i' )
+					highlight = 1;
+				break;
+			case POutputA: case POutputB: case POutputC: case POutputD:
+				if( c == 'o' )
+					highlight = 1;
+				break;
+			case PLine       : if( c == 'l' ) highlight = 1; break;
+			case PReverb     : if( c == 'r' ) highlight = 1; break;
+			case PPatchbay   : if( c == 'y' ) highlight = 1; break;
+			case PPreamp     : if( c == 'p' ) highlight = 1; break;
+			case PCompressor : if( c == 'k' ) highlight = 1; break;
+			//case PChannelN   : if( c == 'n' ) highlight = 1; break;
+		}
+		if( highlight )
+			wattron(menu_win, COLOR_PAIR(3) | A_BOLD);
+		else
+			wattroff(menu_win, COLOR_PAIR(3) | A_BOLD);
+
+		mvwprintw(menu_win, start_y, start_x + j, "%c", c);
 	}
 
 	start_y += 2;
@@ -236,7 +271,6 @@ void  on_capmix_event(capmix_event_t event)
 int   main(int argc, char ** argv)
 {
 	capmix_connect(on_capmix_event);
-	page = capmix_get_page(PInputB);
 
 	//FILE *f = fopen("/dev/tty", "r+");
 	//SCREEN *screen = newterm(NULL, f, f);
@@ -249,8 +283,6 @@ int   main(int argc, char ** argv)
 	////this goes to display
 	//mvprintw(0, 0, "hello ncurses");
 
-	WINDOW *menu_win;
-
 	initscr();
 	start_color();
 	clear();
@@ -260,12 +292,15 @@ int   main(int argc, char ** argv)
 
 	init_pair(1, 15, 0);
 	init_pair(2, 8, 0);
+	init_pair(3, 6, 0);
 
 	startx = 0;
 	starty = 0;
 
 	menu_win = newwin(HEIGHT, WIDTH, starty, startx);
 	keypad(menu_win, TRUE);
+
+	set_page(PInputA);
 	refresh();
 
 	int c;

@@ -8,6 +8,7 @@ static const char *output_labels[]     = { "Stereo","Mute","Solo","","Pan","Volu
 
 static const capmix_mixer_page_t capmix_mixer_pages[] = {
 	[PInputA] = {
+		.id = PInputA,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.a",
 		.headers = (const char **) channel_headers,
@@ -22,6 +23,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PInputB] = {
+		.id = PInputB,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.b",
 		.headers = (const char **) channel_headers,
@@ -36,6 +38,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PInputC] = {
+		.id = PInputC,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.c",
 		.headers = (const char **) channel_headers,
@@ -50,6 +53,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PInputD] = {
+		.id = PInputD,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.d",
 		.headers = (const char **) channel_headers,
@@ -64,6 +68,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[POutputA] = {
+		.id = POutputA,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.a",
 		.headers = (const char **) channel_headers,
@@ -78,6 +83,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[POutputB] = {
+		.id = POutputB,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.b",
 		.headers = (const char **) channel_headers,
@@ -92,6 +98,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[POutputC] = {
+		.id = POutputC,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.c",
 		.headers = (const char **) channel_headers,
@@ -106,6 +113,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[POutputD] = {
+		.id = POutputD,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.d",
 		.headers = (const char **) channel_headers,
@@ -120,6 +128,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PPreamp] = {
+		.id = PPreamp,
 		.rows = 8, .cols = 12,
 		.name = "preamp",
 		.headers = (const char **) channel_headers,
@@ -136,6 +145,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PCompressor] = {
+		.id = PCompressor,
 		.rows = 8, .cols = 12,
 		.name = "compressor",
 		.headers = (const char **) channel_headers,
@@ -152,6 +162,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PLine] = {
+		.id = PLine,
 		.rows = 2, .cols = 4,
 		.name = "line",
 		.headers = (const char **) &(channel_headers[12]),
@@ -162,6 +173,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PReverb] = {
+		.id = PReverb,
 		.rows = 6, .cols = 3,
 		.name = "reverb",
 		.headers = CCA( "Type", "Pre delay [ms]", "Time [s]" ),
@@ -177,6 +189,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		},
 	},
 	[PPatchbay] = {
+		.id = PPatchbay,
 		.rows = 6, .cols = 1,
 		.name = "patchbay",
 		.headers = CCA( "Source" ),
