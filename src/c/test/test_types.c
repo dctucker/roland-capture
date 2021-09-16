@@ -20,7 +20,7 @@ bool test_parse        (capmix_unpacked_t expected, capmix_type_t type, const ch
 
 bool test_type         (const char *expected, capmix_type_t type, int8_t *bytes)
 {
-	char str[256];
+	char str[64];
 	capmix_fixed fx = capmix_fixed_from_packed(type, bytes);
 	capmix_unpacked_t unpacked = capmix_unpack_type(type, bytes);
 	capmix_format_type(type, unpacked, str);
@@ -30,7 +30,7 @@ bool test_type         (const char *expected, capmix_type_t type, int8_t *bytes)
 
 bool test_format       (const char *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
-	char str[256];
+	char str[64];
 	SILENT(
 		capmix_format_type(type, unpacked, str);
 	)
@@ -40,7 +40,7 @@ bool test_format       (const char *expected, capmix_type_t type, capmix_unpacke
 
 bool test_pack         (const int8_t *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
-	char str[256];
+	char str[64];
 	char buf[6];
 	capmix_pack_type(type, unpacked, buf);
 	capmix_format_type(type, unpacked, str);

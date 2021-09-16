@@ -60,11 +60,14 @@ int   capmix_setup_midi( capmix_listener_t *listener )
 	return 1;
 }
 
+/**
+ * @brief poll the device, read any available MIDI data, and forward it to the listener callback
+ * @return number of bytes received, 0 if none available, negative on error
+ */
 int   capmix_read_midi()
 {
 	int err;
 	int timeout_ms = 1;
-	// it's blocking here I think
 	snd_seq_poll_descriptors(seq, descriptors, n_descriptors, POLLIN);
 	if (poll(descriptors, n_descriptors, timeout_ms) <= 0)
 		return 0;

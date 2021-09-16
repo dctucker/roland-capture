@@ -5,8 +5,9 @@
 static const char *channel_headers[]   = { "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16", NULL };
 static const char *input_labels[]      = { "Stereo","Mute","Solo","Reverb","Pan","Volume", NULL };
 static const char *output_labels[]     = { "Stereo","Mute","Solo","","Pan","Volume", NULL };
+static const char *channelpg_headers[] = { "Preamp","","","Compress","","","","A","B","C","D", NULL };
 
-static const capmix_mixer_page_t capmix_mixer_pages[] = {
+static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 	[PInputA] = {
 		.id = PInputA,
 		.rows = 6, .cols = 16,
@@ -202,7 +203,60 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 			{ 0x30003 },
 			{ 0x30004 },
 		},
+
 	},
+
+	#define HI_Z(N) (N <= 0x100) ? (N+0x50003) : 0x0
+	#define CHANNEL_CONTROLS(N) { \
+			{  HI_Z(N) , N+0x50001,   0x0    , N+0x50006,   0x0    ,   0x0    , 0x0, N+0x60002, N+0x61002, N+0x62002, N+0x63002 }, \
+			{ N+0x50000, N+0x50002,   0x0    ,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x60003, N+0x61003, N+0x62003, N+0x63003 }, \
+			{ N+0x50004,   0x0    ,   0x0    , N+0x5000b, N+0x50008, N+0x5000a, 0x0, N+0x6000e, N+0x6100e, N+0x6200e, N+0x6300e }, \
+			{   0x0    ,   0x0    , N+0x50007, N+0x5000d, N+0x50009, N+0x5000c, 0x0, N+0x60004, N+0x61004, N+0x62004, N+0x63004 }, \
+			{   0x0    ,   0x0    ,       0x0,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x60008, N+0x61008, N+0x62008, N+0x63008 }, \
+		}
+
+	#define ATTEN(N) (0x51001 + N - 0xd00)
+	#define LINE_CHANNEL_CONTROLS(N) { \
+			{   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x60002, N+0x61002, N+0x62002, N+0x63002 }, \
+			{   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x60003, N+0x61003, N+0x62003, N+0x63003 }, \
+			{   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x6000e, N+0x6100e, N+0x6200e, N+0x6300e }, \
+			{   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x60004, N+0x61004, N+0x62004, N+0x63004 }, \
+			{ ATTEN(N) ,   0x0    ,   0x0    ,   0x0    ,   0x0    ,   0x0    , 0x0, N+0x60008, N+0x61008, N+0x62008, N+0x63008 }, \
+		}
+
+	#define CHANNEL_PAGE(N) [ PChannel##N ] = { \
+			.id = PChannel##N, \
+			.name = "Channel " #N, \
+			.rows = 5, .cols = 11, \
+			.headers =(const char **) &(channelpg_headers), \
+			.labels = (const char **) &(input_labels[1]), \
+			.controls = CHANNEL_CONTROLS(((N-1)<<8)), \
+		}
+	#define LINE_CHANNEL_PAGE(N) [ PChannel##N ] = { \
+			.id = PChannel##N, \
+			.name = "Channel " #N, \
+			.rows = 5, .cols = 11, \
+			.headers =(const char **) &(channelpg_headers), \
+			.labels = (const char **) &(input_labels[1]), \
+			.controls = LINE_CHANNEL_CONTROLS(((N-1)<<8)), \
+		}
+
+	CHANNEL_PAGE(1),
+	CHANNEL_PAGE(2),
+	CHANNEL_PAGE(3),
+	CHANNEL_PAGE(4),
+	CHANNEL_PAGE(5),
+	CHANNEL_PAGE(6),
+	CHANNEL_PAGE(7),
+	CHANNEL_PAGE(8),
+	CHANNEL_PAGE(9),
+	CHANNEL_PAGE(10),
+	CHANNEL_PAGE(11),
+	CHANNEL_PAGE(12),
+	LINE_CHANNEL_PAGE(13),
+	LINE_CHANNEL_PAGE(14),
+	LINE_CHANNEL_PAGE(15),
+	LINE_CHANNEL_PAGE(16),
 };
 
 /**
@@ -215,6 +269,11 @@ const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page)
 	return &capmix_mixer_pages[page];
 }
 
+/**
+ * @brief call a function for each control in the mixer
+ * @param page the mixer page to iterate over
+ * @param func the function to call for each control, receives a device memory address and row and column of the control on the mixer page
+ */
 void capmix_mixer_foreach(const capmix_mixer_page_t *page, void (*func)(capmix_addr_t, int, int))
 {
 	for(int i=0; i < page->rows; i++)
@@ -222,6 +281,12 @@ void capmix_mixer_foreach(const capmix_mixer_page_t *page, void (*func)(capmix_a
 			func( page->controls[i][j], i, j );
 }
 
+/**
+ * @brief searches for a device memory address in the given mixer page
+ * @param page the mixer page to search
+ * @param addr the device memory address to search for
+ * @return the position of the control if found, or {-1,-1}
+ */
 cursor_t capmix_mixer_addr_xy( const capmix_mixer_page_t *page, capmix_addr_t addr )
 {
 	for(int i=0; i < page->rows; i++)
@@ -231,6 +296,12 @@ cursor_t capmix_mixer_addr_xy( const capmix_mixer_page_t *page, capmix_addr_t ad
 	return (cursor_t){ .x = -1, .y = -1 };
 }
 
+/**
+ * @brief scans a single row on the given mixer page to report how many controls it contains
+ * @param page the mixer page to scan
+ * @param row the row number to scan
+ * @return the number of controls on the page's row
+ */
 int capmix_mixer_rowlen( const capmix_mixer_page_t *page, int row )
 {
 	int rowlen = 0;

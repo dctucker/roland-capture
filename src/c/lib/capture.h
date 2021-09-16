@@ -48,8 +48,8 @@ typedef struct capmix_str_s {
 	const char *const link;
 } capmix_str_t;
 
-void                   capmix_print_map(capmix_mem_t *map, char *prefix, capmix_addr_t old_offset);
-static capmix_mem_t *  capmix_lookup_map(capmix_mem_t *map, char *part);
+void                         capmix_print_map (const capmix_mem_t *map, const char *prefix, capmix_addr_t old_offset);
+static const capmix_mem_t *  capmix_lookup_map(const capmix_mem_t *map, const char *part);
 
 _API uint32_t          capmix_parse_addr  (const char *desc);
 _API void              capmix_format_addr (capmix_addr_t addr, char *desc);

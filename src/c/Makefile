@@ -1,7 +1,6 @@
 IDIR = .
 ODIR = obj
-CFLAGS=-I$(IDIR) -fvisibility=hidden -g
-#-save-temps
+CFLAGS=-I$(IDIR) -fvisibility=hidden -g -save-temps
 LIBS=-lasound -lm
 STRIP=-s
 
