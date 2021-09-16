@@ -214,3 +214,10 @@ const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page)
 {
 	return &capmix_mixer_pages[page];
 }
+
+void capmix_mixer_foreach(const capmix_mixer_page_t *page, void (*func)(capmix_addr_t, int, int))
+{
+	for(int i=0; i < page->rows; i++)
+		for(int j=0; j < page->cols; j++)
+			func( page->controls[i][j], i, j );
+}

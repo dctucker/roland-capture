@@ -1,3 +1,4 @@
+//#include <unistd.h>
 #include <stdio.h>
 #include <ncurses.h>
 #include <string.h>
@@ -22,12 +23,7 @@ static const capmix_mixer_page_t *page;
 static const char page_indicator[] = "i o [abcd] k l n p r y";
 int page_indicator_len = sizeof(page_indicator);
 
-
-void set_page( enum capmix_pages_e p )
-{
-	page = capmix_get_page(p);
-	wclear(menu_win);
-}
+void set_page( enum capmix_pages_e );
 
 void  up()
 {
@@ -128,6 +124,7 @@ void  on_keyboard(int c)
 		case '$'           :  channel(14);      break;
 		case '%'           :  channel(15);      break;
 		case '^'           :  channel(16);      break;
+		case ERR           :  break;
 		default            :  unrecognized(c);
 	}
 }
@@ -158,8 +155,23 @@ void  format_value( capmix_addr_t addr, capmix_unpacked_t unpacked, char *str )
 			format_boolean(addr, unpacked.discrete, str);
 			break;
 		default:
-			capmix_format_type(addr, unpacked, str);
+			capmix_format_type(type, unpacked, str);
 	}
+}
+
+void request_control_data(capmix_addr_t addr, int i, int j)
+{
+	if( addr )
+	{
+		capmix_get(addr);
+		//usleep(2000);
+	}
+	capmix_listen();
+}
+
+void request_mixer_data()
+{
+	capmix_mixer_foreach(page, request_control_data);
 }
 
 void  interface_refresh(WINDOW *menu_win)
@@ -266,6 +278,25 @@ void  interface_refresh(WINDOW *menu_win)
 
 void  on_capmix_event(capmix_event_t event)
 {
+	char name[128];
+	char value[16];
+
+	capmix_format_addr(event.addr, name);
+	capmix_format_type(event.type_info->type, event.unpacked, value);
+
+	fprintf(stderr, "cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
+	fprintf(stderr, "name=%s ", name);
+	fprintf(stderr, "type=%s ", event.type_info->name);
+	fprintf(stderr, "unpacked=0x%x ", event.unpacked.discrete);
+	fprintf(stderr, "value=%s ", value);
+	fprintf(stderr, "\n");
+}
+
+void set_page( enum capmix_pages_e p )
+{
+	page = capmix_get_page(p);
+	request_mixer_data();
+	wclear(menu_win);
 }
 
 int   main(int argc, char ** argv)
@@ -288,6 +319,7 @@ int   main(int argc, char ** argv)
 	clear();
 	noecho();
 	cbreak();
+	halfdelay(1);
 	//curs_set(0);
 
 	init_pair(1, 15, 0);
@@ -303,9 +335,11 @@ int   main(int argc, char ** argv)
 	set_page(PInputA);
 	refresh();
 
+
 	int c;
 	while( ! quitting )
 	{
+		while( capmix_listen() );
 		interface_refresh(menu_win);
 		c = wgetch(menu_win);
 		on_keyboard(c);

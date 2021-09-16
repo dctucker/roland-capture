@@ -359,7 +359,7 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 	// 0x0006120e -> daw_monitor.b.channel.3.volume
 	*desc = '\0';
 	int section;
-	if( addr >> 15 == 0x51 )
+	if( addr >> 12 == 0x51 )
 		section = LINE;
 	else
 		section = addr >> 16;
@@ -412,7 +412,7 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 const char *            capmix_addr_suffix(capmix_addr_t addr)
 {
 	int section;
-	if( addr >> 15 == 0x51 )
+	if( addr >> 12 == 0x51 )
 		section = LINE;
 	else
 		section = addr >> 16;
@@ -464,7 +464,7 @@ const char *            capmix_addr_suffix(capmix_addr_t addr)
 capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 {
 	int section;
-	if( addr >> 15 == 0x51 )
+	if( addr >> 12 == 0x51 )
 		section = LINE;
 	else
 		section = addr >> 16;
