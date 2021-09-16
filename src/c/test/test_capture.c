@@ -42,5 +42,9 @@ int main(int argc, char *argv[])
 	TEST( test_format_addr("input_monitor.b.channel.3.reverb", 0x0006120e) );
 	TEST( test_format_addr("input_monitor.a.channel.1.stereo", 0x00060000) );
 	TEST( test_addr_type(TBoolean, 0x00060000) );
-	TEST( test_addr_type(TVolume, 0x00062108) );
+	TEST( test_addr_type(TVolume , 0x00062108) );
+	TEST( test_addr_type(TBoolean    , 0x00051000) );
+	TEST( test_addr_type(TAttenuation, 0x00051001) );
+	TEST( test_format_addr("line.channel.13.stereo", 0x00051000) );
+	TEST( test_format_addr("line.channel.13.attenuation", 0x00051001) );
 }
