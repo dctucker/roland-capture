@@ -5,7 +5,7 @@
 #include "capture.h"
 #include "strings.h"
 
-#define DEF_MEMAREA(NAME) static capmix_mem_t NAME ## _area[] ///< define an area in device memory by name
+#define DEF_MEMAREA(NAME) static const capmix_mem_t NAME ## _area[] ///< define an area in device memory by name
 #define MEMAREA(NAME) .area=(const capmix_mem_t **const)& NAME ## _area ///< assign the child area to the given named area
 #define ENDA { .offset=capmix_None } ///< end of memory map, required for each memory area
 #define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE } ///< describes a leaf node within the memory map
@@ -284,14 +284,20 @@ static const capmix_mem_t memory_map[] = {
 	ENDA
 };
 
-void                    capmix_print_map(capmix_mem_t *map, char *prefix, capmix_addr_t old_offset)
+/**
+ * @brief traverse a memory map recursively, printing the address and full name of each entry
+ * @param map the map to traverse
+ * @param prefix recursion parameter storing the name of the current area of the map
+ * @param prev_offset recursion parameter accumulating the starting memory address of the current area of the map
+ */
+void                    capmix_print_map(const capmix_mem_t *map, const char *prefix, capmix_addr_t prev_offset)
 {
 	for(int i = 0; map[i].offset != 0xffffffff; i++ )
 	{
 		if( map[i].name == NULL ) continue;
 		uint32_t offset = map[i].offset;
 		const char *name = map[i].name;
-		char new_prefix[256];
+		char new_prefix[64];
 		if( strlen(prefix) == 0 )
 			sprintf(new_prefix, "%s", name);
 		else
@@ -299,15 +305,21 @@ void                    capmix_print_map(capmix_mem_t *map, char *prefix, capmix
 
 		if( map[i].area == NULL )
 		{
-			printf("0x%08x %s\n", old_offset + offset, new_prefix);
+			printf("0x%08x %s\n", prev_offset + offset, new_prefix);
 			continue;
 		}
 
-		capmix_print_map((capmix_mem_t *)(map[i].area), new_prefix, old_offset + offset);
+		capmix_print_map((const capmix_mem_t *)(map[i].area), new_prefix, prev_offset + offset);
 	}
 }
 
-static capmix_mem_t *   capmix_lookup_map(capmix_mem_t *map, char *part)
+/**
+ * @brief iterate through a memory map until the given partial name is found
+ * @param map the map to search
+ * @param part the name to match
+ * @return the map with matching name, or NULL if not found
+ */
+static const capmix_mem_t *   capmix_lookup_map(const capmix_mem_t *map, const char *part)
 {
 	for( int i = 0; map[i].offset != capmix_None; i++ )
 	{
@@ -329,7 +341,7 @@ static capmix_mem_t *   capmix_lookup_map(capmix_mem_t *map, char *part)
 capmix_addr_t           capmix_parse_addr(const char *desc)
 {
 	capmix_addr_t ret = 0;
-	capmix_mem_t *map = (capmix_mem_t *)(memory_map);
+	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map);
 	char *desc_ = strdup(desc);
 	char *tok = strtok(desc_, ".");
 	while( tok != NULL )
@@ -342,21 +354,20 @@ capmix_addr_t           capmix_parse_addr(const char *desc)
 		ret += map->offset;
 		//printf("0x%08x\n", ret);
 		tok = strtok(NULL, ".");
-		map = (capmix_mem_t *)(map->area);
+		map = (const capmix_mem_t *)(map->area);
 	}
 	free(desc_);
 	return ret;
 }
 
 /**
- * @brief write a string describing the given device memory address
+ * @brief write a string describing the given device memory address, e.g. 0x0006120e -> daw_monitor.b.channel.3.volume
  * @param[in] the device memory address to describe
  * @param[out] the string buffer to write into
  * @ingroup API
  */
 void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 {
-	// 0x0006120e -> daw_monitor.b.channel.3.volume
 	*desc = '\0';
 	int section;
 	if( addr >> 12 == 0x51 )
@@ -365,14 +376,14 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 		section = addr >> 16;
 
 	int countdown = addr;
-	capmix_mem_t *map = (capmix_mem_t *)(memory_map[section].area);
+	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 	strcat(desc, memory_map[section].name);
 
 	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
-		capmix_mem_t *candidate = NULL;
+		const capmix_mem_t *candidate = NULL;
 
 		capmix_addr_t min_offset = capmix_None;
 		for( int i = 0; map[i].offset != capmix_None; i++ )
@@ -394,7 +405,7 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 		strcat(desc, ".");
 		strcat(desc, candidate->name);
 		countdown -= candidate->offset; // 0x120e
-		map = (capmix_mem_t *)(candidate->area);
+		map = (const capmix_mem_t *)(candidate->area);
 	}
 	if( map != NULL && map->name != NULL )
 	{
@@ -418,14 +429,14 @@ const char *            capmix_addr_suffix(capmix_addr_t addr)
 		section = addr >> 16;
 
 	int countdown = addr;
-	capmix_mem_t *map = (capmix_mem_t *)(memory_map[section].area);
+	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 
 	const char *name = "";
 	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
-		capmix_mem_t *candidate = NULL;
+		const capmix_mem_t *candidate = NULL;
 
 		capmix_addr_t min_offset = capmix_None;
 		for( int i = 0; map[i].offset != capmix_None; i++ )
@@ -446,7 +457,7 @@ const char *            capmix_addr_suffix(capmix_addr_t addr)
 
 		countdown -= candidate->offset; // 0x120e
 		name = candidate->name;
-		map = (capmix_mem_t *)(candidate->area);
+		map = (const capmix_mem_t *)(candidate->area);
 	}
 	if( map != NULL && map->name != NULL )
 	{
@@ -470,14 +481,14 @@ capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 		section = addr >> 16;
 
 	int countdown = addr;
-	capmix_mem_t *map = (capmix_mem_t *)(memory_map[section].area);
+	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 
 	capmix_type_t type = TValue;
 	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
-		capmix_mem_t *candidate = NULL;
+		const capmix_mem_t *candidate = NULL;
 
 		capmix_addr_t min_offset = capmix_None;
 		for( int i = 0; map[i].offset != capmix_None; i++ )
@@ -498,7 +509,7 @@ capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 
 		countdown -= candidate->offset; // 0x120e
 		type = candidate->type;
-		map = (capmix_mem_t *)(candidate->area);
+		map = (const capmix_mem_t *)(candidate->area);
 	}
 	if( map != NULL && map->name != NULL )
 	{

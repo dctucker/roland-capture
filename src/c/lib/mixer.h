@@ -16,6 +16,22 @@ enum capmix_pages_e {
 	PReverb,     ///< Reverb Settings
 	PLine,       ///< Line Inputs
 	PPatchbay,   ///< Output routing Patchbay
+	PChannel1,   ///< Channel controls
+	PChannel2,   ///< Channel controls
+	PChannel3,   ///< Channel controls
+	PChannel4,   ///< Channel controls
+	PChannel5,   ///< Channel controls
+	PChannel6,   ///< Channel controls
+	PChannel7,   ///< Channel controls
+	PChannel8,   ///< Channel controls
+	PChannel9,   ///< Channel controls
+	PChannel10,  ///< Channel controls
+	PChannel11,  ///< Channel controls
+	PChannel12,  ///< Channel controls
+	PChannel13,  ///< Channel controls
+	PChannel14,  ///< Channel controls
+	PChannel15,  ///< Channel controls
+	PChannel16,  ///< Channel controls
 	N_Pages,     ///< total number of mixer pages
 };
 
@@ -33,6 +49,5 @@ typedef struct capmix_mixer_page_s {
 const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page);
 
 void capmix_mixer_foreach(const capmix_mixer_page_t *page, void (*func)(capmix_addr_t, int, int));
-//extern const capmix_mixer_page_t  capmix_mixer_pages[];
 cursor_t capmix_mixer_addr_xy( const capmix_mixer_page_t *page, capmix_addr_t addr );
 int capmix_mixer_rowlen( const capmix_mixer_page_t *page, int row );

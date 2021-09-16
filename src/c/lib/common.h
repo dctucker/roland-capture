@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 
+/// structure representing the header of a SysEx message
 typedef struct capmix_sysex_fields_s {
 	uint8_t status;       ///< must be 0xf0
 	uint8_t manufacturer; ///< Roland is 0x41

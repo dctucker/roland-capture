@@ -12,7 +12,7 @@ bool test_name_addr   (capmix_addr_t expected, const char *desc)
 
 bool test_format_addr (const char *expected, capmix_addr_t addr)
 {
-	char actual[256];
+	char actual[64];
 	capmix_format_addr(addr, actual);
 	printf("0x%08x -> %s  expected %s", addr, actual, expected);
 	return strcmp(actual, expected) == 0;

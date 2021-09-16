@@ -2,7 +2,12 @@
 #include <stdio.h>
 #include "roland.h"
 
-uint8_t capture_sysex[] = { 0xf0, 0x41, 0x10, 0x00, 0x00, 0x6b };
+static const capmix_sysex_fields_t capture_sysex = {
+	.status = 0xf0,
+	.manufacturer = 0x41,
+	.device_id = 0x10,
+	.model_id = { 0x0, 0x0, 0x6b },
+};
 
 /**
  * @brief calculate the checksum for a given data buffer
@@ -30,7 +35,7 @@ static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 	int i;
 	for(i=0; i < sizeof(capture_sysex); i++)
 	{
-		buffer[i] = capture_sysex[i];
+		buffer[i] = ((uint8_t *)&capture_sysex)[i];
 	}
 	buffer[i++] = cmd;
 	i += data_len;
@@ -92,9 +97,10 @@ capmix_sysex_t *  capmix_parse_sysex(uint8_t *buffer, int len)
 
 	for(int i=0; i < 6; i++)
 	{
-		if( sysex->header[i] != capture_sysex[i] )
+		uint8_t c = ((uint8_t *)&capture_sysex)[i];
+		if( sysex->header[i] != c )
 		{
-			printf("Expected %x, got %x\n", sysex->header[i], capture_sysex[i]);
+			printf("Expected %x, got %x\n", sysex->header[i], c);
 			return NULL;
 		}
 	}

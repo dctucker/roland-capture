@@ -7,7 +7,6 @@
 
 #define WIDTH 120
 #define HEIGHT 20
-#define SPACING 5
 
 #define log(...) { wprintw(log_win, __VA_ARGS__); wprintw(log_win, "\n"); wrefresh(log_win); }
 
@@ -19,6 +18,8 @@ int startx = 0;
 int starty = 0;
 int quitting = 0;
 
+static uint8_t current_monitor = 0;
+static uint8_t current_channel = 1;
 static const capmix_mixer_page_t *page;
 static const char page_indicator[] = "i o [abcd] k l n p r y";
 int page_indicator_len = sizeof(page_indicator);
@@ -49,24 +50,44 @@ void  right()
 		cursor.x += 1;
 }
 
-void  monitor(char mon)
-{
-}
 void  decrement(){}
 void  increment(){}
 void  zero(){}
+void  monitor(uint8_t mon)
+{
+	current_monitor = mon % 4;
+	if( page->id >= PInputA && page->id <= PInputD )
+		set_page(PInputA + current_monitor);
+	else if( page->id >= POutputA && page->id <= POutputD )
+		set_page(POutputA + current_monitor);
+}
 void  preamp        (){ set_page(PPreamp); }
 void  compressor    (){ set_page(PCompressor); }
 void  line          (){ set_page(PLine); }
-void  inputs        (){ set_page(PInputA); }
-void  outputs       (){ set_page(POutputA); }
-void  toggle_io     (){ }
-void  prev_subpage  (){ }
-void  next_subpage  (){ }
+void  inputs        (){ set_page(PInputA + current_monitor); }
+void  outputs       (){ set_page(POutputA + current_monitor); }
 void  reverb        (){ set_page(PReverb); }
 void  patchbay      (){ set_page(PPatchbay); }
+void  prev_subpage  (){ monitor(current_monitor+3); }
+void  next_subpage  (){ monitor(current_monitor+1); }
+void  toggle_io     ()
+{
+	if( page->id >= PInputA  && page->id <= PInputD  )
+		outputs();
+	else inputs();
+}
 void  channel       (char ch)
 {
+	if( ch == '\0' )
+	{
+		set_page(PChannel1 + current_channel - 1);
+	}
+	else
+	{
+		current_channel = ch % 16;
+		if( page->id >= PChannel1 )
+			set_page(PChannel1 + current_channel - 1);
+	}
 }
 
 void  quit()
@@ -87,10 +108,10 @@ int  on_keyboard(int c)
 		case KEY_DOWN      :  down();           break;
 		case KEY_LEFT      :  left();           break;
 		case KEY_RIGHT     :  right();          break;
-		case 'a'           :  monitor('a');     break;
-		case 'b'           :  monitor('b');     break;
-		case 'c'           :  monitor('c');     break;
-		case 'd'           :  monitor('d');     break;
+		case 'a'           :  monitor(0);     break;
+		case 'b'           :  monitor(1);     break;
+		case 'c'           :  monitor(2);     break;
+		case 'd'           :  monitor(3);     break;
 		case '-': case '_' :  decrement();      break;
 		case '=': case '+' :  increment();      break;
 		case 'z'           :  zero();           break;
@@ -129,6 +150,20 @@ int  on_keyboard(int c)
 	return 1;
 }
 
+
+
+
+int  row_spacing(int i)
+{
+	int dx = COLS / (2 + page->cols);
+	int rowlen = capmix_mixer_rowlen(page, i);
+	if( dx > 10 ) dx = 10;
+	if( rowlen > 0 && rowlen == page->cols / 2 )
+		dx *= 2;
+	return dx;
+}
+
+
 #define ON_SUFFIX(X,Y,Z) if( strcmp(suffix, X) == 0 ){ if( yes ) sprintf(str, Y); else sprintf(str, Z); return; }
 void  format_boolean( capmix_addr_t addr, int yes, char *str )
 {
@@ -161,9 +196,13 @@ void  format_value( capmix_addr_t addr, capmix_unpacked_t unpacked, char *str )
 
 void  request_control_data(capmix_addr_t addr, int i, int j)
 {
-	int delay_usec = 20e3;
+	int rowlen = capmix_mixer_rowlen(page, i);
+	int delay_usec = 10e3;
 	if( addr )
 	{
+		int rs = row_spacing(i);
+		wmove(menu_win, 3+i, j * rs + rs/2);
+		wrefresh(menu_win);
 		capmix_get(addr);
 		usleep(delay_usec);
 	}
@@ -175,17 +214,13 @@ void  request_mixer_data()
 	capmix_mixer_foreach(page, request_control_data);
 }
 
-void  render_control(WINDOW *menu_win, capmix_addr_t addr)
+void  render_control(WINDOW *menu_win, capmix_addr_t addr, cursor_t pos)
 {
-	char text [SPACING*2+1];
-	char value[SPACING*2+1];
+	char text [64];
+	char value[64];
 	int start_x = 0, start_y = 3;
-	cursor_t pos = capmix_mixer_addr_xy(page, addr);
 
-	int rowlen = capmix_mixer_rowlen(page, pos.y);
-	int dx = SPACING;
-	if( rowlen > 0 && rowlen == page->cols / 2 )
-		dx *= 2;
+	int dx = row_spacing(pos.y);
 
 	if( addr != 0 )
 	{
@@ -217,16 +252,8 @@ void  render_control(WINDOW *menu_win, capmix_addr_t addr)
 	wmove(menu_win, pos.y + start_y, dx * pos.x + start_x);
 }
 
-void  interface_refresh(WINDOW *menu_win)
+void  render_page_indicator(WINDOW *menu_win, int start_x, int start_y)
 {
-	char text [SPACING*2+1];
-	char value[SPACING*2+1];
-	int pad_l, pad_r;
-	int dx = SPACING;
-	int cdx;
-	int start_x = 0, start_y = 0;
-
-	//box(menu_win, 0, 0);
 	for(int j=0; j < page_indicator_len; j++)
 	{
 		char c = page_indicator[j];
@@ -236,9 +263,13 @@ void  interface_refresh(WINDOW *menu_win)
 			case PInputA: case PInputB: case PInputC: case PInputD:
 				if( c == 'i' )
 					highlight = 1;
+				if( c == current_monitor + 'a' )
+					highlight = 1;
 				break;
 			case POutputA: case POutputB: case POutputC: case POutputD:
 				if( c == 'o' )
+					highlight = 1;
+				if( c == current_monitor + 'a' )
 					highlight = 1;
 				break;
 			case PLine       : if( c == 'l' ) highlight = 1; break;
@@ -246,7 +277,10 @@ void  interface_refresh(WINDOW *menu_win)
 			case PPatchbay   : if( c == 'y' ) highlight = 1; break;
 			case PPreamp     : if( c == 'p' ) highlight = 1; break;
 			case PCompressor : if( c == 'k' ) highlight = 1; break;
-			//case PChannelN   : if( c == 'n' ) highlight = 1; break;
+			default:
+				if( page->id >= PChannel1 && page->id <= PChannel16 )
+				   if( c == 'n' )
+					   highlight = 1;
 		}
 		if( highlight )
 			wattron(menu_win, COLOR_PAIR(3) | A_BOLD);
@@ -255,6 +289,18 @@ void  interface_refresh(WINDOW *menu_win)
 
 		mvwprintw(menu_win, start_y, start_x + j, "%c", c);
 	}
+}
+
+void  interface_refresh(WINDOW *menu_win)
+{
+	char text [64];
+	char value[64];
+	int pad_l, pad_r;
+	int main_dx = row_spacing(page->rows-1);
+	int start_x = 0, start_y = 0;
+
+	//box(menu_win, 0, 0);
+	render_page_indicator(menu_win, start_x, start_y);
 
 	start_y += 2;
 	wattron(menu_win, A_BOLD);
@@ -262,8 +308,8 @@ void  interface_refresh(WINDOW *menu_win)
 	for(int j=0; j < page->cols; j++)
 	{
 		const char *header = page->headers[j];
-		int o = (SPACING - strlen(header))/2;
-		mvwprintw(menu_win, start_y, start_x + j * SPACING + o, header);
+		int o = (main_dx - strlen(header))/2;
+		mvwprintw(menu_win, start_y, start_x + j * main_dx + o, header);
 	}
 	wattroff(menu_win, COLOR_PAIR(2));
 	wattroff(menu_win, A_BOLD);
@@ -271,51 +317,22 @@ void  interface_refresh(WINDOW *menu_win)
 	start_y += 1;
 	for(int i=0; i < page->rows; i++)
 	{
-		int rowlen = capmix_mixer_rowlen(page, i);
-		dx = SPACING;
-		if( rowlen > 0 && rowlen == page->cols / 2 )
-			dx *= 2;
+		int dx = row_spacing(i);
 		for(int j=0; j < page->cols; j++)
 		{
 			capmix_addr_t addr = page->controls[i][j];
-
-			if( addr != 0 )
-			{
-				format_value( addr, capmix_memory_get_unpacked(addr), value ); // print formatted
-				//capmix_unpacked_t v = capmix_memory_get_unpacked(addr); sprintf(value, "%x", v); // print raw value
-				//sprintf(value, "%s", capmix_addr_suffix(addr)); // print suffix
-			}
-			else
-				sprintf(value, " ");
-
-			int len = strlen(value);
-			pad_l = (dx - len) / 2;
-			pad_r = (dx - len) / 2 + ((dx - len) % 2);
-			sprintf(text, "%*s%s%*s", pad_l, "", value, pad_r, "");
-
-			if( i == cursor.y && j == cursor.x )
-			{
-				wattron(menu_win, A_REVERSE);
-				mvwprintw(menu_win, start_y + i, start_x + j * dx, text);
-				wattroff(menu_win, A_REVERSE);
-				cdx = dx;
-			}
-			else
-			{
-				wattron(menu_win, COLOR_PAIR(1));
-				mvwprintw(menu_win, start_y + i, start_x + j * dx, text);
-				wattroff(menu_win, COLOR_PAIR(1));
-			}
+			cursor_t pos = { .x=j, .y=i };
+			render_control(menu_win, addr, pos);
 		}
 		const char *label = page->labels[i];
 		wattron(menu_win, A_BOLD);
 		wattron(menu_win, COLOR_PAIR(2));
-		mvwprintw(menu_win, start_y + i, start_x + page->cols * SPACING + 1, label);
+		mvwprintw(menu_win, start_y + i, start_x + page->cols * main_dx + 1, label);
 		wattroff(menu_win, COLOR_PAIR(2));
 		wattroff(menu_win, A_BOLD);
 	}
 	wrefresh(menu_win);
-	wmove(menu_win, cursor.y + start_y, cdx * cursor.x + start_x);
+	wmove(menu_win, cursor.y + start_y, row_spacing(cursor.y) * cursor.x + start_x);
 }
 
 void  on_capmix_event(capmix_event_t event)
@@ -326,16 +343,14 @@ void  on_capmix_event(capmix_event_t event)
 	capmix_format_addr(event.addr, name);
 	capmix_format_type(event.type_info->type, event.unpacked, value);
 
-	//wmove(log_win, 9, 0);
-	wprintw(log_win, "cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
-	wprintw(log_win, "name=%s ", name);
-	wprintw(log_win, "type=%s ", event.type_info->name);
-	wprintw(log_win, "unpacked=0x%x ", event.unpacked.discrete);
-	wprintw(log_win, "value=%s ", value);
-	wprintw(log_win, "\n");
+	log("cmd=%x addr=%08x name=%s type=%s unpacked=0x%x value=%s\n",
+		event.sysex->cmd, event.addr, name, event.type_info->name,
+		event.unpacked.discrete, value
+	);
 	wrefresh(log_win);
 
-	render_control(menu_win, event.addr);
+	cursor_t pos = capmix_mixer_addr_xy(page, event.addr);
+	render_control(menu_win, event.addr, pos);
 	capmix_listen();
 }
 
@@ -383,10 +398,10 @@ int   main(int argc, char ** argv)
 	startx = 0;
 	starty = 0;
 
-	log_win = newwin(10, WIDTH, starty+HEIGHT, startx);
+	log_win = newwin(10, COLS, starty+HEIGHT, startx);
 	scrollok(log_win, 1);
 
-	menu_win = newwin(HEIGHT, WIDTH, starty, startx);
+	menu_win = newwin(HEIGHT, COLS, starty, startx);
 	keypad(menu_win, TRUE);
 	nodelay(menu_win, 1);
 

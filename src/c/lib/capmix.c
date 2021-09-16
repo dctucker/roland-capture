@@ -6,7 +6,7 @@
 static uint8_t sysex_buf[16];
 static uint8_t data_buf[8];
 static int     connected;
-static void   (*capmix_event_handler)(capmix_event_t) = NULL;
+static capmix_event_handler_t *capmix_event_handler = NULL;
 
 /**
  * @brief create a capmix_event_t for a given MIDI message buffer
@@ -54,7 +54,7 @@ static void             listener(uint8_t *buf, int len)
  * @param event_handler the callback function that will receive events
  * @return 1 on success, 0 when no connection could be established
  */
-int                     capmix_connect( void (*event_handler)(capmix_event_t) )
+int                     capmix_connect( capmix_event_handler_t *event_handler )
 {
 	capmix_memory_init();
 	capmix_event_handler = event_handler;
