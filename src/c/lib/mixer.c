@@ -195,12 +195,12 @@ static const capmix_mixer_page_t capmix_mixer_pages[] = {
 		.headers = CCA( "Source" ),
 		.labels = CCA( "Output", "1-2", "3-4", "5-6", "7-8", "9-10" ),
 		.controls = {
-			0x0,
-			0x30000,
-			0x30001,
-			0x30002,
-			0x30003,
-			0x30004,
+			{ 0x0 },
+			{ 0x30000 },
+			{ 0x30001 },
+			{ 0x30002 },
+			{ 0x30003 },
+			{ 0x30004 },
 		},
 	},
 };
@@ -220,4 +220,25 @@ void capmix_mixer_foreach(const capmix_mixer_page_t *page, void (*func)(capmix_a
 	for(int i=0; i < page->rows; i++)
 		for(int j=0; j < page->cols; j++)
 			func( page->controls[i][j], i, j );
+}
+
+cursor_t capmix_mixer_addr_xy( const capmix_mixer_page_t *page, capmix_addr_t addr )
+{
+	for(int i=0; i < page->rows; i++)
+		for(int j=0; j < page->cols; j++)
+			if( page->controls[i][j] == addr )
+				return (cursor_t){ .x = j, .y = i };
+	return (cursor_t){ .x = -1, .y = -1 };
+}
+
+int capmix_mixer_rowlen( const capmix_mixer_page_t *page, int row )
+{
+	int rowlen = 0;
+	if( row < 0 || row >= page->rows ) return 0;
+	for(int j=0; j < page->cols; j++)
+	{
+		if( page->controls[row][j] != 0 )
+			rowlen++;
+	}
+	return rowlen;
 }
