@@ -2,14 +2,18 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
+#include <libgen.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 #include "lib/capmix.h"
 
 static volatile int quitting = 0;
 static int sysex_len;
 static uint8_t  sysex_buf[16];
+static bool meters = false;
 
-void   handler(capmix_event_t event)
+void  handler(capmix_event_t event)
 {
 	char name[128];
 	char value[16];
@@ -18,6 +22,11 @@ void   handler(capmix_event_t event)
 	capmix_format_type(event.type_info->type, event.unpacked, value);
 
 	printf("cmd=%x addr=%08x data=", event.sysex->cmd, event.addr);
+	for(int i=0; i < event.sysex_data_length; i++)
+	{
+		char c = event.sysex->data[i];
+		printf("0x%02x ", c);
+	}
 	printf("name=%s ", name);
 	printf("type=%s ", event.type_info->name);
 	printf("unpacked=0x%x ", event.unpacked.discrete);
@@ -92,6 +101,16 @@ void  sigint_handler(int _)
 int   main(int argc, const char **argv)
 {
 	signal(SIGINT, sigint_handler);
+
+	printf("%s\n", argv[0]);
+	char *a0 = strdup(argv[0]);
+	char *base = basename(a0);
+	if( strcmp(base, "meters") == 0 )
+	{
+		meters = true;
+	}
+	free(a0);
+
 	/*
 	int opt;
 	while ((opt = getopt(argc, argv, "ilw")) != -1)
@@ -124,9 +143,19 @@ int   main(int argc, const char **argv)
 	else // interactive
 	{
 		int ok = capmix_connect(handler);
+		if( ok && meters )
+		{
+			set("meters_active", "on");
+		}
+
 		while(ok && ! quitting )
 		{
 			capmix_listen();
+		}
+
+		if( meters )
+		{
+			set("meters_active", "off");
 		}
 		capmix_disconnect();
 		printf("\nDone.\n");

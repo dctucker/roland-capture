@@ -279,7 +279,7 @@ static const capmix_mem_t memory_map[] = {
 	[0x6] = { .offset = O_INPUT_MON, .name = capmix_str.top_map[0x6] , MEMAREA(input_monitor) },
 	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
 	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
-	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] },
+	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] , .type = TBoolean },
 	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] },
 	ENDA
 };
@@ -484,7 +484,7 @@ capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
 	countdown -= memory_map[section].offset;
 
-	capmix_type_t type = TValue;
+	capmix_type_t type = memory_map[section].type;
 	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
