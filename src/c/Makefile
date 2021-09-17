@@ -59,6 +59,7 @@ bin/capmixer-dynamic: lib/libcapmix.so lib/mixer.o app/capmixer.c
 
 bin/main: $(OBJ) app/main.c
 	$(CC) $(LIBS) $(CFLAGS) -o bin/main $(addprefix $(OBJDIR)/,$(OBJ)) app/main.c
+	ln -f bin/main bin/meters
 	# -L$(OBJDIR)/lib -lcapmix
 
 #bin/main: $(OBJ) app/main.c # static library
