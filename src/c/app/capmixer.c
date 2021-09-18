@@ -322,8 +322,8 @@ void  interface_refresh(WINDOW *menu_win)
 		int dx = row_spacing(i);
 		for(int j=0; j < page->cols; j++)
 		{
-			capmix_addr_t addr = page->controls[i][j];
 			pos.x = j;
+			capmix_addr_t addr = page->controls[i][j];
 			render_control(menu_win, addr, pos);
 		}
 		const char *label = page->labels[i];
@@ -332,6 +332,16 @@ void  interface_refresh(WINDOW *menu_win)
 		mvwprintw(menu_win, start_y + i, start_x + page->cols * main_dx + 1, label);
 		wattroff(menu_win, COLOR_PAIR(2));
 		wattroff(menu_win, A_BOLD);
+	}
+	for(int i=0; i < page->meter_rows; i++)
+	{
+		pos.y = i + page->rows;
+		for(int j=0; j < page->cols; j++)
+		{
+			pos.x = j;
+			capmix_addr_t addr = page->meters[i][j];
+			render_control(menu_win, addr, pos);
+		}
 	}
 	wmove(menu_win, cursor.y + start_y, row_spacing(cursor.y) * cursor.x + start_x);
 	wrefresh(menu_win);
@@ -345,14 +355,27 @@ void  on_capmix_event(capmix_event_t event)
 	capmix_format_addr(event.addr, name);
 	capmix_format_type(event.type_info->type, event.unpacked, value);
 
-	log("cmd=%x addr=%08x name=%s type=%s unpacked=0x%x value=%s\n",
+	log("cmd=%x addr=%08x name=%s type=%s unpacked=0x%x value=%s",
 		event.sysex->cmd, event.addr, name, event.type_info->name,
 		event.unpacked.discrete, value
 	);
 	wrefresh(log_win);
 
-	cursor_t pos = capmix_mixer_addr_xy(page, event.addr);
-	render_control(menu_win, event.addr, pos);
+	if( event.addr >> 16 == 0x0a )
+	{
+		for(int j=0; j < page->cols; j++)
+		{
+			capmix_addr_t addr = page->meters[0][j];
+			cursor_t pos = { .x=j, .y=page->rows };
+			render_control(menu_win, addr, pos);
+		}
+		wrefresh(menu_win);
+	}
+	else
+	{
+		cursor_t pos = capmix_mixer_addr_xy(page, event.addr);
+		render_control(menu_win, event.addr, pos);
+	}
 	capmix_listen();
 }
 
@@ -408,7 +431,7 @@ int   main(int argc, char ** argv)
 	nodelay(menu_win, 1);
 
 	set_page(PInputA);
-	//capmix_put(0xa0000, capmix_UnpackedInt(1));
+	capmix_put(0xa0000, capmix_UnpackedInt(1));
 
 
 	interface_refresh(menu_win);
@@ -424,7 +447,7 @@ int   main(int argc, char ** argv)
 		}
 		capmix_listen();
 	}
-	//capmix_put(0xa0000, capmix_UnpackedInt(0));
+	capmix_put(0xa0000, capmix_UnpackedInt(0));
 	capmix_disconnect();
 
 	clrtoeol();

@@ -43,7 +43,9 @@ typedef struct capmix_mixer_page_s {
 	const char *name;              ///< human-readable name of this page
 	const char **headers;          ///< header shown above each column
 	const char **labels;           ///< header shown next to each row
-	capmix_addr_t controls[8][16]; ///< memory address matrix
+	capmix_addr_t controls[8][16]; ///< memory address matrix for controls
+	int meter_rows;                ///< number of rows with meters
+	capmix_addr_t meters[4][16];   ///< memory address matrix for meters
 } capmix_mixer_page_t;
 
 const capmix_mixer_page_t *  capmix_get_page(enum capmix_pages_e page);

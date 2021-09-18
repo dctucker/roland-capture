@@ -52,8 +52,11 @@ int main(int argc, char *argv[])
 	TEST( test_name_addr(0x000a0000, "meters.active" ) );
 	TEST( test_addr_type(TBoolean, 0x000a0000) );
 
-	TEST( test_format_addr("meters.channel.1", 0x000a0001) );
 	TEST( test_addr_type(TMeter, 0x000a0001) );
+	TEST( test_addr_type(TMeter, 0x000a0003) );
+	TEST( test_format_addr("meters.channel.1", 0x000a0001) );
+	TEST( test_format_addr("meters.channel.2", 0x000a0003) );
+	TEST( test_format_addr("meters.more.1", 0x000a0101) );
 
 	TEST( test_format_addr("meters.channel.?", 0x000a3f3f) );
 	TEST( test_addr_type(TValue, 0x000a3f3f) );
