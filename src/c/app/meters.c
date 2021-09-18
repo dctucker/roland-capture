@@ -18,20 +18,36 @@ void  handler(capmix_event_t event)
 	char name[128];
 	char value[16];
 
-	capmix_format_addr(event.addr, name);
-	capmix_format_type(event.type_info->type, event.unpacked, value);
+	//capmix_format_addr(event.addr, name);
+	//capmix_format_type(event.type_info->type, event.unpacked, value);
 
-	printf("cmd=%x addr=%08x len=%d data=", event.sysex->cmd, event.addr, event.sysex_data_length);
+	/*
+	printf("cmd=%x addr=%08x  data=", event.sysex->cmd, event.addr);
 	for(int i=0; i < event.sysex_data_length; i++)
 	{
 		char c = event.sysex->data[i];
 		printf("%02x ", c);
 	}
-	printf("name=%s ", name);
-	printf("type=%s ", event.type_info->name);
-	printf("unpacked=0x%x ", event.unpacked.discrete);
-	printf("value=%s ", value);
-	printf("\n");
+	//printf("name=%s ", name);
+	//printf("type=%s ", event.type_info->name);
+	//printf("unpacked=0x%x ", event.unpacked.discrete);
+	//printf("value=%s ", value);
+	*/
+	for(int j=0; j < 62; j++)
+	{
+		capmix_addr_t addr = 0xa0001 + 2 * j;
+		capmix_unpacked_t unpacked = capmix_memory_get_unpacked(addr);
+		//capmix_format_type(TMeter, unpacked, value);
+		printf("\033[48;5;%dm.", 232 + (int)(unpacked.continuous * 23.));
+	}
+	for(int j=0; j < 4; j++)
+	{
+		capmix_addr_t addr = 0xa0101 + 2 * j;
+		capmix_unpacked_t unpacked = capmix_memory_get_unpacked(addr);
+		//capmix_format_type(TMeter, unpacked, value);
+		printf("\033[48;5;%dm.", 232 + (int)(unpacked.continuous * 23.));
+	}
+	printf("\033[40m\n");
 }
 
 int   get(const char *control)
@@ -102,26 +118,6 @@ int   main(int argc, const char **argv)
 {
 	signal(SIGINT, sigint_handler);
 
-	printf("%s\n", argv[0]);
-	char *a0 = strdup(argv[0]);
-	char *base = basename(a0);
-	if( strcmp(base, "meters") == 0 )
-	{
-		meters = true;
-	}
-	free(a0);
-
-	/*
-	int opt;
-	while ((opt = getopt(argc, argv, "ilw")) != -1)
-	{
-		switch(opt)
-		{
-			case '
-		}
-	}
-	*/
-
 	const char *control ="", *value ="";
 	int a = 0;
 	const char *arg0 = argv[a++];
@@ -129,36 +125,17 @@ int   main(int argc, const char **argv)
 	if( argc > 2 ) value   = argv[a++];
 	//printf("args: control=%s value=%s\n", control, value);
 
-	if( strlen(control) > 0 ) // non-interactive
-	{
-		if( strlen(value) == 0 )
-		{
-			return get(control);
-		}
-		else // set
-		{
-			return set(control, value);
-		}
-	}
-	else // interactive
-	{
-		int ok = capmix_connect(handler);
-		if( ok && meters )
-		{
-			set("meters.active", "on");
-		}
+	int ok = capmix_connect(handler);
+	if( ok ) set("meters.active", "on");
 
-		while(ok && ! quitting )
-		{
-			capmix_listen();
-		}
-
-		if( meters )
-		{
-			set("meters.active", "off");
-		}
-		capmix_disconnect();
-		printf("\nDone.\n");
-		return 0;
+	while(ok && ! quitting )
+	{
+		capmix_listen();
 	}
+	set("meters.active", "off");
+	capmix_disconnect();
+
+	printf("\nDone.\n");
+	return 0;
 }
+
