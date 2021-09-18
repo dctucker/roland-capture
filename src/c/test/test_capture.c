@@ -48,7 +48,13 @@ int main(int argc, char *argv[])
 	TEST( test_format_addr("line.channel.13.stereo", 0x00051000) );
 	TEST( test_format_addr("line.channel.13.attenuation", 0x00051001) );
 
-	TEST( test_format_addr("meters_active", 0x000a0000) );
-	TEST( test_name_addr(0x000a0000, "meters_active" ) );
+	TEST( test_format_addr("meters.active", 0x000a0000) );
+	TEST( test_name_addr(0x000a0000, "meters.active" ) );
 	TEST( test_addr_type(TBoolean, 0x000a0000) );
+
+	TEST( test_format_addr("meters.channel.1", 0x000a0001) );
+	TEST( test_addr_type(TMeter, 0x000a0001) );
+
+	TEST( test_format_addr("meters.channel.?", 0x000a3f3f) );
+	TEST( test_addr_type(TValue, 0x000a3f3f) );
 }

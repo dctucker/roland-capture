@@ -30,7 +30,7 @@ static const capmix_str_t capmix_str = {
 		[0x7] = "daw_monitor",
 		[0x8] = "master",
 		[LINE]= "line",
-		[0xa] = "meters_active",
+		[0xa] = "meters",
 		[0xf] = "load_settings",
 	},
 	.patchbay = { "1-2", "3-4", "5-6", "7-8", "9-10", },
@@ -268,6 +268,33 @@ DEF_MEMAREA(master) = {
 };
 #endif
 
+#define METER(N) [N] = { .offset = 2*(N-1), .name=#N, .type=TMeter }
+DEF_MEMAREA(meter_channels) = {
+	METER(1),
+	METER(2),
+	METER(3),
+	METER(4),
+	METER(5),
+	METER(6),
+	METER(7),
+	METER(8),
+	METER(9),
+	METER(10),
+	METER(11),
+	METER(12),
+	METER(13),
+	METER(14),
+	METER(15),
+	METER(16),
+	ENDA
+};
+
+DEF_MEMAREA(meters) = {
+	[0x0] = { .offset=0x0000, .name="active", .type=TBoolean },
+	[0x1] = { .offset=0x0001, .name="channel", MEMAREA(meter_channels) },
+	ENDA,
+};
+
 /// describe a top-level section of memory by name
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 static const capmix_mem_t memory_map[] = {
@@ -279,7 +306,7 @@ static const capmix_mem_t memory_map[] = {
 	[0x6] = { .offset = O_INPUT_MON, .name = capmix_str.top_map[0x6] , MEMAREA(input_monitor) },
 	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
 	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
-	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] , .type = TBoolean },
+	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] , .type = TBoolean, MEMAREA(meters) },
 	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] },
 	ENDA
 };
@@ -380,10 +407,11 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 	countdown -= memory_map[section].offset;
 	strcat(desc, memory_map[section].name);
 
+	const capmix_mem_t *candidate;
 	while( countdown >= 0 )
 	{
 		if( map == NULL ) break;
-		const capmix_mem_t *candidate = NULL;
+		candidate = NULL;
 
 		capmix_addr_t min_offset = capmix_None;
 		for( int i = 0; map[i].offset != capmix_None; i++ )
@@ -406,6 +434,11 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 		strcat(desc, candidate->name);
 		countdown -= candidate->offset; // 0x120e
 		map = (const capmix_mem_t *)(candidate->area);
+	}
+	if( countdown != 0 )
+	{
+		desc[strlen(desc) - strlen(candidate->name)] = '\0';
+		strcat(desc, "?");
 	}
 	if( map != NULL && map->name != NULL )
 	{
@@ -453,12 +486,14 @@ const char *            capmix_addr_suffix(capmix_addr_t addr)
 			}
 		}
 		
-		if( candidate == NULL ) return TValue;
+		if( candidate == NULL ) return "";
 
 		countdown -= candidate->offset; // 0x120e
 		name = candidate->name;
 		map = (const capmix_mem_t *)(candidate->area);
 	}
+	if( countdown !=0 )
+		return "";
 	if( map != NULL && map->name != NULL )
 	{
 		name = map->name;
@@ -511,6 +546,8 @@ capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 		type = candidate->type;
 		map = (const capmix_mem_t *)(candidate->area);
 	}
+	if( countdown != 0 )
+		return TValue;
 	if( map != NULL && map->name != NULL )
 	{
 		if( map->type != TValue )

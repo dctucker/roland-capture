@@ -7,6 +7,7 @@
 #include "types/boolean.h"
 #include "types/volume.h"
 #include "types/pan.h"
+#include "types/meter.h"
 #include "types/scaled.h"
 #include "types/enum.h"
 #include "types/unset.h"
@@ -60,6 +61,15 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.parse  = capmix_pan_parse,
 		.format = capmix_pan_format,
 		.pack   = capmix_pan_pack,
+	},
+	[TMeter] = {
+		.type = TMeter,
+		.name = "Meter",
+		.parent = TValue,
+		.unpack = capmix_meter_unpack,
+		//.parse  = capmix_pan_parse,
+		.format = capmix_meter_format,
+		//.pack   = capmix_pan_pack,
 	},
 
 	[TScaled] = {
@@ -285,7 +295,11 @@ int                 capmix_type_size         (capmix_type_t type)
 capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 {
 	int len = capmix_type_size(type);
-	int fx = capmix_nibbles_to_fixed(data, len);
+	int fx;
+	if( type == TMeter )
+		fx = 0x3fff & ((data[0] << 7) + data[1]);
+	else
+		fx = capmix_nibbles_to_fixed(data, len);
 	return fx;
 }
 
