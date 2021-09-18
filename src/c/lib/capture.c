@@ -23,6 +23,7 @@ static const char *const volume = "volume";
 static const capmix_str_t capmix_str = {
 	.top_map = {
 		[0x0] = "initial_setting",
+		[0x2] = "auto_sens",
 		[0x3] = "patchbay",
 		[0x4] = "reverb",
 		[0x5] = "preamp",
@@ -292,13 +293,78 @@ DEF_MEMAREA(meter_channels) = {
 DEF_MEMAREA(meters) = {
 	[0x0] = { .offset=0x0000, .name="active", .type=TBoolean },
 	[0x1] = { .offset=0x0001, .name="channel", MEMAREA(meter_channels) },
-	ENDA,
+	ENDA
+};
+
+
+// auto sens on      : 02=1, 03=1
+// auto sens cancel  : 02=2, 03=0
+// auto sens off     : 02=0
+DEF_MEMAREA(auto_sens_setup) = {
+	[0x2] = { .offset=0x02, .name="mode", .type=TAutoSens },
+	[0x3] = { .offset=0x03, .name="reset" , .type=TBoolean },
+	ENDA
+};
+
+DEF_MEMAREA(auto_sens_mask_node) = { { .name="execute", .type=TBoolean }, ENDA };
+#define SENS_MASK(N) [N-1] = { .offset=N-1, .name=#N, MEMAREA(auto_sens_mask_node) }
+DEF_MEMAREA(auto_sens_mask) = {
+	SENS_MASK(1),
+	SENS_MASK(2),
+	SENS_MASK(3),
+	SENS_MASK(4),
+	SENS_MASK(5),
+	SENS_MASK(6),
+	SENS_MASK(7),
+	SENS_MASK(8),
+	SENS_MASK(9),
+	SENS_MASK(10),
+	SENS_MASK(11),
+	SENS_MASK(12),
+	SENS_MASK(13),
+	SENS_MASK(14),
+	SENS_MASK(15),
+	SENS_MASK(16),
+	ENDA
+};
+
+DEF_MEMAREA(auto_sens_preamp_node) = { { .name="sens", .type=TSens }, ENDA };
+DEF_MEMAREA(auto_sens_line_node)   = { { .name="attenuation", .type=TAttenuation }, ENDA };
+
+#define SENS(N)  [N-1] = { .offset=N-1, .name=#N, MEMAREA(auto_sens_preamp_node) }
+#define ATTEN(N) [N-1] = { .offset=N-1, .name=#N, MEMAREA(auto_sens_line_node) }
+DEF_MEMAREA(auto_sens_channels) = {
+	SENS(1),
+	SENS(2),
+	SENS(3),
+	SENS(4),
+	SENS(5),
+	SENS(6),
+	SENS(7),
+	SENS(8),
+	SENS(9),
+	SENS(10),
+	SENS(11),
+	SENS(12),
+	ATTEN(13),
+	ATTEN(14),
+	ATTEN(15),
+	ATTEN(16),
+	ENDA
+};
+
+DEF_MEMAREA(auto_sens) = {
+	[0x0] = { .offset=0x0100, .name="setup"        , MEMAREA(auto_sens_setup) },
+	[0x1] = { .offset=0x0110, .name="select"       , MEMAREA(auto_sens_mask) },
+	[0x2] = { .offset=0x0120, .name="channel"      , MEMAREA(auto_sens_channels) },
+	ENDA
 };
 
 /// describe a top-level section of memory by name
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 static const capmix_mem_t memory_map[] = {
 	[0x0] = { .offset = 0x00000002 , .name = capmix_str.top_map[0x0] },
+	[0x2] = { .offset = 0x00020000 , .name = capmix_str.top_map[0x2] , MEMAREA(auto_sens)     },
 	[0x3] = { .offset = O_PATCHBAY , .name = capmix_str.top_map[0x3] , MEMAREA(patchbay)      },
 	[0x4] = { .offset = O_REVERB   , .name = capmix_str.top_map[0x4] , MEMAREA(reverb)        },
 	[0x5] = { .offset = O_PREAMP   , .name = capmix_str.top_map[0x5] , MEMAREA(preamp)        },
@@ -306,7 +372,7 @@ static const capmix_mem_t memory_map[] = {
 	[0x6] = { .offset = O_INPUT_MON, .name = capmix_str.top_map[0x6] , MEMAREA(input_monitor) },
 	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
 	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
-	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] , .type = TBoolean, MEMAREA(meters) },
+	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] , MEMAREA(meters) },
 	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] },
 	ENDA
 };
@@ -404,8 +470,13 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 
 	int countdown = addr;
 	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
-	countdown -= memory_map[section].offset;
+	if( memory_map[section].name == NULL )
+	{
+		strcat(desc, "?");
+		return;
+	}
 	strcat(desc, memory_map[section].name);
+	countdown -= memory_map[section].offset;
 
 	const capmix_mem_t *candidate;
 	while( countdown >= 0 )

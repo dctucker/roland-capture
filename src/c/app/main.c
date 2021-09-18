@@ -25,7 +25,7 @@ void  handler(capmix_event_t event)
 	for(int i=0; i < event.sysex_data_length; i++)
 	{
 		char c = event.sysex->data[i];
-		printf("%02x", c);
+		printf("%02x ", c);
 	}
 	printf("name=%s ", name);
 	printf("type=%s ", event.type_info->name);

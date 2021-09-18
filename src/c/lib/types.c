@@ -66,6 +66,7 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.type = TMeter,
 		.name = "Meter",
 		.parent = TValue,
+		.min = {.continuous = 0. }, .max = {.continuous = 1. }, .step = {.continuous = 0.01 },
 		.unpack = capmix_meter_unpack,
 		//.parse  = capmix_pan_parse,
 		.format = capmix_meter_format,
@@ -214,6 +215,15 @@ static capmix_type_info_t capmix_types[NTypes] = {
 			"WAVE 1/2", "WAVE 3/4", "WAVE 5/6", "WAVE 7/8", "WAVE 9/10",
 		},
 	},
+	[TAutoSens] = {
+		.type = TAutoSens,
+		.name = "PAutoSens",
+		.parent = TEnum,
+		.min = {.discrete= 0 }, .max = {.discrete= 2 }, .step = {.discrete= 1 },
+		.enum_names = (const char *[]){
+			"off", "on", "cancel",
+		},
+	},
 };
 
 /**
@@ -282,6 +292,7 @@ int                 capmix_type_size         (capmix_type_t type)
 	{
 		case TVolume : return 6;
 		case TPan    : return 4;
+		case TMeter  : return 2;
 		default      : return 1;
 	}
 }
@@ -297,7 +308,7 @@ capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 	int len = capmix_type_size(type);
 	int fx;
 	if( type == TMeter )
-		fx = 0x3fff & ((data[0] << 7) + data[1]);
+		fx = (((int)data[1] << 7) + (int)data[0]) & 0x3fff;
 	else
 		fx = capmix_nibbles_to_fixed(data, len);
 	return fx;
