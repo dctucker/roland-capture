@@ -21,6 +21,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 			{0x6000e, 0x6010e, 0x6020e, 0x6030e, 0x6040e, 0x6050e, 0x6060e, 0x6070e, 0x6080e, 0x6090e, 0x60a0e, 0x60b0e, 0x60c0e, 0x60d0e, 0x60e0e, 0x60f0e}, // reverb
 			{0x60004, 0x60104, 0x60204, 0x60304, 0x60404, 0x60504, 0x60604, 0x60704, 0x60804, 0x60904, 0x60a04, 0x60b04, 0x60c04, 0x60d04, 0x60e04, 0x60f04}, // pan
 			{0x60008, 0x60108, 0x60208, 0x60308, 0x60408, 0x60508, 0x60608, 0x60708, 0x60808, 0x60908, 0x60a08, 0x60b08, 0x60c08, 0x60d08, 0x60e08, 0x60f08}, // volume
+			//{0xa0000, 0xa0002, 0xa0004, 0xa0006, 0xa0008, 0xa000a, 0xa000c, 0xa000e, 0xa0010, 0xa0012, 0xa0014, 0xa0016, 0xa0018, 0xa001a, 0xa001c, 0xa001e}, // meters
 		},
 	},
 	[PInputB] = {
@@ -228,7 +229,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 			.id = PChannel##N, \
 			.name = "Channel " #N, \
 			.rows = 5, .cols = 11, \
-			.headers =(const char **) &(channelpg_headers), \
+			.headers =(const char **) channelpg_headers, \
 			.labels = (const char **) &(input_labels[1]), \
 			.controls = CHANNEL_CONTROLS(((N-1)<<8)), \
 		}
@@ -236,7 +237,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 			.id = PChannel##N, \
 			.name = "Channel " #N, \
 			.rows = 5, .cols = 11, \
-			.headers =(const char **) &(channelpg_headers), \
+			.headers =(const char **) channelpg_headers, \
 			.labels = (const char **) &(input_labels[1]), \
 			.controls = LINE_CHANNEL_CONTROLS(((N-1)<<8)), \
 		}

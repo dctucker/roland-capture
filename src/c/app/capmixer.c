@@ -12,7 +12,7 @@
 
 WINDOW *menu_win;
 WINDOW *log_win;
-cursor_t cursor;
+cursor_t cursor = { .x=0, .y=0 };
 
 int startx = 0;
 int starty = 0;
@@ -248,8 +248,8 @@ void  render_control(WINDOW *menu_win, capmix_addr_t addr, cursor_t pos)
 		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, text);
 		wattroff(menu_win, COLOR_PAIR(1));
 	}
+	//wmove(menu_win, pos.y + start_y, dx * pos.x + start_x);
 	wrefresh(menu_win);
-	wmove(menu_win, pos.y + start_y, dx * pos.x + start_x);
 }
 
 void  render_page_indicator(WINDOW *menu_win, int start_x, int start_y)
@@ -298,6 +298,7 @@ void  interface_refresh(WINDOW *menu_win)
 	int pad_l, pad_r;
 	int main_dx = row_spacing(page->rows-1);
 	int start_x = 0, start_y = 0;
+	cursor_t pos;
 
 	//box(menu_win, 0, 0);
 	render_page_indicator(menu_win, start_x, start_y);
@@ -317,11 +318,12 @@ void  interface_refresh(WINDOW *menu_win)
 	start_y += 1;
 	for(int i=0; i < page->rows; i++)
 	{
+		pos.y = i;
 		int dx = row_spacing(i);
 		for(int j=0; j < page->cols; j++)
 		{
 			capmix_addr_t addr = page->controls[i][j];
-			cursor_t pos = { .x=j, .y=i };
+			pos.x = j;
 			render_control(menu_win, addr, pos);
 		}
 		const char *label = page->labels[i];
@@ -331,8 +333,8 @@ void  interface_refresh(WINDOW *menu_win)
 		wattroff(menu_win, COLOR_PAIR(2));
 		wattroff(menu_win, A_BOLD);
 	}
-	wrefresh(menu_win);
 	wmove(menu_win, cursor.y + start_y, row_spacing(cursor.y) * cursor.x + start_x);
+	wrefresh(menu_win);
 }
 
 void  on_capmix_event(capmix_event_t event)
@@ -406,6 +408,8 @@ int   main(int argc, char ** argv)
 	nodelay(menu_win, 1);
 
 	set_page(PInputA);
+	//capmix_put(0xa0000, capmix_UnpackedInt(1));
+
 
 	interface_refresh(menu_win);
 
@@ -415,11 +419,13 @@ int   main(int argc, char ** argv)
 		c = wgetch(menu_win);
 		if( on_keyboard(c) )
 		{
+			log("refreshing");
 			interface_refresh(menu_win);
-			//log("refreshing");
 		}
 		capmix_listen();
 	}
+	//capmix_put(0xa0000, capmix_UnpackedInt(0));
+	capmix_disconnect();
 
 	clrtoeol();
 	curs_set(1);
