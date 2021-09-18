@@ -269,7 +269,8 @@ DEF_MEMAREA(master) = {
 };
 #endif
 
-#define METER(N) [N] = { .offset = 2*(N-1), .name=#N, .type=TMeter }
+#define METER(N) { .offset = 2*(N-1), .name="level"#N, .type=TMeter }
+#define GATE(N)  { .offset = 2*(N-1)+24, .name="gate"#N, .type=TMeter }
 DEF_MEMAREA(meter_channels) = {
 	METER(1),
 	METER(2),
@@ -283,31 +284,28 @@ DEF_MEMAREA(meter_channels) = {
 	METER(10),
 	METER(11),
 	METER(12),
+	GATE(1),
+	GATE(2),
+	GATE(3),
+	GATE(4),
+	GATE(5),
+	GATE(6),
+	GATE(7),
+	GATE(8),
+	GATE(9),
+	GATE(10),
+	GATE(11),
+	GATE(12),
+
 	METER(13),
 	METER(14),
 	METER(15),
 	METER(16),
+	GATE(13),
+	GATE(14),
+	GATE(15),
+	GATE(16),
 
-	METER(17),
-	METER(18),
-	METER(19),
-	METER(20),
-	METER(21),
-	METER(22),
-	METER(23),
-	METER(24),
-	METER(25),
-	METER(26),
-	METER(27),
-	METER(28),
-	METER(29),
-	METER(30),
-	METER(31),
-	METER(32),
-	METER(33),
-	METER(34),
-	METER(35),
-	METER(36),
 	METER(37),
 	METER(38),
 	METER(39),
