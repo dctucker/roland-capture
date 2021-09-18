@@ -25,7 +25,7 @@ void  handler(capmix_event_t event)
 	for(int i=0; i < event.sysex_data_length; i++)
 	{
 		char c = event.sysex->data[i];
-		printf("0x%02x ", c);
+		printf("%02x", c);
 	}
 	printf("name=%s ", name);
 	printf("type=%s ", event.type_info->name);
@@ -145,7 +145,7 @@ int   main(int argc, const char **argv)
 		int ok = capmix_connect(handler);
 		if( ok && meters )
 		{
-			set("meters_active", "on");
+			set("meters.active", "on");
 		}
 
 		while(ok && ! quitting )
@@ -155,7 +155,7 @@ int   main(int argc, const char **argv)
 
 		if( meters )
 		{
-			set("meters_active", "off");
+			set("meters.active", "off");
 		}
 		capmix_disconnect();
 		printf("\nDone.\n");
