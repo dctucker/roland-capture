@@ -7,11 +7,49 @@
 #include <stdbool.h>
 
 #include "lib/capmix.h"
+#include "lib/memory.h"
 
 static volatile int quitting = 0;
 static int sysex_len;
 static uint8_t  sysex_buf[16];
 static bool meters = false;
+
+void print_meter(int value)
+{
+	//float v = (float)b / (float)0x7f;
+	//printf("\033[48;5;%dm.", 232 + (int)(v * 23.));
+	if( value == 0x7f )
+		printf("\033[31m");
+	else if( value > 0x70 )
+		printf("\033[33m");
+	else if( value > 0x40 )
+		printf("\033[32m");
+	else if( value > 10 )
+		printf("\033[36m");
+	else
+		printf("\033[34m");
+
+	printf("%02x ", value);
+}
+
+void print_float_meter(float value)
+{
+	if( value >= 1.0 )
+		printf("\033[41m");
+	else if( value > 0.8 )
+		printf("\033[43m");
+	else if( value > 0.5 )
+		printf("\033[42m");
+	else if( value > 0.1 )
+		printf("\033[46m");
+	else if( value == 0 )
+		printf("\033[40m");
+	else
+		printf("\033[44m");
+
+	printf("\033[38;5;%dm", 232 + (int)(value * 23.));
+	printf(".", value);
+}
 
 void  handler(capmix_event_t event)
 {
@@ -33,21 +71,51 @@ void  handler(capmix_event_t event)
 	//printf("unpacked=0x%x ", event.unpacked.discrete);
 	//printf("value=%s ", value);
 	*/
+
 	for(int j=0; j < 62; j++)
 	{
 		capmix_addr_t addr = 0xa0001 + 2 * j;
 		capmix_unpacked_t unpacked = capmix_memory_get_unpacked(addr);
 		//capmix_format_type(TMeter, unpacked, value);
-		printf("\033[48;5;%dm.", 232 + (int)(unpacked.continuous * 23.));
+		print_float_meter(unpacked.continuous);
 	}
 	for(int j=0; j < 4; j++)
 	{
 		capmix_addr_t addr = 0xa0101 + 2 * j;
 		capmix_unpacked_t unpacked = capmix_memory_get_unpacked(addr);
 		//capmix_format_type(TMeter, unpacked, value);
-		printf("\033[48;5;%dm.", 232 + (int)(unpacked.continuous * 23.));
+		print_float_meter(unpacked.continuous);
 	}
-	printf("\033[40m\n");
+	printf("\033[0m\n");
+	printf("0123456789ab0123456789abcdef0123456789ab0123456789abcdefcdef\n\033[A");
+	
+	/*
+	for(int j=0; j < 124; j++)
+	{
+		capmix_addr_t addr = 0xa0001 + j;
+		int b = *capmix_memory_get(addr);
+		print_meter(*capmix_memory_get(addr));
+		//capmix_format_type(TMeter, unpacked, value);
+	}
+	for(int j=0; j < 8; j++)
+	{
+		capmix_addr_t addr = 0xa0101 + j;
+		int8_t b = *capmix_memory_get(addr);
+		//capmix_format_type(TMeter, unpacked, value);
+		print_meter(*capmix_memory_get(addr));
+	}
+	*/
+	
+
+	/*
+	uint8_t b = 0;
+	printf("\033[0mlength %d ", event.sysex_data_length);
+	for(int j=0; j < event.sysex_data_length; j++)
+	{
+		b = event.sysex->data[j];
+		print_meter(b);
+	}
+	*/
 }
 
 int   get(const char *control)

@@ -252,6 +252,15 @@ void  render_control(WINDOW *menu_win, capmix_addr_t addr, cursor_t pos)
 	wrefresh(menu_win);
 }
 
+void  render_meter(WINDOW *win, capmix_addr_t addr, cursor_t pos)
+{
+	int start_x = 0, start_y = 3;
+	float value = capmix_memory_get_unpacked(addr).continuous;
+	int dx = row_spacing( page->rows - 1 );
+
+	mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, "  %d  ", (int)(value*100));
+}
+
 void  render_page_indicator(WINDOW *menu_win, int start_x, int start_y)
 {
 	for(int j=0; j < page_indicator_len; j++)
@@ -340,7 +349,7 @@ void  interface_refresh(WINDOW *menu_win)
 		{
 			pos.x = j;
 			capmix_addr_t addr = page->meters[i][j];
-			render_control(menu_win, addr, pos);
+			render_meter(menu_win, addr, pos);
 		}
 	}
 	wmove(menu_win, cursor.y + start_y, row_spacing(cursor.y) * cursor.x + start_x);
@@ -367,7 +376,7 @@ void  on_capmix_event(capmix_event_t event)
 		{
 			capmix_addr_t addr = page->meters[0][j];
 			cursor_t pos = { .x=j, .y=page->rows };
-			render_control(menu_win, addr, pos);
+			render_meter(menu_win, addr, pos);
 		}
 		wrefresh(menu_win);
 	}
