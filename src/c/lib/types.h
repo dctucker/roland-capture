@@ -35,8 +35,9 @@ typedef enum capmix_type_e {
 	TKnee,        ///< Enumerated compressor knee hard/soft values. Parent: `TEnum`
 	TAttenuation, ///< Enumerated line input attenuation {-20, -10, +4}. Parent: `TEnum`
 	TReverbType,  ///< Enumerated value representing reverb type. Parent: `TEnum`
-	TPreDelay,    ///< Enumerated reverb pre-delay time . Parent: `TEnum`
+	TPreDelay,    ///< Enumerated reverb pre-delay time. Parent: `TEnum`
 	TPatch,       ///< Enumerated value representing selected source for a given output. Parent: `TEnum`
+	TAutoSens,    ///< Enumerated value representing auto-sens state. Parent: `TEnum`
 	TReverbTime,  ///< Scaled reverb time. Parent: `TScaled`
 	NTypes,       ///< dummy value to represent the number of enumerated types
 } capmix_type_t;
