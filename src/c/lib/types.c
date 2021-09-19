@@ -308,7 +308,7 @@ capmix_fixed        capmix_fixed_from_packed (capmix_type_t type, uint8_t *data)
 	int len = capmix_type_size(type);
 	int fx;
 	if( type == TMeter )
-		fx = (((int)data[1] << 7) + (int)data[0]) & 0x3fff;
+		fx = (((int)data[0] << 7) + (int)data[1]) & 0x3fff;
 	else
 		fx = capmix_nibbles_to_fixed(data, len);
 	return fx;
