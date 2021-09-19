@@ -7,9 +7,11 @@
 
 #define DEF_MEMAREA(NAME) static const capmix_mem_t NAME ## _area[] ///< define an area in device memory by name
 #define MEMAREA(NAME) .area=(const capmix_mem_t **const)& NAME ## _area ///< assign the child area to the given named area
+//j#define NODE(T,N) .area=(const capmix_mem_t **const)&{ .type=T, .name=#N }
 #define ENDA { .offset=capmix_None } ///< end of memory map, required for each memory area
 #define MEMNODE( OFFSET, TYPE, NAME) [OFFSET] = { .name = NAME, .offset = OFFSET, .type = T##TYPE } ///< describes a leaf node within the memory map
 #define CMEMNODE(OFFSET, TYPE, NAME) [OFFSET] = { .name = capmix_str.NAME[OFFSET] , .offset = OFFSET, .type = T##TYPE } ///< describes a leaf node within the memory map using a predefined capmix_str_t entry
+#define NODE(TYPE,NAME) CMEMNODE(0, TYPE,NAME)
 
 #define PREAMP( OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) } ///< define a child area in memory for the preamp
 #define CHANNEL(OFFSET, AREA) [OFFSET>> 8] = { .offset=OFFSET, .name = capmix_str.channels[OFFSET>> 8], MEMAREA(AREA) } ///< define a child area in memory for an input channel
@@ -226,7 +228,7 @@ DEF_MEMAREA(daw_monitor) = {
 
 DEF_MEMAREA(master_params) = {
 	MEMNODE(0x0, Boolean, capmix_str.master_params[0]),
-	MEMNODE(0x1, Boolean, capmix_str.master_params[1]),
+	MEMNODE(0x1, Volume, capmix_str.master_params[1]),
 	ENDA
 };
 DEF_MEMAREA(direct_monitor_a) = {
@@ -263,84 +265,94 @@ DEF_MEMAREA(master_daw_monitors) = {
 };
 
 DEF_MEMAREA(master) = {
-	[0x0] = { .offset=0x00000000, .name=capmix_str.master_channels[0], MEMAREA(master_direct_monitors) },
-	[0x1] = { .offset=0x00010000, .name=capmix_str.master_channels[1], MEMAREA(master_daw_monitors) },
+	[0x0] = { .offset=0x00000, .name=capmix_str.master_channels[0], MEMAREA(master_direct_monitors) },
+	[0x1] = { .offset=0x10000, .name=capmix_str.master_channels[1], MEMAREA(master_daw_monitors) },
 	ENDA
 };
 #endif
 
-#define METER(N) { .offset = 2*(N-1), .name="level"#N, .type=TMeter }
-#define GATE(N)  { .offset = 2*(N-1)+24, .name="gate"#N, .type=TMeter }
 DEF_MEMAREA(meter_channels) = {
-	METER(1),
-	METER(2),
-	METER(3),
-	METER(4),
-	METER(5),
-	METER(6),
-	METER(7),
-	METER(8),
-	METER(9),
-	METER(10),
-	METER(11),
-	METER(12),
-	GATE(1),
-	GATE(2),
-	GATE(3),
-	GATE(4),
-	GATE(5),
-	GATE(6),
-	GATE(7),
-	GATE(8),
-	GATE(9),
-	GATE(10),
-	GATE(11),
-	GATE(12),
+	{ .type=TMeter, .offset = 0x00, .name="in-1" },
+	{ .type=TMeter, .offset = 0x02, .name="in-2" },
+	{ .type=TMeter, .offset = 0x04, .name="in-3" },
+	{ .type=TMeter, .offset = 0x06, .name="in-4" },
+	{ .type=TMeter, .offset = 0x08, .name="in-5" },
+	{ .type=TMeter, .offset = 0x0a, .name="in-6" },
+	{ .type=TMeter, .offset = 0x0c, .name="in-7" },
+	{ .type=TMeter, .offset = 0x0e, .name="in-8" },
+	{ .type=TMeter, .offset = 0x10, .name="in-9" },
+	{ .type=TMeter, .offset = 0x12, .name="in-10" },
+	{ .type=TMeter, .offset = 0x14, .name="in-11" },
+	{ .type=TMeter, .offset = 0x16, .name="in-12" },
+	{ .type=TMeter, .offset = 0x18, .name="out-1" },
+	{ .type=TMeter, .offset = 0x1a, .name="out-2" },
+	{ .type=TMeter, .offset = 0x1c, .name="out-3" },
+	{ .type=TMeter, .offset = 0x1e, .name="out-4" },
+	{ .type=TMeter, .offset = 0x20, .name="out-5" },
+	{ .type=TMeter, .offset = 0x2a, .name="out-6" },
+	{ .type=TMeter, .offset = 0x2c, .name="out-7" },
+	{ .type=TMeter, .offset = 0x2e, .name="out-8" },
+	{ .type=TMeter, .offset = 0x20, .name="out-9" },
+	{ .type=TMeter, .offset = 0x22, .name="out-10" },
+	{ .type=TMeter, .offset = 0x24, .name="out-11" },
+	{ .type=TMeter, .offset = 0x26, .name="out-12" },
+	{ .type=TMeter, .offset = 0x28, .name="line-13" },
+	{ .type=TMeter, .offset = 0x2a, .name="line-14" },
+	{ .type=TMeter, .offset = 0x2c, .name="line-15" },
+	{ .type=TMeter, .offset = 0x2e, .name="line-16" },
 
-	METER(13),
-	METER(14),
-	METER(15),
-	METER(16),
-	GATE(13),
-	GATE(14),
-	GATE(15),
-	GATE(16),
+	{ .type=TMeter, .offset = 0x30, .name="x" },
+	{ .type=TMeter, .offset = 0x32, .name="x" },
+	{ .type=TMeter, .offset = 0x34, .name="x" },
+	{ .type=TMeter, .offset = 0x36, .name="x" },
+	{ .type=TMeter, .offset = 0x38, .name="x" },
+	{ .type=TMeter, .offset = 0x3a, .name="x" },
+	{ .type=TMeter, .offset = 0x3c, .name="x" },
+	{ .type=TMeter, .offset = 0x3e, .name="x" },
 
-	METER(37),
-	METER(38),
-	METER(39),
-	METER(40),
-	METER(41),
-	METER(42),
-	METER(43),
-	METER(44),
-	METER(45),
-	METER(46),
-	METER(47),
-	METER(48),
-	METER(49),
-	METER(50),
-	METER(51),
-	METER(52),
-	METER(53),
-	METER(54),
-	METER(55),
-	METER(56),
-	METER(57),
-	METER(58),
-	METER(59),
-	METER(60),
-	METER(61),
-	METER(62),
+	{ .type=TMeter, .offset = 0x40, .name="x" },
+	{ .type=TMeter, .offset = 0x42, .name="x" },
+	{ .type=TMeter, .offset = 0x44, .name="x" },
+	{ .type=TMeter, .offset = 0x46, .name="x" },
+	{ .type=TMeter, .offset = 0x48, .name="x" },
+	{ .type=TMeter, .offset = 0x4a, .name="x" },
+	{ .type=TMeter, .offset = 0x4c, .name="x" },
+	{ .type=TMeter, .offset = 0x4e, .name="x" },
+
+	{ .type=TMeter, .offset = 0x50, .name="x" },
+	{ .type=TMeter, .offset = 0x52, .name="x" },
+	{ .type=TMeter, .offset = 0x54, .name="x" },
+	{ .type=TMeter, .offset = 0x56, .name="x" },
+	{ .type=TMeter, .offset = 0x58, .name="x" },
+	{ .type=TMeter, .offset = 0x5a, .name="x" },
+	{ .type=TMeter, .offset = 0x5c, .name="x" },
+	{ .type=TMeter, .offset = 0x5e, .name="x" },
+
+	{ .type=TMeter, .offset = 0x60, .name="x" },
+	{ .type=TMeter, .offset = 0x62, .name="x" },
+	{ .type=TMeter, .offset = 0x64, .name="x" },
+	{ .type=TMeter, .offset = 0x66, .name="x" },
+	{ .type=TMeter, .offset = 0x68, .name="x" },
+	{ .type=TMeter, .offset = 0x6a, .name="x" },
+	{ .type=TMeter, .offset = 0x6c, .name="x" },
+	{ .type=TMeter, .offset = 0x6e, .name="x" },
+
+	{ .type=TMeter, .offset = 0x70, .name="x" },
+	{ .type=TMeter, .offset = 0x72, .name="x" },
+	{ .type=TMeter, .offset = 0x74, .name="x" },
+	{ .type=TMeter, .offset = 0x76, .name="x" },
+	{ .type=TMeter, .offset = 0x78, .name="x" },
+	{ .type=TMeter, .offset = 0x7a, .name="x" },
 
 	ENDA
 };
 
 DEF_MEMAREA(meter_more) = {
-	METER(1),
-	METER(2),
-	METER(3),
-	METER(4),
+	{ .type=TMeter, .offset = 0x7c, .name="z" },
+	{ .type=TMeter, .offset = 0x7e, .name="z" },
+	{ .type=TMeter, .offset = 0x80, .name="z" },
+	{ .type=TMeter, .offset = 0x82, .name="z" },
+	ENDA
 };
 
 DEF_MEMAREA(meters) = {
@@ -507,6 +519,18 @@ capmix_addr_t           capmix_parse_addr(const char *desc)
 	return ret;
 }
 
+int                 capmix_top_section(capmix_addr_t addr)
+{
+	int section;
+	if( addr >> 12 == 0x51 )
+		section = LINE;
+	else if( addr >> 16 == 0x9 )
+		section = 0x8;
+	else
+		section = addr >> 16;
+	return section;
+}
+
 /**
  * @brief write a string describing the given device memory address, e.g. 0x0006120e -> daw_monitor.b.channel.3.volume
  * @param[in] the device memory address to describe
@@ -516,19 +540,15 @@ capmix_addr_t           capmix_parse_addr(const char *desc)
 void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 {
 	*desc = '\0';
-	int section;
-	if( addr >> 12 == 0x51 )
-		section = LINE;
-	else
-		section = addr >> 16;
-
-	int countdown = addr;
+	int section = capmix_top_section(addr);
 	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
 	if( memory_map[section].name == NULL )
 	{
 		strcat(desc, "?");
 		return;
 	}
+
+	int countdown = addr;
 	strcat(desc, memory_map[section].name);
 	countdown -= memory_map[section].offset;
 
