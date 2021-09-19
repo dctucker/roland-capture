@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
 	TEST( test_pack(pan_max, TPan, capmix_UnpackedFloat(100.)) );
 
 	char meter_max[] = { 0x7f, 0x7f };
-	TEST( test_unpack_float(capmix_UnpackedFloat(0.),  TMeter, buf_min) );
-	TEST( test_unpack_float(capmix_UnpackedFloat(1.0), TMeter, meter_max) );
+	TEST( test_unpack_float(capmix_UnpackedFloat(-INFINITY),  TMeter, buf_min) );
+	TEST( test_unpack_float(capmix_UnpackedFloat( 0.0), TMeter, meter_max) );
 
 
 	char bool_true[] = { 1 };

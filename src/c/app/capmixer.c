@@ -260,6 +260,8 @@ void  render_control(WINDOW *menu_win, capmix_addr_t addr, cursor_t pos)
 
 int  meter_color(float value)
 {
+	if( value == capmix_UnsetInt.continuous )
+		return METER_COLOR;
 	if( value >= 0. )
 		return METER_COLOR+23;
 	else if( value <= -70 )

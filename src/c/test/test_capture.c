@@ -14,7 +14,7 @@ bool test_format_addr (const char *expected, capmix_addr_t addr)
 {
 	char actual[64];
 	capmix_format_addr(addr, actual);
-	printf("0x%08x -> %s  expected %s", addr, actual, expected);
+	printf("format_addr 0x%08x -> %s  expected %s", addr, actual, expected);
 	return strcmp(actual, expected) == 0;
 }
 
@@ -48,6 +48,22 @@ int main(int argc, char *argv[])
 	TEST( test_format_addr("line.channel.13.stereo", 0x00051000) );
 	TEST( test_format_addr("line.channel.13.attenuation", 0x00051001) );
 
+	TEST( test_format_addr("master.direct_monitor.a.left.volume" , 0x00080001) );
+	TEST( test_format_addr("master.direct_monitor.a.right.volume", 0x00080101) );
+	TEST( test_addr_type(TBoolean, 0x00060000) );
+	TEST( test_addr_type(TVolume , 0x00062108) );
+
+	TEST( test_format_addr("master.daw_monitor.a.left.volume" , 0x00090001) );
+	TEST( test_format_addr("master.daw_monitor.a.right.volume", 0x00090101) );
+	TEST( test_addr_type(TBoolean    , 0x00080000) );
+	TEST( test_addr_type(TVolume     , 0x00080001) );
+	TEST( test_addr_type(TBoolean    , 0x00090000) );
+	TEST( test_addr_type(TVolume     , 0x00090001) );
+	TEST( test_name_addr(0x00080000, "master.direct_monitor.a.left.stereo") );
+	TEST( test_name_addr(0x00080101, "master.direct_monitor.a.right.volume") );
+	TEST( test_name_addr(0x00090000, "master.daw_monitor.a.left.stereo") );
+	TEST( test_name_addr(0x00090101, "master.daw_monitor.a.right.volume") );
+
 	TEST( test_format_addr("meters.active", 0x000a0000) );
 	TEST( test_name_addr(0x000a0000, "meters.active" ) );
 	TEST( test_addr_type(TBoolean, 0x000a0000) );
@@ -58,6 +74,6 @@ int main(int argc, char *argv[])
 	TEST( test_format_addr("meters.channel.2", 0x000a0003) );
 	TEST( test_format_addr("meters.more.1", 0x000a0101) );
 
-	TEST( test_format_addr("meters.channel.?", 0x000a3f3f) );
 	TEST( test_addr_type(TValue, 0x000a3f3f) );
+	TEST( test_format_addr("meters.channel.?", 0x000a3f3f) );
 }

@@ -2,19 +2,21 @@
 #include <stdio.h>
 #include "mixer.h"
 
-static const char *channel_headers[]   = { "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16", NULL };
+static const char *input_headers[]   = { "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16", NULL };
+static const char *output_headers[]   = { "1","2","3","4","5","6","7","8","9","10","INL","INR","DAWL","DAWR", NULL };
 static const char *input_labels[]      = { "Stereo","Mute","Solo","Reverb","Pan","Volume", "Meter", NULL };
 static const char *output_labels[]     = { "Stereo","Mute","Solo","","Pan","Volume", NULL };
 static const char *channelpg_headers[] = { "Preamp","","","Compress","","","","A","B","C","D", NULL };
 
 #define INPUT_METERS {0xa0001, 0xa0003, 0xa0005, 0xa0007, 0xa0009, 0xa000b, 0xa000d, 0xa000f, 0xa0011, 0xa0013, 0xa0015, 0xa0017, 0xa0031, 0xa0033, 0xa0035, 0xa0037}
+#define GR_METERS    {0xa0019, 0xa001b, 0xa001d, 0xa001f, 0xa0021, 0xa0023, 0xa0025, 0xa0027, 0xa0029, 0xa002b, 0xa002d, 0xa002f, 0x0, 0x0, 0x0, 0x0}
 
 static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 	[PInputA] = {
 		.id = PInputA,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.a",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) input_headers,
 		.labels = (const char **) input_labels,
 		.controls = {
 			{0x60000, 0x60200, 0x60400, 0x60600, 0x60800, 0x60a00, 0x60c00, 0x60e00}, // stereo
@@ -31,7 +33,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = PInputB,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.b",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) input_headers,
 		.labels = (const char **) input_labels,
 		.controls = {
 			{0x61000, 0x61200, 0x61400, 0x61600, 0x61800, 0x61a00, 0x61c00, 0x61e00}, // stereo
@@ -48,7 +50,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = PInputC,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.c",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) input_headers,
 		.labels = (const char **) input_labels,
 		.controls = {
 			{0x62000, 0x62200, 0x62400, 0x62600, 0x62800, 0x62a00, 0x62c00, 0x62e00}, // stereo
@@ -65,7 +67,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = PInputD,
 		.rows = 6, .cols = 16,
 		.name = "input_monitor.d",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) input_headers,
 		.labels = (const char **) input_labels,
 		.controls = {
 			{0x63000, 0x63200, 0x63400, 0x63600, 0x63800, 0x63a00, 0x63c00, 0x63e00}, // stereo
@@ -80,24 +82,24 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 	},
 	[POutputA] = {
 		.id = POutputA,
-		.rows = 6, .cols = 10,
+		.rows = 6, .cols = 14,
 		.name = "daw_monitor.a",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) output_headers,
 		.labels = (const char **) output_labels,
 		.controls = {
-			{0x70000, 0x70200, 0x70400, 0x70600, 0x70800}, // stereo
-			{0x70002, 0x70102, 0x70202, 0x70302, 0x70402, 0x70502, 0x70602, 0x70702, 0x70802, 0x70902}, // solo
-			{0x70003, 0x70103, 0x70203, 0x70303, 0x70403, 0x70503, 0x70603, 0x70703, 0x70803, 0x70903}, // mute
-			{0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0    }, // no reverb
-			{0x70004, 0x70104, 0x70204, 0x70304, 0x70404, 0x70504, 0x70604, 0x70704, 0x70804, 0x70904}, // pan
-			{0x70008, 0x70108, 0x70208, 0x70308, 0x70408, 0x70508, 0x70608, 0x70708, 0x70808, 0x70908}, // volume
+			{0x70000, 0x70200, 0x70400, 0x70600, 0x70800,                                               0x80000, 0x89000 }, // stereo
+			{0x70002, 0x70102, 0x70202, 0x70302, 0x70402, 0x70502, 0x70602, 0x70702, 0x70802, 0x70902,  }, // solo
+			{0x70003, 0x70103, 0x70203, 0x70303, 0x70403, 0x70503, 0x70603, 0x70703, 0x70803, 0x70903,  }, // mute
+			{0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0,     0x0    ,  0x80007, }, // reverb
+			{0x70004, 0x70104, 0x70204, 0x70304, 0x70404, 0x70504, 0x70604, 0x70704, 0x70804, 0x70904,  0x0    , }, // pan
+			{0x70008, 0x70108, 0x70208, 0x70308, 0x70408, 0x70508, 0x70608, 0x70708, 0x70808, 0x70908,  0x80001, 0x80101, 0x90001, 0x90101 }, // volume
 		},
 	},
 	[POutputB] = {
 		.id = POutputB,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.b",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) output_headers,
 		.labels = (const char **) output_labels,
 		.controls = {
 			{0x71000, 0x71200, 0x71400, 0x71600, 0x71800}, // stereo
@@ -112,7 +114,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = POutputC,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.c",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) output_headers,
 		.labels = (const char **) output_labels,
 		.controls = {
 			{0x72000, 0x72200, 0x72400, 0x72600, 0x72800}, // stereo
@@ -127,7 +129,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = POutputD,
 		.rows = 6, .cols = 10,
 		.name = "daw_monitor.d",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) output_headers,
 		.labels = (const char **) output_labels,
 		.controls = {
 			{0x73000, 0x73200, 0x73400, 0x73600, 0x73800}, // stereo
@@ -142,7 +144,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = PPreamp,
 		.rows = 8, .cols = 12,
 		.name = "preamp",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) input_headers,
 		.labels = CCA( "stereo","hi-z","+48","lo-cut","phase","sens","bypass","gate" ),
 		.controls = {
 			{ 0x50005, 0x50205, 0x50405, 0x50605, 0x50805, 0x50a05 }, // stereo
@@ -154,14 +156,14 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 			{ 0x50006, 0x50106, 0x50206, 0x50306, 0x50406, 0x50506, 0x50606, 0x50706, 0x50806, 0x50906, 0x50a06, 0x50b06 }, // bypass
 			{ 0x50007, 0x50107, 0x50207, 0x50307, 0x50407, 0x50507, 0x50607, 0x50707, 0x50807, 0x50907, 0x50a07, 0x50b07 }, // gate
 		},
-		.meter_rows = 1,
-		.meters = { INPUT_METERS },
+		.meter_rows = 2,
+		.meters = { INPUT_METERS, GR_METERS },
 	},
 	[PCompressor] = {
 		.id = PCompressor,
 		.rows = 8, .cols = 12,
 		.name = "compressor",
-		.headers = (const char **) channel_headers,
+		.headers = (const char **) input_headers,
 		.labels = CCA( "bypass","gate","threshold","ratio","attack","release","gain","knee" ),
 		.controls = {
 			{ 0x50006, 0x50106, 0x50206, 0x50306, 0x50406, 0x50506, 0x50606, 0x50706, 0x50806, 0x50906, 0x50a06, 0x50b06 }, // bypass
@@ -178,7 +180,7 @@ static const capmix_mixer_page_t capmix_mixer_pages[N_Pages] = {
 		.id = PLine,
 		.rows = 2, .cols = 4,
 		.name = "line",
-		.headers = (const char **) &(channel_headers[12]),
+		.headers = (const char **) &(input_headers[12]),
 		.labels = CCA( "Stereo","Attenuation" ),
 		.controls = {
 			{ 0x51000, 0x51200 }, // stereo
