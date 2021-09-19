@@ -10,11 +10,19 @@ bool test_name_addr   (capmix_addr_t expected, const char *desc)
 	return actual == expected;
 }
 
+
 bool test_format_addr (const char *expected, capmix_addr_t addr)
 {
 	char actual[64];
 	capmix_format_addr(addr, actual);
 	printf("format_addr 0x%08x -> %s  expected %s", addr, actual, expected);
+	return strcmp(actual, expected) == 0;
+}
+
+bool test_addr_suffix (const char *expected, capmix_addr_t addr)
+{
+	const char *actual = capmix_addr_suffix(addr);
+	printf("addr_suffix 0x%08x -> %s  expected %s", addr, actual, expected);
 	return strcmp(actual, expected) == 0;
 }
 
@@ -33,6 +41,8 @@ int main(int argc, char *argv[])
 
 	TEST( test_name_addr(0x00040000, "reverb.type") );
 	TEST( test_format_addr("reverb.type", 0x00040000) );
+	TEST( test_addr_suffix("type", 0x00040000) );
+	TEST( test_addr_suffix("volume", 0x00071208) );
 
 	TEST( test_name_addr(0x00060000, "input_monitor.a.channel.1.stereo") );
 	TEST( test_name_addr(0x00071208, "daw_monitor.b.channel.3.volume") );
@@ -75,5 +85,5 @@ int main(int argc, char *argv[])
 	TEST( test_format_addr("meters.more.1", 0x000a0101) );
 
 	TEST( test_addr_type(TValue, 0x000a3f3f) );
-	TEST( test_format_addr("meters.channel.?", 0x000a3f3f) );
+	TEST( test_format_addr("meters.more.?", 0x000a3f3f) );
 }

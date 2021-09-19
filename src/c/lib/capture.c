@@ -426,6 +426,8 @@ DEF_MEMAREA(auto_sens) = {
 	ENDA
 };
 
+DEF_MEMAREA(capmix_mem_none) = { { .name = "?" }, ENDA };
+
 /// describe a top-level section of memory by name
 #define OFFSET_AREA( OFFSET, NAME ) { .offset=OFFSET, .name=#NAME, MEMAREA(NAME)}
 static const capmix_mem_t memory_map[] = {
@@ -497,7 +499,7 @@ static const capmix_mem_t *   capmix_lookup_map(const capmix_mem_t *map, const c
  * @return the device memory address
  * @ingroup API
  */
-capmix_addr_t           capmix_parse_addr(const char *desc)
+capmix_addr_t                 capmix_parse_addr(const char *desc)
 {
 	capmix_addr_t ret = 0;
 	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map);
@@ -519,6 +521,11 @@ capmix_addr_t           capmix_parse_addr(const char *desc)
 	return ret;
 }
 
+/**
+ * @brief the top part of the memory map is more efficient to navigate using a piecewise function
+ * @param addr the address to examine
+ * @return the section index of the top memory map
+ */
 int                 capmix_top_section(capmix_addr_t addr)
 {
 	int section;
@@ -532,24 +539,23 @@ int                 capmix_top_section(capmix_addr_t addr)
 }
 
 /**
- * @brief write a string describing the given device memory address, e.g. 0x0006120e -> daw_monitor.b.channel.3.volume
- * @param[in] the device memory address to describe
- * @param[out] the string buffer to write into
- * @ingroup API
+ * @brief algorithm for decomposing a device memory address into a vector of map pointers
+ * @param addr the address to examine
+ * @return a vector containing the path across the map taken by this algorithm to find the given address
  */
-void                    capmix_format_addr(capmix_addr_t addr, char *desc)
+capmix_mem_vector_t           capmix_mem_vector(capmix_addr_t addr)
 {
-	*desc = '\0';
+	int v = 0;
+	capmix_mem_vector_t vec = { .areas = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+
 	int section = capmix_top_section(addr);
 	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
 	if( memory_map[section].name == NULL )
-	{
-		strcat(desc, "?");
-		return;
-	}
+		return vec;
+
+	vec.areas[v++] = &(memory_map[section]);
 
 	int countdown = addr;
-	strcat(desc, memory_map[section].name);
 	countdown -= memory_map[section].offset;
 
 	const capmix_mem_t *candidate;
@@ -573,23 +579,46 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
 			}
 		}
 		
-		if( candidate == NULL ) return;
+		if( candidate == NULL )
+			return vec;
 
-		strcat(desc, ".");
-		strcat(desc, candidate->name);
+		vec.areas[v++] = candidate;
 		countdown -= candidate->offset; // 0x120e
 		map = (const capmix_mem_t *)(candidate->area);
 	}
 	if( countdown != 0 )
 	{
-		desc[strlen(desc) - strlen(candidate->name)] = '\0';
-		strcat(desc, "?");
+		vec.areas[--v] = capmix_mem_none_area;
 	}
 	if( map != NULL && map->name != NULL )
 	{
-		strcat(desc, ".");
-		strcat(desc, map->name);
+		vec.areas[v++] = map;
 	}
+	return vec;
+}
+
+/**
+ * @brief write a string describing the given device memory address, e.g. 0x0006120e -> daw_monitor.b.channel.3.volume
+ * @param[in] the device memory address to describe
+ * @param[out] the string buffer to write into
+ * @ingroup API
+ */
+void                    capmix_format_addr(capmix_addr_t addr, char *desc)
+{
+	capmix_mem_vector_t vec = capmix_mem_vector(addr);
+
+	int a = 0 ;
+	const capmix_mem_t *area = vec.areas[a];
+	sprintf(desc, "");
+	do
+	{
+		strcat(desc, area->name);
+		area = vec.areas[++a];
+		if( area == NULL )
+			break;
+		strcat(desc, ".");
+	}
+	while( a < 8 );
 }
 
 /**
@@ -600,50 +629,11 @@ void                    capmix_format_addr(capmix_addr_t addr, char *desc)
  */
 const char *            capmix_addr_suffix(capmix_addr_t addr)
 {
-	int section;
-	if( addr >> 12 == 0x51 )
-		section = LINE;
-	else
-		section = addr >> 16;
-
-	int countdown = addr;
-	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
-	countdown -= memory_map[section].offset;
-
-	const char *name = "";
-	while( countdown >= 0 )
-	{
-		if( map == NULL ) break;
-		const capmix_mem_t *candidate = NULL;
-
-		capmix_addr_t min_offset = capmix_None;
-		for( int i = 0; map[i].offset != capmix_None; i++ )
-		{
-			if( map[i].name == NULL ) continue;
-
-			if( map[i].offset <= countdown)
-			{
-				if( countdown - map[i].offset < min_offset )
-				{
-					min_offset = countdown - map[i].offset;
-					candidate = &(map[i]);
-				}
-			}
-		}
-		
-		if( candidate == NULL ) return "";
-
-		countdown -= candidate->offset; // 0x120e
-		name = candidate->name;
-		map = (const capmix_mem_t *)(candidate->area);
-	}
-	if( countdown !=0 )
-		return "";
-	if( map != NULL && map->name != NULL )
-	{
-		name = map->name;
-	}
-	return name;
+	capmix_mem_vector_t vec = capmix_mem_vector(addr);
+	int a = 0;
+	while( a < 8 && vec.areas[a] != NULL && vec.areas[a+1] != NULL )
+		a++;
+	return vec.areas[a]->name;
 }
 
 /**
@@ -654,49 +644,10 @@ const char *            capmix_addr_suffix(capmix_addr_t addr)
  */
 capmix_type_t           capmix_addr_type(capmix_addr_t addr)
 {
-	int section;
-	if( addr >> 12 == 0x51 )
-		section = LINE;
-	else
-		section = addr >> 16;
-
-	int countdown = addr;
-	const capmix_mem_t *map = (const capmix_mem_t *)(memory_map[section].area);
-	countdown -= memory_map[section].offset;
-
-	capmix_type_t type = memory_map[section].type;
-	while( countdown >= 0 )
-	{
-		if( map == NULL ) break;
-		const capmix_mem_t *candidate = NULL;
-
-		capmix_addr_t min_offset = capmix_None;
-		for( int i = 0; map[i].offset != capmix_None; i++ )
-		{
-			if( map[i].name == NULL ) continue;
-
-			if( map[i].offset <= countdown)
-			{
-				if( countdown - map[i].offset < min_offset )
-				{
-					min_offset = countdown - map[i].offset;
-					candidate = &(map[i]);
-				}
-			}
-		}
-		
-		if( candidate == NULL ) return TValue;
-
-		countdown -= candidate->offset; // 0x120e
-		type = candidate->type;
-		map = (const capmix_mem_t *)(candidate->area);
-	}
-	if( countdown != 0 )
-		return TValue;
-	if( map != NULL && map->name != NULL )
-	{
-		if( map->type != TValue )
-			type = map->type;
-	}
-	return type;
+	capmix_mem_vector_t vec = capmix_mem_vector(addr);
+	if( vec.areas[0] == NULL ) return TValue;
+	int a = 0;
+	while( a < 8 && vec.areas[a+1] != NULL )
+		a++;
+	return vec.areas[a]->type;
 }

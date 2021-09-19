@@ -28,6 +28,10 @@ typedef struct capmix_memory_area_s {
 	const struct capmix_memory_area_s **const area; ///< areas of memory contained within this area
 } capmix_mem_t;
 
+typedef struct capmix_mem_vector_s {
+	const capmix_mem_t *areas[8];
+} capmix_mem_vector_t;
+
 /// collection of strings used in memory area names
 typedef struct capmix_str_s {
 	const char *const top_map[16];
