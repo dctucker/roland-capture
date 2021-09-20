@@ -80,10 +80,21 @@ int main(int argc, char *argv[])
 
 	TEST( test_addr_type(TMeter, 0x000a0001) );
 	TEST( test_addr_type(TMeter, 0x000a0003) );
-	TEST( test_format_addr("meters.channel.1", 0x000a0001) );
-	TEST( test_format_addr("meters.channel.2", 0x000a0003) );
-	TEST( test_format_addr("meters.more.1", 0x000a0101) );
+	TEST( test_format_addr("meters.channel.pre.1", 0x000a0001) );
+	TEST( test_format_addr("meters.channel.pre.2", 0x000a0003) );
+	TEST( test_format_addr("meters.channel.post.1", 0x000a0019) );
+	TEST( test_format_addr("meters.channel.post.2", 0x000a001b) );
+	TEST( test_format_addr("meters.channel.line.13", 0x000a0031) );
+	TEST( test_format_addr("meters.channel.line.14", 0x000a0033) );
+	TEST( test_format_addr("meters.channel.line.15", 0x000a0035) );
+	TEST( test_format_addr("meters.channel.line.16", 0x000a0037) );
+	TEST( test_format_addr("meters.channel.daw.1", 0x000a0039) );
+	TEST( test_format_addr("meters.channel.daw.10", 0x000a004b) );
+	TEST( test_format_addr("meters.channel.gr.1", 0x000a004d) );
+	TEST( test_format_addr("meters.channel.gate.1", 0x000a0065) );
+	TEST( test_format_addr("meters.clip.pre.1-4"  , 0x000a0101) );
+	TEST( test_format_addr("meters.clip.post.9-12", 0x000a0107) );
 
 	TEST( test_addr_type(TValue, 0x000a3f3f) );
-	TEST( test_format_addr("meters.more.?", 0x000a3f3f) );
+	TEST( test_format_addr("meters.clip.post.?", 0x000a3f3f) );
 }

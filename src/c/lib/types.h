@@ -23,6 +23,7 @@ typedef enum capmix_type_e {
 	TVolume,      ///< Six-byte logarithmic volume value. Parent: `TValue`
 	TPan,         ///< Four-byte pan value. Parent: `TValue`
 	TMeter,       ///< Two-byte meter value. Parent: `TValue`
+	TClipMask,    ///< Bit-mask indicating which channels have clipped. Parent: `TValue`
 	TScaled,      ///< Single-byte value scaled to fit a range. Parent: `TByte`
 	TSens,        ///< Scaled preamp sensitivity value. Parent: `TScaled`
 	TThreshold,   ///< Scaled compressor threshold value. Parent: `TScaled`

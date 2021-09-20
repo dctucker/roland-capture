@@ -271,94 +271,118 @@ DEF_MEMAREA(master) = {
 };
 #endif
 
+DEF_MEMAREA(meter_ins) = {
+	{ .type=TMeter, .offset = 0x00, .name="1" },
+	{ .type=TMeter, .offset = 0x02, .name="2" },
+	{ .type=TMeter, .offset = 0x04, .name="3" },
+	{ .type=TMeter, .offset = 0x06, .name="4" },
+	{ .type=TMeter, .offset = 0x08, .name="5" },
+	{ .type=TMeter, .offset = 0x0a, .name="6" },
+	{ .type=TMeter, .offset = 0x0c, .name="7" },
+	{ .type=TMeter, .offset = 0x0e, .name="8" },
+	{ .type=TMeter, .offset = 0x10, .name="9" },
+	{ .type=TMeter, .offset = 0x12, .name="10" },
+	{ .type=TMeter, .offset = 0x14, .name="11" },
+	{ .type=TMeter, .offset = 0x16, .name="12" },
+	ENDA
+};
+DEF_MEMAREA(meter_outs) = {
+	{ .type=TMeter, .offset = 0x00, .name="1" },
+	{ .type=TMeter, .offset = 0x02, .name="2" },
+	{ .type=TMeter, .offset = 0x04, .name="3" },
+	{ .type=TMeter, .offset = 0x06, .name="4" },
+	{ .type=TMeter, .offset = 0x08, .name="5" },
+	{ .type=TMeter, .offset = 0x0a, .name="6" },
+	{ .type=TMeter, .offset = 0x0c, .name="7" },
+	{ .type=TMeter, .offset = 0x0e, .name="8" },
+	{ .type=TMeter, .offset = 0x10, .name="9" },
+	{ .type=TMeter, .offset = 0x12, .name="10" },
+	{ .type=TMeter, .offset = 0x14, .name="11" },
+	{ .type=TMeter, .offset = 0x16, .name="12" },
+
+	{ .type=TMeter, .offset = 0x18, .name="x" }, //?
+	{ .type=TMeter, .offset = 0x1a, .name="x" }, //?
+	{ .type=TMeter, .offset = 0x1c, .name="x" }, //?
+	{ .type=TMeter, .offset = 0x1e, .name="x" }, //?
+	ENDA
+};
+DEF_MEMAREA(meter_lines) = {
+	{ .type=TMeter, .offset = 0x00, .name="13" },
+	{ .type=TMeter, .offset = 0x02, .name="14" },
+	{ .type=TMeter, .offset = 0x04, .name="15" },
+	{ .type=TMeter, .offset = 0x06, .name="16" },
+	ENDA
+};
+DEF_MEMAREA(meter_daw) = {
+	{ .type=TMeter, .offset = 0x00, .name="1" },
+	{ .type=TMeter, .offset = 0x02, .name="2" },
+	{ .type=TMeter, .offset = 0x04, .name="3" },
+	{ .type=TMeter, .offset = 0x06, .name="4" },
+	{ .type=TMeter, .offset = 0x08, .name="5" },
+	{ .type=TMeter, .offset = 0x0a, .name="6" },
+	{ .type=TMeter, .offset = 0x0c, .name="7" },
+	{ .type=TMeter, .offset = 0x0e, .name="8" },
+	{ .type=TMeter, .offset = 0x10, .name="9" },
+	{ .type=TMeter, .offset = 0x12, .name="10" },
+	ENDA
+};
+DEF_MEMAREA(meter_gr) = {
+	{ .type=TMeter, .offset = 0x00, .name="1" },
+	{ .type=TMeter, .offset = 0x02, .name="2" },
+	{ .type=TMeter, .offset = 0x04, .name="3" },
+	{ .type=TMeter, .offset = 0x06, .name="4" },
+	{ .type=TMeter, .offset = 0x08, .name="5" },
+	{ .type=TMeter, .offset = 0x0a, .name="6" },
+	{ .type=TMeter, .offset = 0x0c, .name="7" },
+	{ .type=TMeter, .offset = 0x0e, .name="8" },
+	{ .type=TMeter, .offset = 0x10, .name="9" },
+	{ .type=TMeter, .offset = 0x12, .name="10" },
+	{ .type=TMeter, .offset = 0x14, .name="11" },
+	{ .type=TMeter, .offset = 0x16, .name="12" },
+	ENDA
+};
+DEF_MEMAREA(meter_gate) = {
+	{ .type=TMeter, .offset = 0x00, .name="1" },
+	{ .type=TMeter, .offset = 0x02, .name="2" },
+	{ .type=TMeter, .offset = 0x04, .name="3" },
+	{ .type=TMeter, .offset = 0x06, .name="4" },
+	{ .type=TMeter, .offset = 0x08, .name="5" },
+	{ .type=TMeter, .offset = 0x0a, .name="6" },
+	{ .type=TMeter, .offset = 0x0c, .name="7" },
+	{ .type=TMeter, .offset = 0x0e, .name="8" },
+	{ .type=TMeter, .offset = 0x10, .name="9" },
+	{ .type=TMeter, .offset = 0x12, .name="10" },
+	{ .type=TMeter, .offset = 0x14, .name="11" },
+	{ .type=TMeter, .offset = 0x16, .name="12" },
+	ENDA
+};
 DEF_MEMAREA(meter_channels) = {
-	{ .type=TMeter, .offset = 0x00, .name="in-1" },
-	{ .type=TMeter, .offset = 0x02, .name="in-2" },
-	{ .type=TMeter, .offset = 0x04, .name="in-3" },
-	{ .type=TMeter, .offset = 0x06, .name="in-4" },
-	{ .type=TMeter, .offset = 0x08, .name="in-5" },
-	{ .type=TMeter, .offset = 0x0a, .name="in-6" },
-	{ .type=TMeter, .offset = 0x0c, .name="in-7" },
-	{ .type=TMeter, .offset = 0x0e, .name="in-8" },
-	{ .type=TMeter, .offset = 0x10, .name="in-9" },
-	{ .type=TMeter, .offset = 0x12, .name="in-10" },
-	{ .type=TMeter, .offset = 0x14, .name="in-11" },
-	{ .type=TMeter, .offset = 0x16, .name="in-12" },
-	{ .type=TMeter, .offset = 0x18, .name="out-1" },
-	{ .type=TMeter, .offset = 0x1a, .name="out-2" },
-	{ .type=TMeter, .offset = 0x1c, .name="out-3" },
-	{ .type=TMeter, .offset = 0x1e, .name="out-4" },
-	{ .type=TMeter, .offset = 0x20, .name="out-5" },
-	{ .type=TMeter, .offset = 0x2a, .name="out-6" },
-	{ .type=TMeter, .offset = 0x2c, .name="out-7" },
-	{ .type=TMeter, .offset = 0x2e, .name="out-8" },
-	{ .type=TMeter, .offset = 0x20, .name="out-9" },
-	{ .type=TMeter, .offset = 0x22, .name="out-10" },
-	{ .type=TMeter, .offset = 0x24, .name="out-11" },
-	{ .type=TMeter, .offset = 0x26, .name="out-12" },
-	{ .type=TMeter, .offset = 0x28, .name="line-13" },
-	{ .type=TMeter, .offset = 0x2a, .name="line-14" },
-	{ .type=TMeter, .offset = 0x2c, .name="line-15" },
-	{ .type=TMeter, .offset = 0x2e, .name="line-16" },
-
-	{ .type=TMeter, .offset = 0x30, .name="x" },
-	{ .type=TMeter, .offset = 0x32, .name="x" },
-	{ .type=TMeter, .offset = 0x34, .name="x" },
-	{ .type=TMeter, .offset = 0x36, .name="x" },
-	{ .type=TMeter, .offset = 0x38, .name="x" },
-	{ .type=TMeter, .offset = 0x3a, .name="x" },
-	{ .type=TMeter, .offset = 0x3c, .name="x" },
-	{ .type=TMeter, .offset = 0x3e, .name="x" },
-
-	{ .type=TMeter, .offset = 0x40, .name="x" },
-	{ .type=TMeter, .offset = 0x42, .name="x" },
-	{ .type=TMeter, .offset = 0x44, .name="x" },
-	{ .type=TMeter, .offset = 0x46, .name="x" },
-	{ .type=TMeter, .offset = 0x48, .name="x" },
-	{ .type=TMeter, .offset = 0x4a, .name="x" },
-	{ .type=TMeter, .offset = 0x4c, .name="x" },
-	{ .type=TMeter, .offset = 0x4e, .name="x" },
-
-	{ .type=TMeter, .offset = 0x50, .name="x" },
-	{ .type=TMeter, .offset = 0x52, .name="x" },
-	{ .type=TMeter, .offset = 0x54, .name="x" },
-	{ .type=TMeter, .offset = 0x56, .name="x" },
-	{ .type=TMeter, .offset = 0x58, .name="x" },
-	{ .type=TMeter, .offset = 0x5a, .name="x" },
-	{ .type=TMeter, .offset = 0x5c, .name="x" },
-	{ .type=TMeter, .offset = 0x5e, .name="x" },
-
-	{ .type=TMeter, .offset = 0x60, .name="x" },
-	{ .type=TMeter, .offset = 0x62, .name="x" },
-	{ .type=TMeter, .offset = 0x64, .name="x" },
-	{ .type=TMeter, .offset = 0x66, .name="x" },
-	{ .type=TMeter, .offset = 0x68, .name="x" },
-	{ .type=TMeter, .offset = 0x6a, .name="x" },
-	{ .type=TMeter, .offset = 0x6c, .name="x" },
-	{ .type=TMeter, .offset = 0x6e, .name="x" },
-
-	{ .type=TMeter, .offset = 0x70, .name="x" },
-	{ .type=TMeter, .offset = 0x72, .name="x" },
-	{ .type=TMeter, .offset = 0x74, .name="x" },
-	{ .type=TMeter, .offset = 0x76, .name="x" },
-	{ .type=TMeter, .offset = 0x78, .name="x" },
-	{ .type=TMeter, .offset = 0x7a, .name="x" },
-
+	{ .offset = 0x00, .name="pre" , MEMAREA(meter_ins  ) }, // pre-compressor
+	{ .offset = 0x18, .name="post", MEMAREA(meter_outs ) }, // post-compressor
+	{ .offset = 0x30, .name="line", MEMAREA(meter_lines) }, // line input
+	{ .offset = 0x38, .name="daw" , MEMAREA(meter_daw  ) }, // daw output
+	{ .offset = 0x4c, .name="gr"  , MEMAREA(meter_gr   ) }, // compressor gain reduction
+	{ .offset = 0x64, .name="gate", MEMAREA(meter_gate ) }, // gate
 	ENDA
 };
 
-DEF_MEMAREA(meter_more) = {
-	{ .type=TMeter, .offset = 0x7c, .name="z" },
-	{ .type=TMeter, .offset = 0x7e, .name="z" },
-	{ .type=TMeter, .offset = 0x80, .name="z" },
-	{ .type=TMeter, .offset = 0x82, .name="z" },
+DEF_MEMAREA(meter_clips) = {
+	{ .type=TClipMask, .offset = 0x00, .name= "1-4"  },
+	{ .type=TClipMask, .offset = 0x01, .name= "5-8"  },
+	{ .type=TClipMask, .offset = 0x02, .name= "9-12" },
+	{ .type=TClipMask, .offset = 0x03, .name="13-16" },
+	ENDA
+};
+DEF_MEMAREA(meter_clip) = {
+	{ .offset = 0x00, .name="pre" , MEMAREA(meter_clips) },
+	{ .offset = 0x04, .name="post", MEMAREA(meter_clips) },
 	ENDA
 };
 
 DEF_MEMAREA(meters) = {
 	[0x0] = { .offset=0x0000, .name="active" , .type=TBoolean },
-	[0x1] = { .offset=0x0001, .name="channel", MEMAREA(meter_channels) },
-	[0x2] = { .offset=0x0101, .name="more"   , MEMAREA(meter_more) },
+	[0x1] = { .offset=0x0001, .name="channel", MEMAREA(meter_channels), .type=TMeter },
+	[0x2] = { .offset=0x0101, .name="clip"   , MEMAREA(meter_clip) },
 	ENDA
 };
 
