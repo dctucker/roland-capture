@@ -80,18 +80,18 @@ int main(int argc, char *argv[])
 
 	TEST( test_addr_type(TMeter, 0x000a0001) );
 	TEST( test_addr_type(TMeter, 0x000a0003) );
-	TEST( test_format_addr("meters.channel.pre.1", 0x000a0001) );
-	TEST( test_format_addr("meters.channel.pre.2", 0x000a0003) );
-	TEST( test_format_addr("meters.channel.post.1", 0x000a0019) );
-	TEST( test_format_addr("meters.channel.post.2", 0x000a001b) );
-	TEST( test_format_addr("meters.channel.line.13", 0x000a0031) );
-	TEST( test_format_addr("meters.channel.line.14", 0x000a0033) );
-	TEST( test_format_addr("meters.channel.line.15", 0x000a0035) );
-	TEST( test_format_addr("meters.channel.line.16", 0x000a0037) );
-	TEST( test_format_addr("meters.channel.daw.1", 0x000a0039) );
-	TEST( test_format_addr("meters.channel.daw.10", 0x000a004b) );
-	TEST( test_format_addr("meters.channel.gr.1", 0x000a004d) );
-	TEST( test_format_addr("meters.channel.gate.1", 0x000a0065) );
+	TEST( test_format_addr("meters.pre.1.level", 0x000a0001) );
+	TEST( test_format_addr("meters.pre.2.level", 0x000a0003) );
+	TEST( test_format_addr("meters.post.1.level", 0x000a0019) );
+	TEST( test_format_addr("meters.post.2.level", 0x000a001b) );
+	TEST( test_format_addr("meters.line.13.level", 0x000a0031) );
+	TEST( test_format_addr("meters.line.14.level", 0x000a0033) );
+	TEST( test_format_addr("meters.line.15.level", 0x000a0035) );
+	TEST( test_format_addr("meters.line.16.level", 0x000a0037) );
+	TEST( test_format_addr("meters.daw.1.level", 0x000a0039) );
+	TEST( test_format_addr("meters.daw.10.level", 0x000a004b) );
+	TEST( test_format_addr("meters.gr.1.level", 0x000a004d) );
+	TEST( test_format_addr("meters.gate.1.level", 0x000a0065) );
 	TEST( test_format_addr("meters.clip.pre.1-4"  , 0x000a0101) );
 	TEST( test_format_addr("meters.clip.post.9-12", 0x000a0107) );
 
