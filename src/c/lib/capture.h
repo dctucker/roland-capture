@@ -28,6 +28,10 @@ typedef struct capmix_memory_area_s {
 	const struct capmix_memory_area_s **const area; ///< areas of memory contained within this area
 } capmix_mem_t;
 
+typedef struct capmix_mem_vector_s {
+	const capmix_mem_t *areas[8];
+} capmix_mem_vector_t;
+
 /// collection of strings used in memory area names
 typedef struct capmix_str_s {
 	const char *const top_map[16];
@@ -37,6 +41,7 @@ typedef struct capmix_str_s {
 	const char *const preamp_params[15];
 	const char *const reverb_params[3];
 	const char *const monitors[4];
+	const char *const source;
 	const char *const channel;
 	const char *const channels[16];
 	const char *const channel_params[15];
@@ -46,6 +51,7 @@ typedef struct capmix_str_s {
 	const char *const master_params[2];
 	const char *const reverb_return;
 	const char *const link;
+	const char *const meters[9];
 } capmix_str_t;
 
 void                         capmix_print_map (const capmix_mem_t *map, const char *prefix, capmix_addr_t old_offset);

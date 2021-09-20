@@ -2,17 +2,23 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <string.h>
+#include <math.h>
 #include "lib/capmix.h"
 #include "lib/mixer.h"
 
 #define WIDTH 120
-#define HEIGHT 20
+#define HEIGHT 15
+#define METER_COLOR 20
 
-#define log(...) { wprintw(log_win, __VA_ARGS__); wprintw(log_win, "\n"); wrefresh(log_win); }
+#define log(...) { \
+	fprintf(log_file, __VA_ARGS__); fprintf(log_file, "\n"); fflush(log_file); \
+	wprintw(log_win, __VA_ARGS__); wprintw(log_win, "\n"); wrefresh(log_win); \
+}
 
+FILE *log_file;
 WINDOW *menu_win;
 WINDOW *log_win;
-cursor_t cursor;
+cursor_t cursor = { .x=0, .y=0 };
 
 int startx = 0;
 int starty = 0;
@@ -248,8 +254,74 @@ void  render_control(WINDOW *menu_win, capmix_addr_t addr, cursor_t pos)
 		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, text);
 		wattroff(menu_win, COLOR_PAIR(1));
 	}
-	wrefresh(menu_win);
-	wmove(menu_win, pos.y + start_y, dx * pos.x + start_x);
+	//wmove(menu_win, pos.y + start_y, dx * pos.x + start_x);
+	//wrefresh(menu_win);
+}
+
+int  meter_color(float value)
+{
+	if( value == capmix_UnsetInt.continuous )
+		return METER_COLOR;
+	if( value >= 0. )
+		return METER_COLOR+23;
+	else if( value <= -70 )
+		return METER_COLOR;
+	for(int i=0; i < 22; i++)
+	{
+		if( value >= -i*3. )
+			return METER_COLOR+23-i;
+	}
+	return METER_COLOR+1;
+}
+
+void  render_meter(WINDOW *win, capmix_addr_t addr, cursor_t pos)
+{
+	char text[64];
+	char value[64];
+	int start_x = 0, start_y = 3;
+	int dx = row_spacing( page->rows - 1 );
+
+	cursor_t prev_cursor; getyx(win, prev_cursor.y, prev_cursor.x);
+
+	capmix_unpacked_t unpacked = capmix_memory_get_unpacked(addr);
+	int color = meter_color(unpacked.continuous);
+
+	capmix_format_type(TMeter, unpacked, value);
+	int len = strlen(value);
+	int pad_l = (dx - len) / 2;
+	int pad_r = (dx - len) / 2 + ((dx - len) % 2);
+	sprintf(text, "%*s%s%*s", pad_l, "", value, pad_r, "");
+
+	//wattr_on(menu_win, COLOR_PAIR(20+(int)(value/12.)), NULL);
+	wattr_on(menu_win, COLOR_PAIR(color), NULL);
+	mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, "%s", text);
+	wattr_off(menu_win, COLOR_PAIR(color), NULL);
+	//wattr_off(menu_win, COLOR_PAIR(20+(int)(value/12.)), NULL);
+
+	wmove(win, prev_cursor.y, prev_cursor.x);
+}
+
+void render_clipmask(WINDOW *win, int ch, cursor_t pos)
+{
+	cursor_t prev_cursor; getyx(win, prev_cursor.y, prev_cursor.x);
+
+	int dx = row_spacing( page->rows - 1 );
+	int start_x = dx/2-2, start_y = 2;
+	capmix_unpacked_t clip = capmix_memory_get_unpacked(0xa0101 + ch/4);
+	bool ch_clip = clip.discrete & (1 << (ch % 4));
+	
+	if( ch_clip )
+	{
+		wattr_on(menu_win, COLOR_PAIR(METER_COLOR+23), NULL);
+		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, "!");
+		wattr_off(menu_win, COLOR_PAIR(METER_COLOR+23), NULL);
+	}
+	else
+	{
+		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, " ");
+	}
+
+	wmove(win, prev_cursor.y, prev_cursor.x);
 }
 
 void  render_page_indicator(WINDOW *menu_win, int start_x, int start_y)
@@ -291,48 +363,62 @@ void  render_page_indicator(WINDOW *menu_win, int start_x, int start_y)
 	}
 }
 
-void  interface_refresh(WINDOW *menu_win)
+void  interface_refresh(WINDOW *win)
 {
 	char text [64];
 	char value[64];
 	int pad_l, pad_r;
 	int main_dx = row_spacing(page->rows-1);
 	int start_x = 0, start_y = 0;
+	cursor_t pos;
+	cursor_t prev_cursor; getyx(win, prev_cursor.y, prev_cursor.x);
 
 	//box(menu_win, 0, 0);
-	render_page_indicator(menu_win, start_x, start_y);
+	render_page_indicator(win, start_x, start_y);
 
 	start_y += 2;
-	wattron(menu_win, A_BOLD);
-	wattron(menu_win, COLOR_PAIR(2));
+	wattron(win, A_BOLD);
+	wattron(win, COLOR_PAIR(2));
 	for(int j=0; j < page->cols; j++)
 	{
 		const char *header = page->headers[j];
 		int o = (main_dx - strlen(header))/2;
-		mvwprintw(menu_win, start_y, start_x + j * main_dx + o, header);
+		mvwprintw(win, start_y, start_x + j * main_dx + o, header);
 	}
-	wattroff(menu_win, COLOR_PAIR(2));
-	wattroff(menu_win, A_BOLD);
+	wattroff(win, COLOR_PAIR(2));
+	wattroff(win, A_BOLD);
 
 	start_y += 1;
 	for(int i=0; i < page->rows; i++)
 	{
+		pos.y = i;
 		int dx = row_spacing(i);
 		for(int j=0; j < page->cols; j++)
 		{
+			pos.x = j;
 			capmix_addr_t addr = page->controls[i][j];
-			cursor_t pos = { .x=j, .y=i };
-			render_control(menu_win, addr, pos);
+			render_control(win, addr, pos);
 		}
 		const char *label = page->labels[i];
-		wattron(menu_win, A_BOLD);
-		wattron(menu_win, COLOR_PAIR(2));
-		mvwprintw(menu_win, start_y + i, start_x + page->cols * main_dx + 1, label);
-		wattroff(menu_win, COLOR_PAIR(2));
-		wattroff(menu_win, A_BOLD);
+		wattron(win, A_BOLD);
+		wattron(win, COLOR_PAIR(2));
+		mvwprintw(win, start_y + i, start_x + page->cols * main_dx + 1, label);
+		wattroff(win, COLOR_PAIR(2));
+		wattroff(win, A_BOLD);
 	}
-	wrefresh(menu_win);
-	wmove(menu_win, cursor.y + start_y, row_spacing(cursor.y) * cursor.x + start_x);
+	for(int i=0; i < page->meter_rows; i++)
+	{
+		pos.y = i + page->rows;
+		for(int j=0; j < page->cols; j++)
+		{
+			pos.x = j;
+			capmix_addr_t addr = page->meters[i][j];
+			render_meter(win, addr, pos);
+		}
+	}
+	//wmove(win, cursor.y + start_y, row_spacing(cursor.y) * cursor.x + start_x);
+	wmove(win, prev_cursor.y, prev_cursor.x);
+	wrefresh(win);
 }
 
 void  on_capmix_event(capmix_event_t event)
@@ -343,14 +429,41 @@ void  on_capmix_event(capmix_event_t event)
 	capmix_format_addr(event.addr, name);
 	capmix_format_type(event.type_info->type, event.unpacked, value);
 
-	log("cmd=%x addr=%08x name=%s type=%s unpacked=0x%x value=%s\n",
-		event.sysex->cmd, event.addr, name, event.type_info->name,
-		event.unpacked.discrete, value
-	);
-	wrefresh(log_win);
+	if( event.addr >> 16 == 0x0a )
+	{
+		for(int i=0; i < page->meter_rows; i++)
+		{
+			for(int j=0; j < page->cols; j++)
+			{
+				capmix_addr_t addr = page->meters[i][j];
+				cursor_t pos = { .x=j, .y=i + page->rows };
+				render_meter(menu_win, addr, pos);
+			}
+		}
+		switch(page->id){
+			case PInputA: case PInputB: case PInputC: case PInputD:
+				for(int j=0; j < page->cols; j++)
+				{
+					cursor_t pos = { .x=j, .y=0 };
+					render_clipmask(menu_win, j, pos);
+				}
+				break;
+			default:
+		}
+		//wrefresh(menu_win);
+	}
+	else
+	{
+		log("cmd=%x addr=%08x name=%s type=%s unpacked=0x%x value=%s",
+			event.sysex->cmd, event.addr, name, event.type_info->name,
+			event.unpacked.discrete, value
+		);
+		wrefresh(log_win);
 
-	cursor_t pos = capmix_mixer_addr_xy(page, event.addr);
-	render_control(menu_win, event.addr, pos);
+		cursor_t pos = capmix_mixer_addr_xy(page, event.addr);
+		render_control(menu_win, event.addr, pos);
+		wrefresh(menu_win);
+	}
 	capmix_listen();
 }
 
@@ -371,6 +484,7 @@ void set_page( enum capmix_pages_e p )
 
 int   main(int argc, char ** argv)
 {
+	log_file = fopen("capmixer.log", "w");
 	capmix_connect(on_capmix_event);
 
 	//FILE *f = fopen("/dev/tty", "r+");
@@ -391,21 +505,35 @@ int   main(int argc, char ** argv)
 	cbreak();
 	//curs_set(0);
 
-	init_pair(1, 15, 0);
-	init_pair(2, 8, 0);
-	init_pair(3, 6, 0);
+	init_pair(1, 15, 233);
+	init_pair(2,  8, 232);
+	init_pair(3,  6, 0);
+	init_pair(4, 25, 0);
+
+	//int meter_colors[] = {  16,  17,  18,  19,  20,  21,  26,  31,  42,  77, 119, 190, 220, 214, 208, 196 };
+	//int meter_colors[] = { 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 };
+	int meter_colors[]   = { 232,  16,  17,  18,  19,  20,  27,  33,  39,  81, 116, 121, 120, 119, 155, 154, 190, 191, 227, 226, 220, 214, 208, 196 };
+	for(int i=0; i < 24; i++)
+	{
+		init_pair(METER_COLOR+i, 8, meter_colors[i]);
+	}
+
 
 	startx = 0;
 	starty = 0;
 
-	log_win = newwin(10, COLS, starty+HEIGHT, startx);
+	log_win = newwin(LINES-HEIGHT, COLS, starty+HEIGHT, startx);
 	scrollok(log_win, 1);
+	wattron(log_win, COLOR_PAIR(4));
+	wbkgd(log_win, COLOR_PAIR(4));
 
 	menu_win = newwin(HEIGHT, COLS, starty, startx);
 	keypad(menu_win, TRUE);
 	nodelay(menu_win, 1);
 
 	set_page(PInputA);
+	capmix_put(0xa0000, capmix_UnpackedInt(1));
+
 
 	interface_refresh(menu_win);
 
@@ -415,11 +543,13 @@ int   main(int argc, char ** argv)
 		c = wgetch(menu_win);
 		if( on_keyboard(c) )
 		{
-			interface_refresh(menu_win);
 			//log("refreshing");
+			interface_refresh(menu_win);
 		}
 		capmix_listen();
 	}
+	capmix_put(0xa0000, capmix_UnpackedInt(0));
+	capmix_disconnect();
 
 	clrtoeol();
 	curs_set(1);
@@ -429,5 +559,6 @@ int   main(int argc, char ** argv)
 	//delscreen(screen);
 
 	endwin();
+	fclose(log_file);
 	return 0;
 }
