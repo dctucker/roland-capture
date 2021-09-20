@@ -271,34 +271,38 @@ DEF_MEMAREA(master) = {
 };
 #endif
 
+DEF_MEMAREA(meter_level) = {
+	{ .type=TMeter, .name="level" },
+};
 DEF_MEMAREA(meter_ins) = {
-	{ .type=TMeter, .offset = 0x00, .name="1" },
-	{ .type=TMeter, .offset = 0x02, .name="2" },
-	{ .type=TMeter, .offset = 0x04, .name="3" },
-	{ .type=TMeter, .offset = 0x06, .name="4" },
-	{ .type=TMeter, .offset = 0x08, .name="5" },
-	{ .type=TMeter, .offset = 0x0a, .name="6" },
-	{ .type=TMeter, .offset = 0x0c, .name="7" },
-	{ .type=TMeter, .offset = 0x0e, .name="8" },
-	{ .type=TMeter, .offset = 0x10, .name="9" },
-	{ .type=TMeter, .offset = 0x12, .name="10" },
-	{ .type=TMeter, .offset = 0x14, .name="11" },
-	{ .type=TMeter, .offset = 0x16, .name="12" },
+	{ .offset = 0x00, .name="1" , MEMAREA(meter_level) },
+	{ .offset = 0x02, .name="2" , MEMAREA(meter_level) },
+	{ .offset = 0x04, .name="3" , MEMAREA(meter_level) },
+	{ .offset = 0x06, .name="4" , MEMAREA(meter_level) },
+	{ .offset = 0x08, .name="5" , MEMAREA(meter_level) },
+	{ .offset = 0x0a, .name="6" , MEMAREA(meter_level) },
+	{ .offset = 0x0c, .name="7" , MEMAREA(meter_level) },
+	{ .offset = 0x0e, .name="8" , MEMAREA(meter_level) },
+	{ .offset = 0x10, .name="9" , MEMAREA(meter_level) },
+	{ .offset = 0x12, .name="10", MEMAREA(meter_level) },
+	{ .offset = 0x14, .name="11", MEMAREA(meter_level) },
+	{ .offset = 0x16, .name="12", MEMAREA(meter_level) },
 	ENDA
 };
+
 DEF_MEMAREA(meter_outs) = {
-	{ .type=TMeter, .offset = 0x00, .name="1" },
-	{ .type=TMeter, .offset = 0x02, .name="2" },
-	{ .type=TMeter, .offset = 0x04, .name="3" },
-	{ .type=TMeter, .offset = 0x06, .name="4" },
-	{ .type=TMeter, .offset = 0x08, .name="5" },
-	{ .type=TMeter, .offset = 0x0a, .name="6" },
-	{ .type=TMeter, .offset = 0x0c, .name="7" },
-	{ .type=TMeter, .offset = 0x0e, .name="8" },
-	{ .type=TMeter, .offset = 0x10, .name="9" },
-	{ .type=TMeter, .offset = 0x12, .name="10" },
-	{ .type=TMeter, .offset = 0x14, .name="11" },
-	{ .type=TMeter, .offset = 0x16, .name="12" },
+	{ .offset = 0x00, .name="1" , MEMAREA(meter_level) },
+	{ .offset = 0x02, .name="2" , MEMAREA(meter_level) },
+	{ .offset = 0x04, .name="3" , MEMAREA(meter_level) },
+	{ .offset = 0x06, .name="4" , MEMAREA(meter_level) },
+	{ .offset = 0x08, .name="5" , MEMAREA(meter_level) },
+	{ .offset = 0x0a, .name="6" , MEMAREA(meter_level) },
+	{ .offset = 0x0c, .name="7" , MEMAREA(meter_level) },
+	{ .offset = 0x0e, .name="8" , MEMAREA(meter_level) },
+	{ .offset = 0x10, .name="9" , MEMAREA(meter_level) },
+	{ .offset = 0x12, .name="10", MEMAREA(meter_level) },
+	{ .offset = 0x14, .name="11", MEMAREA(meter_level) },
+	{ .offset = 0x16, .name="12", MEMAREA(meter_level) },
 
 	{ .type=TMeter, .offset = 0x18, .name="x" }, //?
 	{ .type=TMeter, .offset = 0x1a, .name="x" }, //?
@@ -306,63 +310,58 @@ DEF_MEMAREA(meter_outs) = {
 	{ .type=TMeter, .offset = 0x1e, .name="x" }, //?
 	ENDA
 };
+
 DEF_MEMAREA(meter_lines) = {
-	{ .type=TMeter, .offset = 0x00, .name="13" },
-	{ .type=TMeter, .offset = 0x02, .name="14" },
-	{ .type=TMeter, .offset = 0x04, .name="15" },
-	{ .type=TMeter, .offset = 0x06, .name="16" },
+	{ .offset = 0x00, .name="13", MEMAREA(meter_level) },
+	{ .offset = 0x02, .name="14", MEMAREA(meter_level) },
+	{ .offset = 0x04, .name="15", MEMAREA(meter_level) },
+	{ .offset = 0x06, .name="16", MEMAREA(meter_level) },
 	ENDA
 };
 DEF_MEMAREA(meter_daw) = {
-	{ .type=TMeter, .offset = 0x00, .name="1" },
-	{ .type=TMeter, .offset = 0x02, .name="2" },
-	{ .type=TMeter, .offset = 0x04, .name="3" },
-	{ .type=TMeter, .offset = 0x06, .name="4" },
-	{ .type=TMeter, .offset = 0x08, .name="5" },
-	{ .type=TMeter, .offset = 0x0a, .name="6" },
-	{ .type=TMeter, .offset = 0x0c, .name="7" },
-	{ .type=TMeter, .offset = 0x0e, .name="8" },
-	{ .type=TMeter, .offset = 0x10, .name="9" },
-	{ .type=TMeter, .offset = 0x12, .name="10" },
+	{ .offset = 0x00, .name="1" , MEMAREA(meter_level) },
+	{ .offset = 0x02, .name="2" , MEMAREA(meter_level) },
+	{ .offset = 0x04, .name="3" , MEMAREA(meter_level) },
+	{ .offset = 0x06, .name="4" , MEMAREA(meter_level) },
+	{ .offset = 0x08, .name="5" , MEMAREA(meter_level) },
+	{ .offset = 0x0a, .name="6" , MEMAREA(meter_level) },
+	{ .offset = 0x0c, .name="7" , MEMAREA(meter_level) },
+	{ .offset = 0x0e, .name="8" , MEMAREA(meter_level) },
+	{ .offset = 0x10, .name="9" , MEMAREA(meter_level) },
+	{ .offset = 0x12, .name="10", MEMAREA(meter_level)  },
 	ENDA
 };
 DEF_MEMAREA(meter_gr) = {
-	{ .type=TMeter, .offset = 0x00, .name="1" },
-	{ .type=TMeter, .offset = 0x02, .name="2" },
-	{ .type=TMeter, .offset = 0x04, .name="3" },
-	{ .type=TMeter, .offset = 0x06, .name="4" },
-	{ .type=TMeter, .offset = 0x08, .name="5" },
-	{ .type=TMeter, .offset = 0x0a, .name="6" },
-	{ .type=TMeter, .offset = 0x0c, .name="7" },
-	{ .type=TMeter, .offset = 0x0e, .name="8" },
-	{ .type=TMeter, .offset = 0x10, .name="9" },
-	{ .type=TMeter, .offset = 0x12, .name="10" },
-	{ .type=TMeter, .offset = 0x14, .name="11" },
-	{ .type=TMeter, .offset = 0x16, .name="12" },
+	{ .offset = 0x00, .name="1" , MEMAREA(meter_level) },
+	{ .offset = 0x02, .name="2" , MEMAREA(meter_level) },
+	{ .offset = 0x04, .name="3" , MEMAREA(meter_level) },
+	{ .offset = 0x06, .name="4" , MEMAREA(meter_level) },
+	{ .offset = 0x08, .name="5" , MEMAREA(meter_level) },
+	{ .offset = 0x0a, .name="6" , MEMAREA(meter_level) },
+	{ .offset = 0x0c, .name="7" , MEMAREA(meter_level) },
+	{ .offset = 0x0e, .name="8" , MEMAREA(meter_level) },
+	{ .offset = 0x10, .name="9" , MEMAREA(meter_level) },
+	{ .offset = 0x12, .name="10", MEMAREA(meter_level) },
+	{ .offset = 0x14, .name="11", MEMAREA(meter_level) },
+	{ .offset = 0x16, .name="12", MEMAREA(meter_level) },
 	ENDA
 };
 DEF_MEMAREA(meter_gate) = {
-	{ .type=TMeter, .offset = 0x00, .name="1" },
-	{ .type=TMeter, .offset = 0x02, .name="2" },
-	{ .type=TMeter, .offset = 0x04, .name="3" },
-	{ .type=TMeter, .offset = 0x06, .name="4" },
-	{ .type=TMeter, .offset = 0x08, .name="5" },
-	{ .type=TMeter, .offset = 0x0a, .name="6" },
-	{ .type=TMeter, .offset = 0x0c, .name="7" },
-	{ .type=TMeter, .offset = 0x0e, .name="8" },
-	{ .type=TMeter, .offset = 0x10, .name="9" },
-	{ .type=TMeter, .offset = 0x12, .name="10" },
-	{ .type=TMeter, .offset = 0x14, .name="11" },
-	{ .type=TMeter, .offset = 0x16, .name="12" },
+	{ .offset = 0x00, .name="1" , MEMAREA(meter_level) },
+	{ .offset = 0x02, .name="2" , MEMAREA(meter_level) },
+	{ .offset = 0x04, .name="3" , MEMAREA(meter_level) },
+	{ .offset = 0x06, .name="4" , MEMAREA(meter_level) },
+	{ .offset = 0x08, .name="5" , MEMAREA(meter_level) },
+	{ .offset = 0x0a, .name="6" , MEMAREA(meter_level) },
+	{ .offset = 0x0c, .name="7" , MEMAREA(meter_level) },
+	{ .offset = 0x0e, .name="8" , MEMAREA(meter_level) },
+	{ .offset = 0x10, .name="9" , MEMAREA(meter_level) },
+	{ .offset = 0x12, .name="10", MEMAREA(meter_level) },
+	{ .offset = 0x14, .name="11", MEMAREA(meter_level) },
+	{ .offset = 0x16, .name="12", MEMAREA(meter_level) },
 	ENDA
 };
 DEF_MEMAREA(meter_channels) = {
-	{ .offset = 0x00, .name="pre" , MEMAREA(meter_ins  ) }, // pre-compressor
-	{ .offset = 0x18, .name="post", MEMAREA(meter_outs ) }, // post-compressor
-	{ .offset = 0x30, .name="line", MEMAREA(meter_lines) }, // line input
-	{ .offset = 0x38, .name="daw" , MEMAREA(meter_daw  ) }, // daw output
-	{ .offset = 0x4c, .name="gr"  , MEMAREA(meter_gr   ) }, // compressor gain reduction
-	{ .offset = 0x64, .name="gate", MEMAREA(meter_gate ) }, // gate
 	ENDA
 };
 
@@ -380,9 +379,14 @@ DEF_MEMAREA(meter_clip) = {
 };
 
 DEF_MEMAREA(meters) = {
-	[0x0] = { .offset=0x0000, .name="active" , .type=TBoolean },
-	[0x1] = { .offset=0x0001, .name="channel", MEMAREA(meter_channels), .type=TMeter },
-	[0x2] = { .offset=0x0101, .name="clip"   , MEMAREA(meter_clip) },
+	{ .offset=0x0000, .name="active" , .type=TBoolean },
+	{ .offset=0x0001, .name="pre" , MEMAREA(meter_ins  ) }, // pre-compressor
+	{ .offset=0x0019, .name="post", MEMAREA(meter_outs ) }, // post-compressor
+	{ .offset=0x0031, .name="line", MEMAREA(meter_lines) }, // line input
+	{ .offset=0x0039, .name="daw" , MEMAREA(meter_daw  ) }, // daw output
+	{ .offset=0x004d, .name="gr"  , MEMAREA(meter_gr   ) }, // compressor gain reduction
+	{ .offset=0x0065, .name="gate", MEMAREA(meter_gate ) }, // gate
+	{ .offset=0x0101, .name="clip", MEMAREA(meter_clip) },
 	ENDA
 };
 
