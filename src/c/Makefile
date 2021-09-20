@@ -11,7 +11,7 @@ DEPS = lib/$(patsubst %.c,%.o,$(wildcard types/*.h)) $(wildcard *.h)
 
 LCAPMIX = -L$(OBJDIR)/lib -lcapmix '-Wl,-R,$$ORIGIN/../lib'
 TESTS = bin/test_memory bin/test_mixer bin/test_capture bin/test_types
-BINARIES = bin/main bin/meters bin/capmixer $(TESTS)
+BINARIES = bin/main bin/meters bin/list-memory bin/capmixer $(TESTS)
 
 all: $(BINARIES)
 
@@ -59,6 +59,9 @@ bin/capmixer-dynamic: lib/libcapmix.so lib/mixer.o app/capmixer.c
 
 bin/meters: $(OBJ) app/meters.c
 	$(CC) $(LIBS) $(CFLAGS) -o bin/meters $(addprefix $(OBJDIR)/,$(OBJ)) app/meters.c
+
+bin/list-memory: $(OBJ) app/list-memory.c
+	$(CC) $(LIBS) $(CFLAGS) -o bin/list-memory $(addprefix $(OBJDIR)/,$(OBJ)) app/list-memory.c
 
 bin/main: $(OBJ) app/main.c
 	$(CC) $(LIBS) $(CFLAGS) -o bin/main $(addprefix $(OBJDIR)/,$(OBJ)) app/main.c

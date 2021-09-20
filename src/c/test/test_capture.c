@@ -80,21 +80,21 @@ int main(int argc, char *argv[])
 
 	TEST( test_addr_type(TMeter, 0x000a0001) );
 	TEST( test_addr_type(TMeter, 0x000a0003) );
-	TEST( test_format_addr("meters.pre.1.level", 0x000a0001) );
-	TEST( test_format_addr("meters.pre.2.level", 0x000a0003) );
-	TEST( test_format_addr("meters.post.1.level", 0x000a0019) );
-	TEST( test_format_addr("meters.post.2.level", 0x000a001b) );
-	TEST( test_format_addr("meters.line.13.level", 0x000a0031) );
-	TEST( test_format_addr("meters.line.14.level", 0x000a0033) );
-	TEST( test_format_addr("meters.line.15.level", 0x000a0035) );
-	TEST( test_format_addr("meters.line.16.level", 0x000a0037) );
-	TEST( test_format_addr("meters.daw.1.level", 0x000a0039) );
-	TEST( test_format_addr("meters.daw.10.level", 0x000a004b) );
-	TEST( test_format_addr("meters.gr.1.level", 0x000a004d) );
-	TEST( test_format_addr("meters.gate.1.level", 0x000a0065) );
-	TEST( test_format_addr("meters.clip.pre.1-4"  , 0x000a0101) );
-	TEST( test_format_addr("meters.clip.post.9-12", 0x000a0107) );
+	TEST( test_format_addr("meters.pre.channel.1.level", 0x000a0001) );
+	TEST( test_format_addr("meters.pre.channel.2.level", 0x000a0003) );
+	TEST( test_format_addr("meters.post.channel.1.level", 0x000a0019) );
+	TEST( test_format_addr("meters.post.channel.2.level", 0x000a001b) );
+	TEST( test_format_addr("meters.line.channel.13.level", 0x000a0031) );
+	TEST( test_format_addr("meters.line.channel.14.level", 0x000a0033) );
+	TEST( test_format_addr("meters.line.channel.15.level", 0x000a0035) );
+	TEST( test_format_addr("meters.line.channel.16.level", 0x000a0037) );
+	TEST( test_format_addr("meters.daw.channel.1.level", 0x000a0039) );
+	TEST( test_format_addr("meters.daw.channel.10.level", 0x000a004b) );
+	TEST( test_format_addr("meters.gr.channel.1.level", 0x000a004d) );
+	TEST( test_format_addr("meters.gate.channel.1.level", 0x000a0065) );
+	TEST( test_format_addr("meters.clip.pre.1-4.mask"  , 0x000a0101) );
+	TEST( test_format_addr("meters.clip.post.9-12.mask", 0x000a0107) );
 
 	TEST( test_addr_type(TValue, 0x000a3f3f) );
-	TEST( test_format_addr("meters.clip.post.?", 0x000a3f3f) );
+	TEST( test_format_addr("meters.clip.post.13-16.?", 0x000a3f3f) );
 }
