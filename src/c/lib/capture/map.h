@@ -309,21 +309,32 @@ DEF_MEMAREA(auto_sens_channels) = {
 	ENDA
 };
 
+DEF_MEMAREA(auto_sens) = {
+	{ .offset=0x00, .name="auto"  , .type=TBoolean },
+	{ .offset=0x01, .name="margin", .type=TByte }, // ugh, it's zero to twelve
+	{ .offset=0x02, .name="mode"  , .type=TAutoSens },
+	{ .offset=0x03, .name="reset" , .type=TBoolean },
+	{ .offset=0x10, .name="select"          , MEMAREA(auto_sens_mask) },
+	{ .offset=0x20, .name=capmix_str.channel, MEMAREA(auto_sens_channels) },
+	ENDA
+};
+
 // auto sens on      : 02=1, 03=1
 // auto sens cancel  : 02=2, 03=0
 // auto sens off     : 02=0
-DEF_MEMAREA(auto_sens) = {
-	{ .offset=0x0102, .name="mode"  , .type=TAutoSens },
-	{ .offset=0x0103, .name="reset" , .type=TBoolean },
-	{ .offset=0x0110, .name="select"          , MEMAREA(auto_sens_mask) },
-	{ .offset=0x0120, .name=capmix_str.channel, MEMAREA(auto_sens_channels) },
+DEF_MEMAREA(settings) = {
+	{ .offset=0x0004, .name="input_selector_auto"  , .type=TBoolean },
+	{ .offset=0x0005, .name="sync", .type=TBoolean }, // auto
+	{ .offset=0x0006, .name="stereo-link", .type=TBoolean }, // paired
+	{ .offset=0x0007, .name="dim_solo", .type=TByte }, // another TEnum: { OFF, -6, -12, -18 }
+	{ .offset=0x0100, .name="auto-sens", MEMAREA(auto_sens) },
 	ENDA
 };
 #endif
 
 static const capmix_mem_t memory_map[] = {
 	[0x0] = { .offset = 0x00000002 , .name = capmix_str.top_map[0x0] },
-	[0x2] = { .offset = 0x00020000 , .name = capmix_str.top_map[0x2] , MEMAREA(auto_sens)     },
+	[0x2] = { .offset = O_SETTINGS , .name = capmix_str.top_map[0x2] , MEMAREA(settings)     },
 	[0x3] = { .offset = O_PATCHBAY , .name = capmix_str.top_map[0x3] , MEMAREA(patchbay)      },
 	[0x4] = { .offset = O_REVERB   , .name = capmix_str.top_map[0x4] , MEMAREA(reverb)        },
 	[0x5] = { .offset = O_PREAMP   , .name = capmix_str.top_map[0x5] , MEMAREA(preamp)        },
@@ -331,7 +342,7 @@ static const capmix_mem_t memory_map[] = {
 	[0x6] = { .offset = O_INPUT_MON, .name = capmix_str.top_map[0x6] , MEMAREA(input_monitor) },
 	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
 	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
-	[0xa] = { .offset = 0x000a0000 , .name = capmix_str.top_map[0xa] , MEMAREA(meters) },
+	[0xa] = { .offset = O_METERS   , .name = capmix_str.top_map[0xa] , MEMAREA(meters) },
 	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] },
 	ENDA
 };
