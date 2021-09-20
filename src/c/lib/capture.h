@@ -6,6 +6,7 @@
 
 /// top and intermediate level device memory offsets
 enum memory_offset_e {
+	O_SETTINGS  = 0x00020000, ///< device settings offset
 	O_PATCHBAY  = 0x00030000, ///< patchbay offset
 	O_REVERB    = 0x00040000, ///< reverb offset
 	O_PREAMP    = 0x00050000, ///< preamp offset
@@ -13,6 +14,7 @@ enum memory_offset_e {
 	O_INPUT_MON = 0x00060000, ///< input monitor offset
 	O_DAW_MON   = 0x00070000, ///< DAW output monitor offset
 	O_MASTER    = 0x00080000, ///< master channel offset
+	O_METERS    = 0x000a0000, ///< meters offset
 	O_MON_A     = 0x00001000, ///< monitor A offset
 	O_MON_B     = 0x00002000, ///< monitor B offset
 	O_MON_C     = 0x00003000, ///< monitor C offset
