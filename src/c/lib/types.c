@@ -8,6 +8,7 @@
 #include "types/volume.h"
 #include "types/pan.h"
 #include "types/meter.h"
+#include "types/clipmask.h"
 #include "types/scaled.h"
 #include "types/enum.h"
 #include "types/unset.h"
@@ -223,6 +224,13 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.enum_names = (const char *[]){
 			"off", "on", "cancel",
 		},
+	},
+	[TClipMask] = {
+		.type = TClipMask,
+		.name = "ClipMask",
+		.parent = TByte,
+		.min = {.discrete= 0 }, .max = {.discrete= 0x7f}, .step = {.discrete= 0 },
+		.format = capmix_clipmask_format,
 	},
 };
 

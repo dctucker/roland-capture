@@ -301,6 +301,29 @@ void  render_meter(WINDOW *win, capmix_addr_t addr, cursor_t pos)
 	wmove(win, prev_cursor.y, prev_cursor.x);
 }
 
+void render_clipmask(WINDOW *win, int ch, cursor_t pos)
+{
+	cursor_t prev_cursor; getyx(win, prev_cursor.y, prev_cursor.x);
+
+	int dx = row_spacing( page->rows - 1 );
+	int start_x = dx/2-2, start_y = 2;
+	capmix_unpacked_t clip = capmix_memory_get_unpacked(0xa0101 + ch/4);
+	bool ch_clip = clip.discrete & (1 << (ch % 4));
+	
+	if( ch_clip )
+	{
+		wattr_on(menu_win, COLOR_PAIR(METER_COLOR+23), NULL);
+		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, "!");
+		wattr_off(menu_win, COLOR_PAIR(METER_COLOR+23), NULL);
+	}
+	else
+	{
+		mvwprintw(menu_win, start_y + pos.y, start_x + pos.x * dx, " ");
+	}
+
+	wmove(win, prev_cursor.y, prev_cursor.x);
+}
+
 void  render_page_indicator(WINDOW *menu_win, int start_x, int start_y)
 {
 	for(int j=0; j < page_indicator_len; j++)
@@ -416,6 +439,16 @@ void  on_capmix_event(capmix_event_t event)
 				cursor_t pos = { .x=j, .y=i + page->rows };
 				render_meter(menu_win, addr, pos);
 			}
+		}
+		switch(page->id){
+			case PInputA: case PInputB: case PInputC: case PInputD:
+				for(int j=0; j < page->cols; j++)
+				{
+					cursor_t pos = { .x=j, .y=0 };
+					render_clipmask(menu_win, j, pos);
+				}
+				break;
+			default:
 		}
 		//wrefresh(menu_win);
 	}
