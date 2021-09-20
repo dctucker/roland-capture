@@ -28,6 +28,34 @@ bool test_type         (const char *expected, capmix_type_t type, int8_t *bytes)
 	return strcmp(str, expected) == 0;
 }
 
+bool test_unpack_float (capmix_unpacked_t expected, capmix_type_t type, int8_t *buf)
+{
+	char str[64];
+	capmix_unpacked_t unpacked = capmix_unpack_type(type, buf);
+	const char *typename = capmix_type_name(type);
+	//capmix_format_type(type, unpacked, str);
+	printf("%s ", typename);
+	for(int i=0; i < capmix_type_size(type); i++)
+	{
+		printf("0x%02x ", buf[i]);
+	}
+	printf("-> %f  expected %f", unpacked.continuous, expected.continuous);
+	/*
+	char str[64];
+	capmix_unpacked_t unpacked = capmix_unpack_type(type, buf);
+	capmix_format_type(type, unpacked, str);
+	printf("unpacked %s %s -> ", capmix_type_name(type), str);
+	int size = capmix_type_size(type);
+	for(int i=0; i < size; i++)
+		printf("0x%02x ", buf[i]);
+	printf("  expected ");
+	for(int i=0; i < size; i++)
+		printf("0x%02x ", expected[i]);
+	return memcmp(buf, expected, size) == 0;
+	*/
+	return unpacked.continuous == expected.continuous;
+}
+
 bool test_format       (const char *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
 	char str[64];
@@ -37,7 +65,6 @@ bool test_format       (const char *expected, capmix_type_t type, capmix_unpacke
 	printf("format %s 0x%x -> %s  expected %s", capmix_type_name(type), unpacked.discrete, str, expected);
 	return strcmp(str, expected) == 0;
 }
-
 bool test_pack         (const int8_t *expected, capmix_type_t type, capmix_unpacked_t unpacked)
 {
 	char str[64];
@@ -85,6 +112,11 @@ int main(int argc, char *argv[])
 	TEST( test_pack(buf_min, TPan, capmix_UnpackedFloat(-100.)) );
 	TEST( test_pack(pan_zero, TPan, capmix_UnpackedFloat(0.)) );
 	TEST( test_pack(pan_max, TPan, capmix_UnpackedFloat(100.)) );
+
+	char meter_max[] = { 0x7f, 0x7f };
+	TEST( test_unpack_float(capmix_UnpackedFloat(-INFINITY),  TMeter, buf_min) );
+	TEST( test_unpack_float(capmix_UnpackedFloat( 0.0), TMeter, meter_max) );
+
 
 	char bool_true[] = { 1 };
 	char bool_false[] = { 0 };
