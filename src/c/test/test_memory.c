@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
 	bool b;
 	printf("\nTesting memory...\n");
 
-	TEST( test_addr_coord(COORD(0x6, 0x24e), 0x0006120e) );
-	TEST( test_addr_coord(COORD(0x5, 0x0e7), 0x00050707) );
-	TEST( test_addr_coord(COORD(0xa, 0x101), 0x000a0101) );
+	TEST( test_addr_coord(COORD(0x6, 0x90e), 0x0006120e) );
+	TEST( test_addr_coord(COORD(0x5, 0x387), 0x00050707) );
+	TEST( test_addr_coord(COORD(0xa, 0x081), 0x000a0101) );
 
 	char data[] = { 0x20, 0x7f, 0x7f, 0x7f };
 	TEST( test_readback( data, 4, 0x00060004) );

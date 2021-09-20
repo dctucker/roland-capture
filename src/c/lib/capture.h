@@ -41,6 +41,7 @@ typedef struct capmix_str_s {
 	const char *const preamp_params[15];
 	const char *const reverb_params[3];
 	const char *const monitors[4];
+	const char *const source;
 	const char *const channel;
 	const char *const channels[16];
 	const char *const channel_params[15];
@@ -50,6 +51,7 @@ typedef struct capmix_str_s {
 	const char *const master_params[2];
 	const char *const reverb_return;
 	const char *const link;
+	const char *const meters[9];
 } capmix_str_t;
 
 void                         capmix_print_map (const capmix_mem_t *map, const char *prefix, capmix_addr_t old_offset);
