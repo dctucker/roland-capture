@@ -67,6 +67,9 @@ bin/main: $(OBJ) app/main.c
 	$(CC) $(LIBS) $(CFLAGS) -o bin/main $(addprefix $(OBJDIR)/,$(OBJ)) app/main.c
 	# -L$(OBJDIR)/lib -lcapmix
 
+bin/main-dynamic: $(OBJ) app/main.c
+	$(CC) $(CFLAGS) -o $@ app/main.c $(LCAPMIX)
+
 #bin/main: $(OBJ) app/main.c # static library
 #	$(CC) $(LIBS) $(CFLAGS) -o bin/main app/main.c
 #	# -L$(OBJDIR)/lib -lcapmix
