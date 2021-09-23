@@ -74,7 +74,7 @@ _API capmix_unpacked_t  capmix_parse_type   (capmix_type_t, const char *); ///< 
 _API int                capmix_format_type  (capmix_type_t, capmix_unpacked_t, char *); ///< @ingroup API
 _API int                capmix_pack_type    (capmix_type_t, capmix_unpacked_t, uint8_t *); ///< @ingroup API
 
-capmix_type_info_t *    capmix_type         (capmix_type_t type);
-_API const char *       capmix_type_name    (capmix_type_t);
-int                     capmix_type_size    (capmix_type_t);
-capmix_type_t           capmix_type_parent  (capmix_type_t type);
+_API capmix_type_info_t *  capmix_type         (capmix_type_t type);
+_API const char *          capmix_type_name    (capmix_type_t);
+int                        capmix_type_size    (capmix_type_t);
+capmix_type_t              capmix_type_parent  (capmix_type_t type);

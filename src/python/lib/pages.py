@@ -33,6 +33,10 @@ class InputPage(Page):
 		controls += [row]
 		for control in self.controls:
 			row = []
+			if control == "reverb" and self.monitor != "a":
+				controls += [[None]]
+				continue
+
 			for ch in range(0, 16):
 				desc = "%s.channel.%d.%s" % (page, ch+1, control)
 				row += [desc]
@@ -78,7 +82,8 @@ class OutputPage(Page):
 			else:
 				row += [None, None, None, None]
 			controls += [row]
-		controls[3][11] = "master.direct_monitor.a.reverb_return"
+		if self.monitor == "a":
+			controls[3][11] = "master.direct_monitor.a.reverb_return"
 		return controls
 
 class PreampPage(Page):

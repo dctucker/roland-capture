@@ -77,7 +77,7 @@ class App(object):
 	def setup_midi(self):
 		self.listener = Listener(self)
 		if self.port is None:
-			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
+			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE Control"
 
 		midi = MIDI(self.port)
 		midi.listener = self.listener
@@ -104,12 +104,12 @@ class App(object):
 		self.interface = None
 		if self.interactive:
 			if self.graphical:
-				try:
-					from ui.gui import GraphicalMixer, MainGraphical
-				except:
-					self.debug("Unable to setup graphical interface, falling back to terminal")
-					self.graphical = False
-					return False
+				#try:
+				from ui.gui import GraphicalMixer, MainGraphical
+				#except:
+				#	self.debug("Unable to setup graphical interface, falling back to terminal")
+				#	self.graphical = False
+				#	return False
 				self.mixer = GraphicalMixer()
 				self.interface = MainGraphical(self.controller, self.mixer)
 			else:

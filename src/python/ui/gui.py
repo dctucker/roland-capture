@@ -51,7 +51,8 @@ class MainGraphical(QApplication):
 
 	def present(self):
 		self.window.show()
-		self.window.set_current_page(self.mixer.page_name)
+		self.controller.call_app("set_page", self.mixer.page_name)
+		#self.window.set_current_page(self.mixer.page_name)
 		self.refresh()
 		self.update()
 		return self.exec_()
