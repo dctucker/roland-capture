@@ -8,6 +8,9 @@
 #include "capture/strings.h"
 #include "capture/map.h"
 
+static const capmix_mem_t *memory_map   = octa_memory_map;
+static const capmix_mem_t *top_map_area = octa_top_map_area;
+
 /**
  * @brief traverse a memory map recursively, printing the address and full name of each entry
  * @param map the map to traverse

@@ -31,9 +31,9 @@ void print_page(const capmix_mixer_page_t *page)
 bool test_mixer(const capmix_mixer_page_t *mixer_page)
 {
 	//char *control = input_pages[0].controls[0][1];
-	SILENT(
+	//SILENT(
 		print_page(mixer_page);
-	)
+	//)
 	printf("# %s", mixer_page->name);
 	return 1;
 }
