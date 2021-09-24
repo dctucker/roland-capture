@@ -2,24 +2,6 @@
 #include <stdio.h>
 #include "roland.h"
 
-static const capmix_sysex_fields_t sysex_octa = {
-	.status = 0xf0,
-	.manufacturer = 0x41,
-	.device_id = 0x10,
-	.model_id = { 0x0, 0x0, 0x4d },
-};
-static const capmix_sysex_fields_t sysex_studio = {
-	.status = 0xf0,
-	.manufacturer = 0x41,
-	.device_id = 0x10,
-	.model_id = { 0x0, 0x0, 0x6b },
-};
-static const capmix_sysex_fields_t *capture_sysex_models[] = {
-	[MOcta] = &sysex_octa,
-	[MStudio] = &sysex_studio,
-};
-const capmix_sysex_fields_t *capture_sysex = &sysex_studio;
-
 /**
  * @brief calculate the checksum for a given data buffer
  * @param data the buffer to sum
@@ -44,9 +26,9 @@ static uint8_t    checksum(uint8_t *data, int len)
 static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 {
 	int i;
-	for(i=0; i < sizeof(capture_sysex); i++)
+	for(i=0; i < sizeof(capmix_sysex_fields_t); i++)
 	{
-		buffer[i] = ((uint8_t *)&capture_sysex)[i];
+		buffer[i] = ((uint8_t *)capture_sysex)[i];
 	}
 	buffer[i++] = cmd;
 	i += data_len;
@@ -106,15 +88,18 @@ capmix_sysex_t *  capmix_parse_sysex(uint8_t *buffer, int len)
 {
 	capmix_sysex_t *sysex = (capmix_sysex_t *)buffer;
 
+	int good = 1;
 	for(int i=0; i < 6; i++)
 	{
-		uint8_t c = ((uint8_t *)&capture_sysex)[i];
+		uint8_t c = ((uint8_t *)capture_sysex)[i];
 		if( sysex->header[i] != c )
 		{
-			printf("Expected %x, got %x\n", sysex->header[i], c);
-			return NULL;
+			printf("Expected 0x%x, got 0x%x\n", c, sysex->header[i]);
+			good = 0;
 		}
 	}
 
+	if( !good )
+		return NULL;
 	return sysex;
 }

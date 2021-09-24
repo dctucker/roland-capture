@@ -57,3 +57,5 @@ typedef struct cursor_s {
 	int y;
 } cursor_t;
 
+extern capmix_model_t capmix_model;
+extern const capmix_sysex_fields_t *capture_sysex;

@@ -11,8 +11,34 @@
 static const capmix_mem_t *memory_map   = none_memory_map;
 static const capmix_mem_t *top_map_area = capmix_mem_none_area;
 
+static const capmix_sysex_fields_t sysex_none = {
+	.status = 0xf0,
+	.manufacturer = 0x0,
+	.device_id = 0x0,
+	.model_id = { 0x0, 0x0, 0x0 },
+};
+static const capmix_sysex_fields_t sysex_octa = {
+	.status = 0xf0,
+	.manufacturer = 0x41,
+	.device_id = 0x10,
+	.model_id = { 0x0, 0x0, 0x4d },
+};
+static const capmix_sysex_fields_t sysex_studio = {
+	.status = 0xf0,
+	.manufacturer = 0x41,
+	.device_id = 0x10,
+	.model_id = { 0x0, 0x0, 0x6b },
+};
+static const capmix_sysex_fields_t *capture_sysex_models[] = {
+	[MOcta] = &sysex_octa,
+	[MStudio] = &sysex_studio,
+};
+const capmix_sysex_fields_t *capture_sysex = &sysex_none;
+capmix_model_t capmix_model = MNone;
+
 void                   capmix_set_model(capmix_model_t model)
 {
+	capmix_model = model;
 	switch(model)
 	{
 		case MQuad: // TODO
@@ -22,14 +48,17 @@ void                   capmix_set_model(capmix_model_t model)
 		case MOcta:
 			memory_map   = octa_memory_map;
 			top_map_area = octa_top_map_area;
+			capture_sysex = &sysex_octa;
 			break;
 		case MStudio:
 			memory_map   = studio_memory_map;
 			top_map_area = studio_top_map_area;
+			capture_sysex = &sysex_studio;
 			break;
 		default:
 			memory_map   = none_memory_map;
 			top_map_area = capmix_mem_none_area;
+			capture_sysex = &sysex_none;
 	}
 }
 

@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <stdio.h>
+
 #include "capmix.h"
 #include "memory.h"
 #include "roland.h"
@@ -87,6 +90,8 @@ capmix_event_t          capmix_get(capmix_addr_t addr)
 	int sysex_len = capmix_make_receive_sysex(sysex_buf, addr, type_len);
 	if( connected )
 		capmix_send_midi(sysex_buf, sysex_len);
+	else
+		fprintf(stderr, "not connected\n");
 	return (capmix_event_t){
 		.sysex = (capmix_sysex_t *)sysex_buf,
 		.sysex_data_length = sysex_len - 13,
