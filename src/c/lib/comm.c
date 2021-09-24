@@ -10,7 +10,11 @@
 
 //const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
 //const char *port_name = "24:1";
-const char *          port_name = "STUDIO-CAPTURE:1";
+static const char *const port_names[] = {
+	[MQuad]   = "QUAD-CAPTURE:1",
+	[MOcta]   = "OCTA-CAPTURE:1",
+	[MStudio] = "STUDIO-CAPTURE:1",
+};
 static unsigned char  buf[8192];
 static unsigned int   msglen = 0;
 static unsigned int   sysex_start = sizeof(buf);
@@ -22,6 +26,11 @@ static snd_seq_addr_t   device_port;
 static int              n_descriptors;
 static struct pollfd *  descriptors;
 
+const char *  capmix_port_name()
+{
+	return port_names[capmix_model];
+}
+
 /**
  * @brief call the operating system to set up MIDI communication with the device
  * @param listener pointer to a callback function that receives a data buffer and the length of the buffer when MIDI messages are received
@@ -29,6 +38,7 @@ static struct pollfd *  descriptors;
  */
 int   capmix_setup_midi( capmix_listener_t *listener )
 {
+	const char *port_name = capmix_port_name();
 	int err;
 	TRY_SEQ( snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0), "Unable to open sequencer" )
 	TRY_SEQ( snd_seq_set_client_name(seq, "libcapmix")            , "Unable to set client name" )
@@ -46,7 +56,7 @@ int   capmix_setup_midi( capmix_listener_t *listener )
 	port_out = err;
 	
 	//connect application to device
-	TRY_SEQ( snd_seq_parse_address(seq, &device_port, port_name)                , "Port not found")
+	TRY_SEQ( snd_seq_parse_address(seq, &device_port, port_name)          , "Port not found")
 	TRY_SEQ( snd_seq_connect_from(seq, port_in , device_port.client, device_port.port) , "Unable to connect input port" )
 	TRY_SEQ( snd_seq_connect_to  (seq, port_out, device_port.client, device_port.port) , "Unable to connect output port" )
 	TRY_SEQ( snd_seq_nonblock(seq, 1)                                           , "Unable to set nonblock mode" )

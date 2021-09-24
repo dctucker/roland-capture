@@ -122,6 +122,9 @@ int   main(int argc, const char **argv)
 	}
 	*/
 
+	capmix_set_model(MOcta);
+	//capmix_set_model(MStudio);
+
 	const char *control ="", *value ="";
 	int a = 0;
 	const char *arg0 = argv[a++];

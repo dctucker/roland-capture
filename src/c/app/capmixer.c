@@ -444,8 +444,7 @@ void  on_capmix_event(capmix_event_t event)
 			case PInputA: case PInputB: case PInputC: case PInputD:
 				for(int j=0; j < page->cols; j++)
 				{
-					cursor_t pos = { .x=j, .y=0 };
-					render_clipmask(menu_win, j, pos);
+					cursor_t pos = { .x=j, .y=0 }; render_clipmask(menu_win, j, pos);
 				}
 				break;
 			default:
@@ -485,6 +484,10 @@ void set_page( enum capmix_pages_e p )
 int   main(int argc, char ** argv)
 {
 	log_file = fopen("capmixer.log", "w");
+
+	capmix_set_model(MOcta);
+	//capmix_set_model(MStudio);
+
 	capmix_connect(on_capmix_event);
 
 	//FILE *f = fopen("/dev/tty", "r+");
@@ -532,7 +535,7 @@ int   main(int argc, char ** argv)
 	nodelay(menu_win, 1);
 
 	set_page(PInputA);
-	capmix_put(0xa0000, capmix_UnpackedInt(1));
+	//capmix_put(0xa0000, capmix_UnpackedInt(1)); // enable live meters
 
 
 	interface_refresh(menu_win);
@@ -548,7 +551,7 @@ int   main(int argc, char ** argv)
 		}
 		capmix_listen();
 	}
-	capmix_put(0xa0000, capmix_UnpackedInt(0));
+	capmix_put(0xa0000, capmix_UnpackedInt(0)); // disable live meters
 	capmix_disconnect();
 
 	clrtoeol();
