@@ -10,9 +10,9 @@ def main():
 		print("addr=%s type=%s v=%s" % (addr, event.type_name(), value))
 		#print("type=%x" % event.type_info)
 
-	capmix.connect(listener)
+	ok = capmix.connect(listener)
 	try:
-		while True:
+		while ok:
 			x = capmix.listen()
 	except KeyboardInterrupt:
 		pass
