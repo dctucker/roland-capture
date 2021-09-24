@@ -1,5 +1,10 @@
 DEF_MEMAREA(capmix_mem_none) = { { .name = "?" }, ENDA };
 
+static const capmix_mem_t none_memory_map[] = {
+	{ .name = "capmix", .area=(const capmix_mem_t **const)&(capmix_mem_none_area) },
+	ENDA
+};
+
 DEF_MEMAREA(patchbay_output) = { { .type=TPatch, .name=capmix_str.source }, ENDA };
 DEF_MEMAREA(patchbay) = {
 	{ .offset = 0, .name = capmix_str.patchbay[0], MEMAREA(patchbay_output) },

@@ -113,7 +113,7 @@ DEF_MEMAREA(settings_8) = {
 };
 #endif
 
-static const capmix_mem_t octa_memory_map[] = {
+static const capmix_mem_t octa_memory_map[17] = {
 	[0x0] = { .offset = 0x00000002 , .name = capmix_str.top_map[0x0] },
 	[0x2] = { .offset = O_SETTINGS , .name = capmix_str.top_map[0x2] , MEMAREA(settings_8)    },
 	[0x3] = { .offset = O_PATCHBAY , .name = capmix_str.top_map[0x3] , MEMAREA(patchbay)      },

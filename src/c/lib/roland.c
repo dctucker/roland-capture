@@ -2,12 +2,23 @@
 #include <stdio.h>
 #include "roland.h"
 
-static const capmix_sysex_fields_t capture_sysex = {
+static const capmix_sysex_fields_t sysex_octa = {
+	.status = 0xf0,
+	.manufacturer = 0x41,
+	.device_id = 0x10,
+	.model_id = { 0x0, 0x0, 0x4d },
+};
+static const capmix_sysex_fields_t sysex_studio = {
 	.status = 0xf0,
 	.manufacturer = 0x41,
 	.device_id = 0x10,
 	.model_id = { 0x0, 0x0, 0x6b },
 };
+static const capmix_sysex_fields_t *capture_sysex_models[] = {
+	[MOcta] = &sysex_octa,
+	[MStudio] = &sysex_studio,
+};
+const capmix_sysex_fields_t *capture_sysex = &sysex_studio;
 
 /**
  * @brief calculate the checksum for a given data buffer
@@ -39,7 +50,7 @@ static int        capmix_make_sysex(uint8_t *buffer, uint8_t cmd, int data_len)
 	}
 	buffer[i++] = cmd;
 	i += data_len;
-	buffer[i++] = checksum(&(buffer[sizeof(capture_sysex)+1]), data_len);
+	buffer[i++] = checksum(&(buffer[sizeof(capmix_sysex_fields_t)+1]), data_len);
 	buffer[i++] = 0xf7;
 	return i;
 }
