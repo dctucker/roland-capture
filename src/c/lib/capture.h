@@ -4,6 +4,8 @@
 #include "types.h"
 #include "memory.h"
 
+///
+
 /// top and intermediate level device memory offsets
 enum memory_offset_e {
 	O_SETTINGS  = 0x00020000, ///< device settings offset
@@ -56,10 +58,11 @@ typedef struct capmix_str_s {
 	const char *const meters[9];
 } capmix_str_t;
 
-void                         capmix_print_map (const capmix_mem_t *map, const char *prefix, capmix_addr_t old_offset);
-static const capmix_mem_t *  capmix_lookup_map(const capmix_mem_t *map, const char *part);
+void                         capmix_print_map (const capmix_mem_t *, const char *, capmix_addr_t);
+static const capmix_mem_t *  capmix_lookup_map(const capmix_mem_t *, const char *);
 
-_API uint32_t          capmix_parse_addr  (const char *desc);
-_API void              capmix_format_addr (capmix_addr_t addr, char *desc);
-_API capmix_type_t     capmix_addr_type   (capmix_addr_t addr);
-_API const char *      capmix_addr_suffix (capmix_addr_t addr);
+_API void              capmix_set_model   (capmix_model_t);
+_API uint32_t          capmix_parse_addr  (const char *);
+_API void              capmix_format_addr (capmix_addr_t, char *);
+_API capmix_type_t     capmix_addr_type   (capmix_addr_t);
+_API const char *      capmix_addr_suffix (capmix_addr_t);

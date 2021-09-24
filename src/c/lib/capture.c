@@ -8,8 +8,30 @@
 #include "capture/strings.h"
 #include "capture/map.h"
 
-static const capmix_mem_t *memory_map   = octa_memory_map;
-static const capmix_mem_t *top_map_area = octa_top_map_area;
+static const capmix_mem_t *memory_map   = none_memory_map;
+static const capmix_mem_t *top_map_area = capmix_mem_none_area;
+
+void                   capmix_set_model(capmix_model_t model)
+{
+	switch(model)
+	{
+		case MQuad: // TODO
+			//memory_map   = quad_memory_map;
+			//top_map_area = quad_top_map_area;
+			//break;
+		case MOcta:
+			memory_map   = octa_memory_map;
+			top_map_area = octa_top_map_area;
+			break;
+		case MStudio:
+			memory_map   = studio_memory_map;
+			top_map_area = studio_top_map_area;
+			break;
+		default:
+			memory_map   = none_memory_map;
+			top_map_area = capmix_mem_none_area;
+	}
+}
 
 /**
  * @brief traverse a memory map recursively, printing the address and full name of each entry
@@ -96,6 +118,8 @@ capmix_addr_t          capmix_parse_addr(const char *desc)
 int                    capmix_top_section(capmix_addr_t addr)
 {
 	int section;
+	if( memory_map == none_memory_map )
+		return 0;
 	if( addr >> 12 == 0x51 )
 		section = LINE;
 	else if( addr >> 16 == 0x9 )
@@ -189,6 +213,12 @@ void                   capmix_format_addr(capmix_addr_t addr, char *desc)
 	int a = 0 ;
 	const capmix_mem_t *area = vec.areas[a];
 	sprintf(desc, "");
+	if( area == NULL )
+	{
+		sprintf(desc, "?");
+		return;
+	}
+
 	do
 	{
 		strcat(desc, area->name);

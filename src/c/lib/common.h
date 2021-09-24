@@ -2,6 +2,15 @@
 
 #include <inttypes.h>
 
+/// the type of audio card
+typedef enum capmix_model_e {
+	MNone,
+	MDuo, // (pretty sure this does not have a software mixer interface)
+	MQuad,
+	MOcta,
+	MStudio,
+} capmix_model_t;
+
 /// structure representing the header of a SysEx message
 typedef struct capmix_sysex_fields_s {
 	uint8_t status;       ///< must be 0xf0
