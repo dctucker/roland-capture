@@ -70,20 +70,6 @@ DEF_MEMAREA(preamp_channels) = {
 };
 DEF_MEMAREA(preamp) = { { .name=capmix_str.channel, MEMAREA(preamp_channels) }, ENDA };
 
-DEF_MEMAREA(line_params) = {
-	MEMNODE(0x0, Boolean    , capmix_str.channel_params[0]),
-	MEMNODE(0x1, Attenuation, capmix_str.channel_params[1]),
-	ENDA
-};
-DEF_MEMAREA(line_channels) = {
-	[0x0] = { .offset=0x000, .name = capmix_str.channels[12], MEMAREA(line_params) },
-	[0x1] = { .offset=0x100, .name = capmix_str.channels[13], MEMAREA(line_params) },
-	[0x2] = { .offset=0x200, .name = capmix_str.channels[14], MEMAREA(line_params) },
-	[0x3] = { .offset=0x300, .name = capmix_str.channels[15], MEMAREA(line_params) },
-	ENDA
-};
-DEF_MEMAREA(line) = { { .name=capmix_str.channel, MEMAREA(line_channels) }, ENDA };
-
 DEF_MEMAREA(input) = {
 	MEMNODE(0x0, Boolean, capmix_str.channel_params[0x0]),
 	MEMNODE(0x2, Boolean, capmix_str.channel_params[0x2]),
