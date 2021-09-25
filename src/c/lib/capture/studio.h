@@ -173,3 +173,5 @@ DEF_MEMAREA(studio_top_map) = {
 	{ .name="capmix", .area=(const capmix_mem_t **const)& studio_memory_map },
 	ENDA
 };
+
+const capmix_addr_t studio_load_map[2048] = {};

@@ -59,3 +59,4 @@ typedef struct cursor_s {
 
 extern capmix_model_t capmix_model;
 extern const capmix_sysex_fields_t *capture_sysex;
+extern const capmix_addr_t *load_map;

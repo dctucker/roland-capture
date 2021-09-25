@@ -27,6 +27,7 @@ int quitting = 0;
 static uint8_t current_monitor = 0;
 static uint8_t current_channel = 1;
 static const capmix_mixer_page_t *page;
+static capmix_model_t model;
 static const char page_indicator[] = "i o [abcd] k l n p r y";
 int page_indicator_len = sizeof(page_indicator);
 
@@ -217,7 +218,16 @@ void  request_control_data(capmix_addr_t addr, int i, int j)
 
 void  request_mixer_data()
 {
-	capmix_mixer_foreach(page, request_control_data);
+	switch( model )
+	{
+		case MOcta:
+			capmix_get(O_LOAD);
+			break;
+		case MStudio:
+			capmix_mixer_foreach(page, request_control_data);
+			break;
+		default:
+	}
 }
 
 void  render_control(WINDOW *menu_win, capmix_addr_t addr, cursor_t pos)
@@ -485,8 +495,9 @@ int   main(int argc, char ** argv)
 {
 	log_file = fopen("capmixer.log", "w");
 
-	capmix_set_model(MOcta);
-	//capmix_set_model(MStudio);
+	model = MOcta;
+	//model = MStudio;
+	capmix_set_model(model);
 
 	capmix_connect(on_capmix_event);
 

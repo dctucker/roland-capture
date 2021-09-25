@@ -9,6 +9,7 @@
 #include "types/pan.h"
 #include "types/meter.h"
 #include "types/clipmask.h"
+#include "types/rawdata.h"
 #include "types/scaled.h"
 #include "types/enum.h"
 #include "types/unset.h"
@@ -232,6 +233,12 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.min = {.discrete= 0 }, .max = {.discrete= 0x7f}, .step = {.discrete= 0 },
 		.format = capmix_clipmask_format,
 	},
+	[TRawData] = {
+		.type = TRawData,
+		.name = "RawData",
+		.parent = TValue,
+		//.format = capmix_rawdata_format,
+	},
 };
 
 /**
@@ -298,6 +305,7 @@ int                 capmix_type_size         (capmix_type_t type)
 {
 	switch(type)
 	{
+		case TRawData: return 0x47d*2;
 		case TVolume : return 6;
 		case TPan    : return 4;
 		case TMeter  : return 2;

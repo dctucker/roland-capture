@@ -40,6 +40,7 @@ typedef enum capmix_type_e {
 	TPatch,       ///< Enumerated value representing selected source for a given output. Parent: `TEnum`
 	TAutoSens,    ///< Enumerated value representing auto-sens state. Parent: `TEnum`
 	TReverbTime,  ///< Scaled reverb time. Parent: `TScaled`
+	TRawData,     ///< An arbitrary fields of bytes. Parent: `TValue`
 	NTypes,       ///< dummy value to represent the number of enumerated types
 } capmix_type_t;
 
