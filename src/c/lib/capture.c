@@ -37,6 +37,10 @@ static const capmix_sysex_fields_t *capture_sysex_models[] = {
 const capmix_sysex_fields_t *capture_sysex = &sysex_none;
 capmix_model_t capmix_model = MNone;
 
+/**
+ * @brief select the modal of unit being used and assign map accordingly
+ * @param model the model to select; one of MQuad, MOcta, MStudio
+ */
 void                   capmix_set_model(capmix_model_t model)
 {
 	capmix_model = model;
@@ -296,9 +300,3 @@ capmix_type_t          capmix_addr_type(capmix_addr_t addr)
 	return vec.areas[a]->type;
 }
 
-/**
- * @brief
- */
-void parse_settings_message(const char *buf, size_t len)
-{
-}
