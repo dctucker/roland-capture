@@ -53,8 +53,11 @@ int   get(const char *control)
 	if( ! ok ) return 2;
 
 	i = 0;
-	while( capmix_listen() <= 0 && i++ < 50)
+	while( i++ < 50)
+	{
+		capmix_listen();
 		usleep(10000);
+	}
 
 	capmix_disconnect();
 

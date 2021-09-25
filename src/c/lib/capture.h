@@ -8,6 +8,7 @@
 
 /// top and intermediate level device memory offsets
 enum memory_offset_e {
+	O_LOAD      = 0x01000000, ///< monitor D offset
 	O_SETTINGS  = 0x00020000, ///< device settings offset
 	O_PATCHBAY  = 0x00030000, ///< patchbay offset
 	O_REVERB    = 0x00040000, ///< reverb offset

@@ -12,6 +12,34 @@ static int     connected;
 static capmix_event_handler_t *capmix_event_handler = NULL;
 
 /**
+ * @brief process settings dump messages
+ */
+static void             capmix_process_loaded()
+{
+	for(int i=0; i < 2048; i++)
+	{
+		uint8_t *value = capmix_memory_get(O_LOAD + i);
+
+		capmix_addr_t addr = load_map[i];
+		if( addr == 0 ) continue;
+		if( capmix_addr_type(addr) == TBoolean )
+		{
+			uint8_t bit;
+			int j = 0;
+			for(int j=0; j < 4; j++)
+			{
+				bit = *value & (1 << j) ? 1 : 0;
+				capmix_memory_set(j * 0x100 + addr, &bit, 1);
+			}
+		}
+		else
+		{
+			capmix_memory_set(addr, value, 1);
+		}
+	}
+}
+
+/**
  * @brief create a capmix_event_t for a given MIDI message buffer
  * @param msgbuf the byte buffer containing a SysEx message
  * @param msglen length of the message buffer in bytes
@@ -29,6 +57,8 @@ static capmix_event_t   capmix_event_factory(uint8_t *msgbuf, int msglen)
 	capmix_type_info_t *type_info = capmix_type(type);
 	
 	capmix_unpacked_t unpacked = capmix_unpack_type(type, sysex->data);
+
+	if( addr == O_LOAD ) capmix_process_loaded();
 
 	return (capmix_event_t){
 		.sysex_data_length = datalen,

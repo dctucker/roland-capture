@@ -42,6 +42,8 @@ int   capmix_setup_midi( capmix_listener_t *listener )
 	int err;
 	TRY_SEQ( snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, 0), "Unable to open sequencer" )
 	TRY_SEQ( snd_seq_set_client_name(seq, "libcapmix")            , "Unable to set client name" )
+	TRY_SEQ( snd_seq_set_input_buffer_size(seq, 2048) , "Unable to set input buffer size" );
+	TRY_SEQ( snd_seq_set_output_buffer_size(seq, 2048), "Unable to set output buffer size" );
 
 	//input port
 	TRY_SEQ( snd_seq_create_simple_port(seq, "libcapmix",
@@ -85,6 +87,7 @@ int   capmix_read_midi()
 	{
 		snd_seq_event_t *event;
 		err = snd_seq_event_input(seq, &event);
+		//printf("%d bytes remaining\n", err);
 		if (err < 0)
 			return 0;
 		if( event == NULL )
@@ -93,11 +96,10 @@ int   capmix_read_midi()
 		if( event->type != SND_SEQ_EVENT_SYSEX )
 			continue;
 
-		/*
+		printf("MIDI read:");
 		for (int i = 0; i < event->data.ext.len; i++)
 			printf(" %02X", ((unsigned char*)event->data.ext.ptr)[i]);
 		printf("\n");
-		*/
 
 		capmix_listener( event->data.ext.ptr, event->data.ext.len );
 		return event->data.ext.len;

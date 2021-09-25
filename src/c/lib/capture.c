@@ -10,6 +10,7 @@
 
 static const capmix_mem_t *memory_map   = none_memory_map;
 static const capmix_mem_t *top_map_area = capmix_mem_none_area;
+const capmix_addr_t *load_map    = none_load_map;
 
 static const capmix_sysex_fields_t sysex_none = {
 	.status = 0xf0,
@@ -48,16 +49,19 @@ void                   capmix_set_model(capmix_model_t model)
 		case MOcta:
 			memory_map   = octa_memory_map;
 			top_map_area = octa_top_map_area;
+			load_map     = octa_load_map;
 			capture_sysex = &sysex_octa;
 			break;
 		case MStudio:
 			memory_map   = studio_memory_map;
 			top_map_area = studio_top_map_area;
+			load_map     = studio_load_map;
 			capture_sysex = &sysex_studio;
 			break;
 		default:
 			memory_map   = none_memory_map;
 			top_map_area = capmix_mem_none_area;
+			load_map     = none_load_map;
 			capture_sysex = &sysex_none;
 	}
 }
@@ -153,6 +157,8 @@ int                    capmix_top_section(capmix_addr_t addr)
 		section = LINE;
 	else if( addr >> 16 == 0x9 )
 		section = 0x8;
+	else if( addr >> 24 == 0x1 )
+		section = 0xf;
 	else
 		section = addr >> 16;
 	return section;
@@ -288,4 +294,11 @@ capmix_type_t          capmix_addr_type(capmix_addr_t addr)
 	while( a < 8 && vec.areas[a+1] != NULL )
 		a++;
 	return vec.areas[a]->type;
+}
+
+/**
+ * @brief
+ */
+void parse_settings_message(const char *buf, size_t len)
+{
 }

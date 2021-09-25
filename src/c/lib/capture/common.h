@@ -175,3 +175,5 @@ DEF_MEMAREA(auto_sens_mask_node) = { { .name="execute", .type=TBoolean }, ENDA }
 #define ATTEN(N) [N-1] = { .offset=N-1, .name=#N, MEMAREA(auto_sens_line_node) }
 DEF_MEMAREA(auto_sens_preamp_node) = { { .name=capmix_str.preamp_params[4] , .type=TSens }, ENDA };
 DEF_MEMAREA(auto_sens_line_node)   = { { .name=capmix_str.channel_params[1], .type=TAttenuation }, ENDA };
+
+const capmix_addr_t none_load_map[2048] = {};
