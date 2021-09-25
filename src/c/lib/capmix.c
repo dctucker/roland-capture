@@ -16,9 +16,10 @@ static capmix_event_handler_t *capmix_event_handler = NULL;
  */
 static void             capmix_process_loaded()
 {
+	uint8_t *load = capmix_memory_get(O_LOAD);
 	for(int i=0; i < 2048; i++)
 	{
-		uint8_t *value = capmix_memory_get(O_LOAD + i);
+		uint8_t *value = &(load[i]);
 
 		capmix_addr_t addr = load_map[i];
 		if( addr == 0 ) continue;

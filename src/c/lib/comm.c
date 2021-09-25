@@ -17,6 +17,7 @@ static const char *const port_names[] = {
 };
 static unsigned char  buf[8192];
 static unsigned int   msglen = 0;
+static int            buflen = 0;
 static unsigned int   sysex_start = sizeof(buf);
 static capmix_listener_t *capmix_listener = NULL;
 
@@ -26,6 +27,10 @@ static snd_seq_addr_t   device_port;
 static int              n_descriptors;
 static struct pollfd *  descriptors;
 
+/**
+ * @brief return port name for the selected model
+ * @return pointer to the port name
+ */
 const char *  capmix_port_name()
 {
 	return port_names[capmix_model];
@@ -86,26 +91,42 @@ int   capmix_read_midi()
 	do
 	{
 		snd_seq_event_t *event;
+		//if( snd_seq_event_input_pending(seq, 0) <= 0 ) return 0;
 		err = snd_seq_event_input(seq, &event);
 		//printf("%d bytes remaining\n", err);
 		if (err < 0)
+		{
+			//printf("err: %s\n", snd_strerror(err));
 			return 0;
+		}
 		if( event == NULL )
 			continue;
 
 		if( event->type != SND_SEQ_EVENT_SYSEX )
 			continue;
 
-		printf("MIDI read:");
-		for (int i = 0; i < event->data.ext.len; i++)
-			printf(" %02X", ((unsigned char*)event->data.ext.ptr)[i]);
-		printf("\n");
+		//printf("MIDI read:");
+		//for (int i = 0; i < event->data.ext.len; i++)
+		//	printf(" %02X", ((unsigned char*)event->data.ext.ptr)[i]);
+		//printf("\n");
 
-		capmix_listener( event->data.ext.ptr, event->data.ext.len );
-		return event->data.ext.len;
+		for(int i=0; i < event->data.ext.len; i++)
+		{
+			buf[buflen] = ((uint8_t *)event->data.ext.ptr)[i];
+			buflen++;
+			if( buf[buflen-1] == 0xf7 )
+			{
+				capmix_listener( buf, buflen );
+				buflen = 0;
+				continue;
+			}
+		}
+		//printf("buflen: %d, err: %d\n", buflen, err);
 	}
 	while (err > 0);
+
 	fflush(stdout);
+	return buflen;
 }
 
 /**

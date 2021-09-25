@@ -131,7 +131,7 @@ static const capmix_mem_t octa_memory_map[17] = {
 	ENDA
 };
 DEF_MEMAREA(octa_top_map) = {
-	{ .name="capmix", .area=(const capmix_mem_t **const)& octa_memory_map },
+	{ .name="capmix", .area=(const capmix_mem_t **const) &octa_memory_map },
 	ENDA
 };
 
