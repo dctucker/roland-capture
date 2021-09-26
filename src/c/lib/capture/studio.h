@@ -153,6 +153,10 @@ DEF_MEMAREA(settings_16) = {
 	{ .offset=0x0100, .name="auto-sens", MEMAREA(auto_sens_16) },
 	ENDA
 };
+
+DEF_MEMAREA(studio_load) = {
+	{ .name = "data", .type = TStudioLoad },
+};
 #endif
 
 static const capmix_mem_t studio_memory_map[] = {
@@ -165,8 +169,8 @@ static const capmix_mem_t studio_memory_map[] = {
 	[0x6] = { .offset = O_INPUT_MON, .name = capmix_str.top_map[0x6] , MEMAREA(input_16_monitor) },
 	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
 	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
-	[0xa] = { .offset = O_METERS   , .name = capmix_str.top_map[0xa] , MEMAREA(meters_16) },
-	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] },
+	[0xa] = { .offset = O_METERS   , .name = capmix_str.top_map[0xa] , MEMAREA(meters_16)     },
+	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] , MEMAREA(studio_load)   },
 	ENDA
 };
 DEF_MEMAREA(studio_top_map) = {
@@ -174,4 +178,4 @@ DEF_MEMAREA(studio_top_map) = {
 	ENDA
 };
 
-const capmix_addr_t studio_load_map[2048] = {};
+#include "studio_load.h"
