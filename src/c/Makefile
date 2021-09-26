@@ -65,6 +65,7 @@ bin/list-memory: $(OBJ) app/list-memory.c
 
 bin/main: $(OBJ) app/main.c
 	$(CC) $(LIBS) $(CFLAGS) -o bin/main $(addprefix $(OBJDIR)/,$(OBJ)) app/main.c
+	cd bin && ln -sf main octa && ln -sf main studio && cd -
 	# -L$(OBJDIR)/lib -lcapmix
 
 bin/main-dynamic: $(OBJ) app/main.c

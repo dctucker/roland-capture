@@ -15,7 +15,7 @@ static const capmix_str_t capmix_str = {
 		[0x8] = "master",
 		[LINE]= "line",
 		[0xa] = "meters",
-		[0xf] = "load_settings",
+		[0xf] = "load",
 	},
 	.patchbay = { "1-2", "3-4", "5-6", "7-8", "9-10", },
 	.type = "type",

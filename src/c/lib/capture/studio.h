@@ -170,7 +170,7 @@ static const capmix_mem_t studio_memory_map[] = {
 	[0x7] = { .offset = O_DAW_MON  , .name = capmix_str.top_map[0x7] , MEMAREA(daw_monitor)   },
 	[0x8] = { .offset = O_MASTER   , .name = capmix_str.top_map[0x8] , MEMAREA(master)        },
 	[0xa] = { .offset = O_METERS   , .name = capmix_str.top_map[0xa] , MEMAREA(meters_16)     },
-	[0xf] = { .offset = 0x01000000 , .name = capmix_str.top_map[0xf] , MEMAREA(studio_load)   },
+	[0xf] = { .offset = O_LOAD     , .name = capmix_str.top_map[0xf] , MEMAREA(studio_load)   },
 	ENDA
 };
 DEF_MEMAREA(studio_top_map) = {
