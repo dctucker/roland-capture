@@ -239,6 +239,16 @@ static capmix_type_info_t capmix_types[NTypes] = {
 		.parent = TValue,
 		//.format = capmix_rawdata_format,
 	},
+	[TOctaLoad] = {
+		.type = TOctaLoad,
+		.name = "RawData",
+		.parent = TRawData,
+	},
+	[TStudioLoad] = {
+		.type = TStudioLoad,
+		.name = "RawData",
+		.parent = TRawData,
+	},
 };
 
 /**
@@ -305,11 +315,12 @@ int                 capmix_type_size         (capmix_type_t type)
 {
 	switch(type)
 	{
-		case TRawData: return 0x47d*2;
-		case TVolume : return 6;
-		case TPan    : return 4;
-		case TMeter  : return 2;
-		default      : return 1;
+		case TStudioLoad : return 1504 * 2;
+		case TOctaLoad   : return 0x47d * 2;
+		case TVolume     : return 6;
+		case TPan        : return 4;
+		case TMeter      : return 2;
+		default          : return 1;
 	}
 }
 

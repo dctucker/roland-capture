@@ -41,6 +41,8 @@ typedef enum capmix_type_e {
 	TAutoSens,    ///< Enumerated value representing auto-sens state. Parent: `TEnum`
 	TReverbTime,  ///< Scaled reverb time. Parent: `TScaled`
 	TRawData,     ///< An arbitrary fields of bytes. Parent: `TValue`
+	TOctaLoad,    ///< Populated by load_settings on OCTA-CAPTURE. Parent: `TRawData`
+	TStudioLoad,  ///< Populated by load_settings on STUDIO-CAPTURE. Parent: `TRawData`
 	NTypes,       ///< dummy value to represent the number of enumerated types
 } capmix_type_t;
 
