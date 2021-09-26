@@ -241,12 +241,12 @@ static capmix_type_info_t capmix_types[NTypes] = {
 	},
 	[TOctaLoad] = {
 		.type = TOctaLoad,
-		.name = "RawData",
+		.name = "OctaLoad",
 		.parent = TRawData,
 	},
 	[TStudioLoad] = {
 		.type = TStudioLoad,
-		.name = "RawData",
+		.name = "StudioLoad",
 		.parent = TRawData,
 	},
 };
