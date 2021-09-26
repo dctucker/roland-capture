@@ -112,6 +112,10 @@ int   main(int argc, const char **argv)
 	{
 		meters = true;
 	}
+	else if( strcmp(base, "octa") == 0 )
+		capmix_set_model(MOcta);
+	else if( strcmp(base, "studio") == 0 )
+		capmix_set_model(MStudio);
 	free(a0);
 
 	/*
@@ -125,14 +129,12 @@ int   main(int argc, const char **argv)
 	}
 	*/
 
-	//capmix_set_model(MOcta);
-	capmix_set_model(MStudio);
 
 	const char *control ="", *value ="";
 	int a = 0;
 	const char *arg0 = argv[a++];
-	if( argc > 1 ) control = argv[a++];
-	if( argc > 2 ) value   = argv[a++];
+	if( argc > a ) control = argv[a++];
+	if( argc > a ) value   = argv[a++];
 	//printf("args: control=%s value=%s\n", control, value);
 
 	if( strlen(control) > 0 ) // non-interactive

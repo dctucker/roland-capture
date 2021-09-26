@@ -315,8 +315,8 @@ int                 capmix_type_size         (capmix_type_t type)
 {
 	switch(type)
 	{
-		case TStudioLoad : return 1504 * 2;
-		case TOctaLoad   : return 0x47d * 2;
+		case TStudioLoad : return 0x0b60 * 2;
+		case TOctaLoad   : return 0x087a * 2;
 		case TVolume     : return 6;
 		case TPan        : return 4;
 		case TMeter      : return 2;

@@ -11,6 +11,7 @@
 //const char *port_name = "hw:CARD=STUDIOCAPTURE,DEV=0,SUBDEV=1";
 //const char *port_name = "24:1";
 static const char *const port_names[] = {
+	[MNone]   = "",
 	[MQuad]   = "QUAD-CAPTURE:1",
 	[MOcta]   = "OCTA-CAPTURE:1",
 	[MStudio] = "STUDIO-CAPTURE:1",
