@@ -104,6 +104,8 @@ DEF_MEMAREA(auto_sens_8) = {
 // auto sens cancel  : 02=2, 03=0
 // auto sens off     : 02=0
 DEF_MEMAREA(settings_8) = {
+	{ .offset=0x0001, .name="sample_rate", .type=TByte }, // possibly model-specific TEnum: { 44100, 48000, 96000, 192000 }
+	{ .offset=0x0002, .name="reset", .type=TByte }, // possibly model-specific TEnum: { 44100, 48000, 96000, 192000 }
 	{ .offset=0x0004, .name="input_selector_auto"  , .type=TBoolean },
 	{ .offset=0x0005, .name="sync", .type=TBoolean }, // auto
 	{ .offset=0x0006, .name="stereo-link", .type=TBoolean }, // paired
