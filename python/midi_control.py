@@ -45,7 +45,7 @@ def main(argv):
 
 	if args.control:
 		app.interactive = False
-		if args.control not in Capture.memory_names():
+		if args.control not in app.memory_names():
 			print("Unknown control name: %s" % args.control)
 			sys.exit(3)
 		if args.value:

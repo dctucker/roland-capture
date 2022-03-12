@@ -2,24 +2,24 @@ from ctypes import *
 
 class UNPACKED(Union):
 	_fields_ = [
-		("discrete", c_uint),
+		("discrete"  , c_uint ),
 		("continuous", c_float),
 	]
 
 class TYPE(Structure):
 	_fields_ = [
-		("type", c_uint),
-		("parent", c_uint),
-		("min",  UNPACKED),
-		("max",  UNPACKED),
-		("step", UNPACKED),
-		("size", c_int),
-		("unpack", c_void_p),
-		("parse",  c_void_p),
-		("format", c_void_p),
-		("pack",   c_void_p),
-		("name", c_char_p),
-		("_enum_names", POINTER(c_char_p)),
+		("type"       , c_uint   ),
+		("parent"     , c_uint   ),
+		("min"        , UNPACKED ),
+		("max"        , UNPACKED ),
+		("step"       , UNPACKED ),
+		("size"       , c_int    ),
+		("unpack"     , c_void_p ),
+		("parse"      , c_void_p ),
+		("format"     , c_void_p ),
+		("pack"       , c_void_p ),
+		("name"       , c_char_p ),
+		("_enum_names", POINTER(c_char_p) ),
 	]
 	def enum_names(self):
 		return [ x.decode() for x in self._enum_names[0:self.max.discrete+1] ]
@@ -27,11 +27,11 @@ class TYPE(Structure):
 
 class EVENT(Structure):
 	_fields_ = [
-		("sysex_data_length", c_int),
-		("sysex", c_void_p),
-		("addr", c_uint),
-		("type_info", POINTER(TYPE)),
-		("unpacked", UNPACKED),
+		("sysex_data_length", c_int    ),
+		("sysex"            , c_void_p ),
+		("addr"             , c_uint   ),
+		("type_info"        , POINTER(TYPE)),
+		("unpacked"         , UNPACKED ),
 	]
 	def type(self):
 		return self.type_info.contents.type

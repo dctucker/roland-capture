@@ -8,4 +8,4 @@ if [ -z "$endpoint" ]; then
 	endpoint_filter="usb.endpoint_address.number >= 0"
 fi
 capdata="-T fields -e usb.capdata"
-tshark -i usbmon3 -Y "$endpoint_filter && $dir_filter" $capdata -l -q "$@" | sed -E 's/..(.{6})/\1 /g'
+tshark -i usbmon3 -Y "$endpoint_filter && $dir_filter" $capdata -l -q "$@" #| sed -E 's/..(.{6})/\1 /g'

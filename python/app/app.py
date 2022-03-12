@@ -123,6 +123,9 @@ class App(object):
 			self.interface = MainCli(self.controller, self.mixer)
 		return True
 
+	def memory_names(self):
+		return Capture.memory_names()
+
 	def main(self):
 		self.setup_interface() or self.setup_interface()
 		self.setup_midi()
