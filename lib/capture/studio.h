@@ -158,6 +158,7 @@ DEF_MEMAREA(settings_16) = {
 
 DEF_MEMAREA(studio_load) = {
 	{ .name = "data", .type = TStudioLoad },
+	ENDA
 };
 #endif
 
