@@ -248,7 +248,7 @@ class TrackControl(Control):
 		if isinstance(value, Scaled):
 			position /= value.step
 
-		self.slider.setSliderPosition(position)
+		self.slider.setSliderPosition(int(position))
 
 		self.slider.setTracking(True)
 		self.slider.blockSignals(False)
@@ -316,7 +316,7 @@ class Dial(QDial):
 		th = self.fm.height()
 		s = self.size()
 		d = 40  #max(s.height(), s.width())
-		x = s.width()/2 - d/2
+		x = int(s.width()/2 - d/2)
 		min_angle = 240
 		max_angle = -300
 		center_angle = 90
@@ -326,17 +326,17 @@ class Dial(QDial):
 			p.setPen(pen0)
 			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, max_angle * 16)
 			p.setPen(pen1)
-			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, center_angle * 16, angle/2 * 16)
+			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, center_angle * 16, int(angle/2 * 16))
 			p.setPen(pen2)
 		else:
 			angle = max_angle * (self.value() - self.minimum()) / (self.maximum() - self.minimum())
 			p.setPen(pen0)
 			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, max_angle * 16)
 			p.setPen(pen1)
-			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, angle * 16)
+			p.drawArc(x+o, 0+o, d-o-o-x, d-o-o-x, min_angle * 16, int(angle * 16))
 			p.setPen(pen2)
 
-		p.drawText(o/2 + s.width()/2 - tw/2, s.height()/2, self.text)
+		p.drawText(int(o/2 + s.width()/2 - tw/2), int(s.height()/2), self.text)
 
 class Knob(TrackControl):
 	def __init__(self, name):
