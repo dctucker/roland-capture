@@ -1,0 +1,88 @@
+static const char *const stereo = "stereo";
+static const char *const volume = "volume";
+static const char *const pre = "pre";
+static const char *const post = "post";
+
+static const capmix_str_t capmix_str = {
+	.top_map = {
+		[0x0] = "initial_setting",
+		[0x2] = "settings",
+		[0x3] = "patchbay",
+		[0x4] = "reverb",
+		[0x5] = "preamp",
+		[0x6] = "input_monitor",
+		[0x7] = "daw_monitor",
+		[0x8] = "master",
+		[LINE]= "line",
+		[0xa] = "meters",
+		[0xf] = "load",
+	},
+	.patchbay = { "1-2", "3-4", "5-6", "7-8", "9-10", },
+	.type = "type",
+	.reverb_types = {
+		[0x1] = "echo",
+		[0x2] = "room",
+		[0x3] = "small_hall",
+		[0x4] = "large_hall",
+		[0x5] = "plate",
+	},
+	.reverb_params = {
+		[0x1] = "pre_delay" ,
+		[0x2] = "time"      ,
+	},
+	.preamp_params = {
+		[0x0] = "+48"       ,
+		[0x1] = "lo-cut"    ,
+		[0x2] = "phase"     ,
+		[0x3] = "hi-z"      ,
+		[0x4] = "sens"      ,
+		[0x5] = stereo      ,
+		[0x6] = "bypass"    ,
+		[0x7] = "gate"      ,
+		[0x8] = "attack"    ,
+		[0x9] = "release"   ,
+		[0xa] = "threshold" ,
+		[0xb] = "ratio"     ,
+		[0xc] = "gain"      ,
+		[0xd] = "knee"      ,
+	},
+	.source = "source",
+	.monitors = { "a","b","c","d", },
+	.channel = "channel",
+	.channels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", },
+	.channel_params = {
+		[0x0] = stereo,
+		[0x1] = "attenuation",
+		[0x2] = "solo",
+		[0x3] = "mute",
+		[0x4] = "pan",
+		[0x8] = volume,
+		[0xe] = "reverb",
+	},
+	.master = "master",
+	.master_channels = {
+		"direct_monitor",
+		"daw_monitor",
+	},
+	.left_right = {
+		[0x0] = "left",
+		[0x1] = "right",
+	},
+	.master_params = {
+		[0x0] = stereo,
+		[0x1] = volume,
+	},
+	.reverb_return = "reverb_return",
+	.link = "link",
+	.meters = {
+		"active",
+		"pre"   ,
+		"post"  ,
+		"x"     ,
+		"line"  ,
+		"daw"   ,
+		"gr"    ,
+		"gate"  ,
+		"clip"  ,
+	},
+};
