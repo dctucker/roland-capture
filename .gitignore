@@ -1,1 +1,10 @@
 __pycache__
+bin
+*.o
+*.so
+*.i
+*.s
+obj
+doc/html
+doc/xml
+doc/_build
