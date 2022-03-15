@@ -88,7 +88,12 @@ Bus 003 Device 004: ID 0582:0160 Roland Corp. STUDIO-CAPTURE
         bEndpointAddress     0x8c  EP 12 IN
 
 
+https://patchwork.kernel.org/project/alsa-devel/patch/20210422120413.457-2-tiwai@suse.de/
+
+
 # unrecognized comparison
+
+06 24 f1 01 00 00
 
 07 24 01 01 00 01 00 0b 24 02 01 0a 04 18 01 44 ac 00    # 44100
 07 24 01 01 00 01 00 0b 24 02 01 0a 04 18 01 80 bb 00    # 48000
@@ -100,5 +105,30 @@ Bus 003 Device 004: ID 0582:0160 Roland Corp. STUDIO-CAPTURE
 07 24 01 07 00 01 00 0b 24 02 01 12 04 18 01 00 77 01    # 96000
 07 24 01 07 00 01 00 0b 24 02 01 08 04 18 01 00 ee 02    # 192000
 
-                             0000 1010
-                             0001 0010
+06 24 f1 02 02 02     # MIDI Device, 2-in 2-out
+
+
+06 24 f1 02 02 02     # MIDI Device, 2-in 2-out
+len=6 type=0x24=interface subtype=2=FORMAT_TYPE 
+len=6 descType=0x24=interface descSubType=0xf1 ???
+
+Type I format type descriptor
+07 24 01 01 00 01 00 0b 24 02 01 0a 04 18 01 44 ac 00    # 44100
+|  |  |  |  |     |     |  |  |  |  |  |  |  |
+|  |  |  |  |     |     |  |  |  |  |  |  |  tSamFreq=44100
+|  |  |  |  |     |     |  |  |  |  |  |  bSamFreqType=1
+|  |  |  |  |     |     |  |  |  |  |  bBitResolution=24
+|  |  |  |  |     |     |  |  |  |  bSubFrameSize=4
+|  |  |  |  |     |     |  |  |  bnrchannels=0xa
+|  |  |  |  |     |     |  |  bFormatType=1=FORMAT_TYPE_1
+|  |  |  |  |     |     |  subtype=2=FORMAT_TYPE
+|  |  |  |  |     |     type=24=interface
+|  |  |  |  |     len=0x000b
+|  |  |  |  revision=0x0100
+|  |  |  terminalLink=1 
+|  |  subtype=1=AS_GENERAL
+|  type=0x24=interface
+len=7
+
+
+
