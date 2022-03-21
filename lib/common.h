@@ -4,7 +4,7 @@
 
 /// the type of audio card
 typedef enum capmix_model_e {
-	MNone,
+	MNone = 0,
 	MDuo, // (pretty sure this does not have a software mixer interface)
 	MQuad,
 	MOcta,
