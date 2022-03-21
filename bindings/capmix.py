@@ -47,7 +47,7 @@ def listener(event):
 class Capmix(object):
 	def __init__(self):
 		lib = cdll.LoadLibrary("obj/lib/libcapmix.so")
-		lib.capmix_type.restype = POINTER(TYPE)
+		self.setup_returns(lib)
 		#self.connect             = lib.capmix_connect
 		self.listen              = lib.capmix_listen
 		self.get                 = lib.capmix_get
@@ -55,12 +55,21 @@ class Capmix(object):
 		self.disconnect          = lib.capmix_disconnect
 		self.memory_get_unpacked = lib.capmix_memory_get_unpacked
 		self.memory_set_unpacked = lib.capmix_memory_set_unpacked
-		self.parse_addr          = lib.capmix_parse_addr
-		self.addr_suffix         = lib.capmix_addr_suffix
 		self.addr_type           = lib.capmix_addr_type
 		self.unpack_type         = lib.capmix_unpack_type
 		self.parse_type          = lib.capmix_parse_type
 		self.lib                 = lib
+
+	@staticmethod
+	def setup_returns(lib):
+		lib.capmix_type.restype = POINTER(TYPE)
+		lib.capmix_addr_type    = TYPE
+		lib.capmix_get.restype  = EVENT
+		lib.capmix_put.restype  = EVENT
+		lib.capmix_memory_get_unpacked = UNPACKED
+
+	def set_model(self, m):
+		self.lib.capmix_set_model(m)
 
 	def connect(self, l):
 		self._listener = l
@@ -81,9 +90,16 @@ class Capmix(object):
 		self.lib.capmix_pack_type(ty, unpacked, ret)
 		return ret.value.decode()
 
+	def parse_addr(self, desc):
+		ret = self.lib.capmix_parse_addr(desc.encode())
+		return ret
+
 	def type(self, ty):
 		ret = self.lib.capmix_type(ty).contents
 		return ret
+
+	def addr_suffix(self, addr):
+		return self.lib.capmix_addr_suffix(addr).decode()
 
 capmix = Capmix()
 

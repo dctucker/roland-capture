@@ -63,7 +63,7 @@ void                         capmix_print_map (const capmix_mem_t *, const char 
 static const capmix_mem_t *  capmix_lookup_map(const capmix_mem_t *, const char *);
 
 _API void              capmix_set_model   (capmix_model_t);
-_API uint32_t          capmix_parse_addr  (const char *);
+_API capmix_addr_t     capmix_parse_addr  (const char *);
 _API void              capmix_format_addr (capmix_addr_t, char *);
 _API capmix_type_t     capmix_addr_type   (capmix_addr_t);
 _API const char *      capmix_addr_suffix (capmix_addr_t);
