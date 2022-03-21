@@ -303,7 +303,7 @@ class Dial(QDial):
 		distance = abs(dy)
 		sign = (1.0 if dy > 0 else -1.0)
 		new_value = self.base_value + self.scale_factor * distance * sign
-		self.setSliderPosition(new_value)
+		self.setSliderPosition(int(new_value))
 
 	def paintEvent(self, event):
 		o = 4
