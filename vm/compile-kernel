@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd ~/Development/linux
+make O=~/Development/roland-capture/vm -j"$(grep -c ^processor /proc/cpuinfo)" bzImage
+EXIT=$?
+cd -
+exit $EXIT

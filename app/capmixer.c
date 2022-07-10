@@ -57,9 +57,9 @@ void  right()
 		cursor.x += 1;
 }
 
-void  decrement(){}
-void  increment(){}
-void  zero(){}
+void  decrement(){} // TODO
+void  increment(){} // TODO
+void  zero(){} // TODO
 void  monitor(uint8_t mon)
 {
 	current_monitor = mon % 4;
@@ -495,8 +495,8 @@ int   main(int argc, char ** argv)
 {
 	log_file = fopen("capmixer.log", "w");
 
-	model = MOcta;
-	//model = MStudio;
+	//model = MOcta;
+	model = MStudio;
 	capmix_set_model(model);
 
 	capmix_connect(on_capmix_event);
