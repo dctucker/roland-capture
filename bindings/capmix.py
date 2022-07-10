@@ -73,7 +73,7 @@ class Capmix(object):
 
 	def connect(self, l):
 		self._listener = l
-		self.lib.capmix_connect(listener)
+		return self.lib.capmix_connect(listener)
 
 	def format_addr(self, addr):
 		ret = create_string_buffer(b'\000' * 64)

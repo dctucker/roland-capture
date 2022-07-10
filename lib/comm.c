@@ -64,6 +64,7 @@ int   capmix_setup_midi( capmix_listener_t *listener )
 	port_out = err;
 	
 	//connect application to device
+	printf("Trying %s...\n", port_name);
 	TRY_SEQ( snd_seq_parse_address(seq, &device_port, port_name)          , "Port not found")
 	TRY_SEQ( snd_seq_connect_from(seq, port_in , device_port.client, device_port.port) , "Unable to connect input port" )
 	TRY_SEQ( snd_seq_connect_to  (seq, port_out, device_port.client, device_port.port) , "Unable to connect output port" )
