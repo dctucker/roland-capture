@@ -97,10 +97,10 @@ index bbff0923d264..2688fe80cdbf 100644
  
 diff --git a/sound/usb/mixer_capture.c b/sound/usb/mixer_capture.c
 new file mode 100644
-index 000000000000..78f2f7066290
+index 000000000000..6551dbf6564b
 --- /dev/null
 +++ b/sound/usb/mixer_capture.c
-@@ -0,0 +1,776 @@
+@@ -0,0 +1,774 @@
 +#include <linux/slab.h>
 +#include <linux/usb.h>
 +#include <linux/usb/audio-v2.h>
@@ -802,29 +802,27 @@ index 000000000000..78f2f7066290
 +	for (mon = 'A'; mon <= 'D'; mon++) {
 +		m = (mon - 'A') * 0x1000;
 +
-+		SND_CAPTURE_NEW_MON_CTL(0x60000 + m, stereo        , "Direct Monitor %c Stereo Switch",  8, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x60002 + m, solo          , "Direct Monitor %c Solo Switch"  , 16, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x60003 + m, mute          , "Direct Monitor %c Mute Switch"  , 16, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x60004 + m, pan           , "Direct Monitor %c Pan"          , 16, USB_MIXER_U16, SND_CAPTURE_PAN_CENTER);
-+		SND_CAPTURE_NEW_MON_CTL(0x60008 + m, volume        , "Direct Monitor %c Volume"       , 16, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
-+		if (mon == 'A') {
-+			SND_CAPTURE_NEW_MON_CTL(0x60008 + m, reverb    , "Direct Monitor %c Reverb Volume", 16, USB_MIXER_U32, 0x000000);
-+		}
++		SND_CAPTURE_NEW_MON_CTL(0x60000+m, stereo        , "Direct Monitor %c Stereo Switch",  8, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x60002+m, solo          , "Direct Monitor %c Solo Switch"  , 16, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x60003+m, mute          , "Direct Monitor %c Mute Switch"  , 16, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x60004+m, pan           , "Direct Monitor %c Pan"          , 16, USB_MIXER_U16, SND_CAPTURE_PAN_CENTER);
++		SND_CAPTURE_NEW_MON_CTL(0x60008+m, volume        , "Direct Monitor %c Volume"       , 16, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
++		if (mon == 'A')
++			SND_CAPTURE_NEW_MON_CTL(0x60008+m, reverb    , "Direct Monitor %c Reverb Volume", 16, USB_MIXER_U32, 0x000000);
 +
-+		SND_CAPTURE_NEW_MON_CTL(0x70000 + m, daw_stereo        , "DAW %c Stereo Switch"          ,  5, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x70002 + m, daw_solo          , "DAW %c Solo Switch"            , 10, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x70003 + m, daw_mute          , "DAW %c Mute Switch"            , 10, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x70004 + m, daw_pan           , "DAW %c Pan"                    , 10, USB_MIXER_U16, SND_CAPTURE_PAN_CENTER);
-+		SND_CAPTURE_NEW_MON_CTL(0x70008 + m, daw_volume        , "DAW %c Volume"                 , 10, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
-+		if (mon == 'A') {
-+			SND_CAPTURE_NEW_MON_CTL(0x80007 + m, return        , "Master %c Reverb Return Volume",  1, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
-+		}
++		SND_CAPTURE_NEW_MON_CTL(0x70000+m, daw_stereo    , "DAW %c Stereo Switch"          ,  5, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x70002+m, daw_solo      , "DAW %c Solo Switch"            , 10, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x70003+m, daw_mute      , "DAW %c Mute Switch"            , 10, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x70004+m, daw_pan       , "DAW %c Pan"                    , 10, USB_MIXER_U16, SND_CAPTURE_PAN_CENTER);
++		SND_CAPTURE_NEW_MON_CTL(0x70008+m, daw_volume    , "DAW %c Volume"                 , 10, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
 +
-+		SND_CAPTURE_NEW_MON_CTL(0x8000d + m, master_link         , "Master %c Link Switch"                 , 16, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x80000 + m, master_direct_stereo, "Master %c Direct Monitor Stereo Switch", 16, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x80001 + m, master              , "Master %c Direct Monitor Volume"       , 16, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
-+		SND_CAPTURE_NEW_MON_CTL(0x90000 + m, master_daw_stereo   , "Master %c DAW Stereo Switch"           , 16, USB_MIXER_BOOLEAN, 0);
-+		SND_CAPTURE_NEW_MON_CTL(0x90001 + m, master              , "Master %c DAW Volume"                  , 16, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
++		if (mon == 'A')
++			SND_CAPTURE_NEW_MON_CTL(0x80007+m, return          , "Master %c Reverb Return Volume",  1, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
++		SND_CAPTURE_NEW_MON_CTL(0x8000d+m, master_link         , "Master %c Link Switch"                 , 16, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x80000+m, master_direct_stereo, "Master %c Direct Monitor Stereo Switch", 16, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x80001+m, master              , "Master %c Direct Monitor Volume"       , 16, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
++		SND_CAPTURE_NEW_MON_CTL(0x90000+m, master_daw_stereo   , "Master %c DAW Stereo Switch"           , 16, USB_MIXER_BOOLEAN, 0);
++		SND_CAPTURE_NEW_MON_CTL(0x90001+m, master              , "Master %c DAW Volume"                  , 16, USB_MIXER_U32, SND_CAPTURE_VOLUME_0DB);
 +	}
 +
 +	SND_CAPTURE_NEW_CTL(0x40000, reverb_type  , "Reverb Type"            ,  1, USB_MIXER_U8, 1);
