@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+make
+scp libasound_module_ctl_capmix.so archguest:
+ssh archguest sudo cp libasound_module_ctl_capmix.so /usr/lib/alsa-lib/
