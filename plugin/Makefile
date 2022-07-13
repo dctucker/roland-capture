@@ -23,7 +23,7 @@ all: Makefile $(SND_CTL_BIN)
 
 dep:
 	@echo DEP $@
-	$(Q)for i in *.c; do $(CC) -MM $(CFLAGS) "$${i}" ; done > makefile.dep
+	$(Q)for i in *.{c,h}; do $(CC) -MM $(CFLAGS) "$${i}" ; done > makefile.dep
 
 -include makefile.dep
 
