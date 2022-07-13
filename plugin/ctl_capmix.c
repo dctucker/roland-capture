@@ -9,6 +9,8 @@
 #include <alsa/asoundlib.h>
 #include <alsa/control_external.h>
 
+#include "controls.h"
+
 typedef struct snd_ctl_capmix {
 	snd_ctl_ext_t ext;
 	char name[64];
@@ -28,15 +30,13 @@ static void capmix_close(snd_ctl_ext_t *ext)
 	LADSPAcontrolUnMMAP(capmix->control_data);
 	LADSPAunload(capmix->library);
 	*/
-	SNDERR("freeing");
 	free(capmix);
 }
 
 static int capmix_elem_count(snd_ctl_ext_t *ext)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
-	SNDERR("elem count 1");
-	return 1;//capmix->num_input_controls;
+	return capmix_ctl_count;
 }
 
 static int capmix_elem_list(snd_ctl_ext_t *ext, unsigned int offset,
@@ -44,11 +44,14 @@ static int capmix_elem_list(snd_ctl_ext_t *ext, unsigned int offset,
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_MIXER);
-	if (offset == 0) {
-		snd_ctl_elem_id_set_name(id, capmix->name);
-		SNDERR("elem list 0");
+	snd_ctl_elem_id_set_device(id, offset);
+	if (offset < capmix_ctl_count) {
+		snd_ctl_elem_id_set_name(id, capmix_ctl_map[offset].name);
+		snd_ctl_elem_id_set_numid(id, capmix_ctl_map[offset].id);
 	}
-	//snd_ctl_elem_id_set_device(id, offset);
+	else {
+		SNDERR("unknown element %d", offset);
+	}
 	return 0;
 }
 
@@ -60,32 +63,31 @@ static snd_ctl_ext_key_t capmix_find_elem(snd_ctl_ext_t *ext,
 	unsigned int i, numid;
 
 	numid = snd_ctl_elem_id_get_numid(id);
-	name = snd_ctl_elem_id_get_name(id);
 
-	if (!strcmp(name, capmix->name)) {
-		SNDERR("Found element %s", name);
-		return 26;
+	if (0 < numid && numid < capmix_ctl_count) {
+		return capmix_ctl_map[numid-1].id;
 	}
-	/*
-	for (i = 0; i < capmix->num_input_controls; i++) {
-		key = i;
-		if (!strcmp(name, capmix->control_info[key].name)) {
-			return key;
+
+	name = snd_ctl_elem_id_get_name(id);
+	for (i = 0; i < capmix_ctl_count; i++ ) {
+		if (!strcmp(name, capmix_ctl_map[i].name)) {
+			return capmix_ctl_map[i].id;
 		}
 	}
-	*/
-	SNDERR("Could not find element");
 
+	SNDERR("Could not find element %d / %s", numid, name);
 	return SND_CTL_EXT_KEY_NOT_FOUND;
 }
 
 static int capmix_get_attribute(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
-		int *type, unsigned int *acc, unsigned int *count)
+	int *type, unsigned int *acc, unsigned int *count)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	*type = SND_CTL_ELEM_TYPE_INTEGER;
-	*acc = SND_CTL_EXT_ACCESS_READWRITE;
-	*count = capmix->count;
+	*acc = SND_CTL_EXT_ACCESS_READWRITE |
+	       SND_CTL_EXT_ACCESS_TLV_READWRITE |
+	       SND_CTL_EXT_ACCESS_TLV_CALLBACK;
+	*count = 1;
 	return 0;
 }
 
@@ -93,8 +95,8 @@ static int capmix_get_integer_info(snd_ctl_ext_t *ext,
 	snd_ctl_ext_key_t key, long *imin, long *imax, long *istep)
 {
 	*istep = 1;
-	*imin = 0;
-	*imax = 100;
+	*imin = -70;
+	*imax = 12;
 	return 0;
 }
 static int capmix_read_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
@@ -107,6 +109,8 @@ static int capmix_read_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
 		return 0;
 	if (*value == capmix->value)
 		return 0;
+
+	// TODO get from libcapmix
 	*value = capmix->value;
 	/*
 	for(i = 0; i < capmix->control_data->channels; i++) {
@@ -130,6 +134,7 @@ static int capmix_write_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
 	if (key != 26)
 		return 0;
 
+	// TODO set via libcapmix
 	capmix->value = *value;
 	return 1;
 	/*
@@ -151,16 +156,28 @@ static int capmix_read_event(snd_ctl_ext_t *ext ATTRIBUTE_UNUSED,
 }
 
 static snd_ctl_ext_callback_t capmix_ext_callback = {
-	.close = capmix_close,
-	.elem_count = capmix_elem_count,
-	.elem_list = capmix_elem_list,
-	.find_elem = capmix_find_elem,
-	.get_attribute = capmix_get_attribute,
-	.get_integer_info = capmix_get_integer_info,
-	.read_integer = capmix_read_integer,
-	.write_integer = capmix_write_integer,
-	.read_event = capmix_read_event,
+	.close               = capmix_close,
+	.elem_count          = capmix_elem_count,
+	.elem_list           = capmix_elem_list,
+	.find_elem           = capmix_find_elem,
+	.get_attribute       = capmix_get_attribute,
+	.get_integer_info    = capmix_get_integer_info,
+	//.get_enumerated_info = capmix_get_enumerated_info,
+	//.get_enumerated_name = capmix_get_enumerated_name,
+	.read_integer        = capmix_read_integer,
+	.write_integer       = capmix_write_integer,
+	//.write_enumerated    = capmix_write_enumerated,
+	.read_event          = capmix_read_event,
 };
+
+int capmix_tlv_rw(snd_ctl_ext_t *ext,
+    snd_ctl_ext_key_t key, int op_flag, unsigned int numid,
+    unsigned int *tlv, unsigned int tlv_size)
+{
+	//unsigned int *p;
+	//return snd_tlv_parse_dB_info(tlv, tlv_size, p);
+	return 0; // TODO
+}
 
 SND_CTL_PLUGIN_DEFINE_FUNC(capmix)
 {
@@ -198,6 +215,7 @@ SND_CTL_PLUGIN_DEFINE_FUNC(capmix)
 	capmix->ext.poll_fd = -1;
 	capmix->ext.callback = &capmix_ext_callback;
 	capmix->ext.private_data = capmix;
+	capmix->ext.tlv.c = capmix_tlv_rw;
 
 	err = snd_ctl_ext_create(&capmix->ext, name, mode);
 	if (err < 0) {
@@ -206,7 +224,6 @@ SND_CTL_PLUGIN_DEFINE_FUNC(capmix)
 	}
 
 	*handlep = capmix->ext.handle;
-	SNDERR("Capmix init complete");
 	return 0;
 }
 SND_CTL_PLUGIN_SYMBOL(capmix);
