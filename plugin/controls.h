@@ -667,13 +667,13 @@ const capmix_ctl_map_t capmix_ctl_map[] = {
 	{0x8000d, "Master A Input Link"},
 	{0x81000, "Master B Input Stereo"},
 	{0x81001, "Master B Input Volume"},
-	{0x8100d, "Master B Input Link"},
+	//{0x8100d, "Master B Input Link"}, // TODO busted
 	{0x82000, "Master C Input Stereo"},
 	{0x82001, "Master C Input Volume"},
-	{0x8200d, "Master C Input Link"},
+	//{0x8200d, "Master C Input Link"}, // TODO busted
 	{0x83000, "Master D Input Stereo"},
 	{0x83001, "Master D Input Volume"},
-	{0x8300d, "Master D Input Link"},
+	//{0x8300d, "Master D Input Link"}, // TODO busted
 	{0x90000, "Master A DAW Stereo"},
 	{0x90001, "Master A DAW Volume"},
 	{0x91000, "Master B DAW Stereo"},
