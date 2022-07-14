@@ -9,6 +9,7 @@
 #include <alsa/asoundlib.h>
 #include <alsa/control_external.h>
 
+#include "../lib/capmix.h"
 #include "controls.h"
 
 typedef struct snd_ctl_capmix {
@@ -18,7 +19,7 @@ typedef struct snd_ctl_capmix {
 	int count;
 } snd_ctl_capmix_t;
 
-static void capmix_close(snd_ctl_ext_t *ext)
+static void               capmix_close(snd_ctl_ext_t *ext)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	int i;
@@ -33,14 +34,13 @@ static void capmix_close(snd_ctl_ext_t *ext)
 	free(capmix);
 }
 
-static int capmix_elem_count(snd_ctl_ext_t *ext)
+static int                capmix_elem_count(snd_ctl_ext_t *ext)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	return capmix_ctl_count;
 }
 
-static int capmix_elem_list(snd_ctl_ext_t *ext, unsigned int offset,
-		snd_ctl_elem_id_t *id)
+static int                capmix_elem_list(snd_ctl_ext_t *ext, unsigned int offset, snd_ctl_elem_id_t *id)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	snd_ctl_elem_id_set_interface(id, SND_CTL_ELEM_IFACE_MIXER);
@@ -55,8 +55,7 @@ static int capmix_elem_list(snd_ctl_ext_t *ext, unsigned int offset,
 	return 0;
 }
 
-static snd_ctl_ext_key_t capmix_find_elem(snd_ctl_ext_t *ext,
-		const snd_ctl_elem_id_t *id)
+static snd_ctl_ext_key_t  capmix_find_elem(snd_ctl_ext_t *ext, const snd_ctl_elem_id_t *id)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	const char *name;
@@ -79,28 +78,63 @@ static snd_ctl_ext_key_t capmix_find_elem(snd_ctl_ext_t *ext,
 	return SND_CTL_EXT_KEY_NOT_FOUND;
 }
 
-static int capmix_get_attribute(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
-	int *type, unsigned int *acc, unsigned int *count)
+static int                capmix_get_attribute(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, int *type, unsigned int *acc, unsigned int *count)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
-	*type = SND_CTL_ELEM_TYPE_INTEGER;
-	*acc = SND_CTL_EXT_ACCESS_READWRITE |
-	       SND_CTL_EXT_ACCESS_TLV_READWRITE |
-	       SND_CTL_EXT_ACCESS_TLV_CALLBACK;
+
+	auto at = capmix_addr_type(key);
+	switch( at )
+	{
+		case TBoolean:
+			*type = SND_CTL_ELEM_TYPE_BOOLEAN;
+			*acc = SND_CTL_EXT_ACCESS_READWRITE;
+			break;
+		case TVolume:
+		case TPan:
+		case TMeter:
+		case TClipMask:
+		case TScaled:
+		case TSens:
+		case TThreshold:
+		case TGain:
+		case TGate:
+		case TReverbTime:
+			*type = SND_CTL_ELEM_TYPE_INTEGER;
+			*acc = SND_CTL_EXT_ACCESS_READWRITE |
+			       SND_CTL_EXT_ACCESS_TLV_READWRITE |
+			       SND_CTL_EXT_ACCESS_TLV_CALLBACK;
+			break;
+		case TEnum:
+		case TRatio:
+		case TAttack:
+		case TRelease:
+		case TKnee:
+		case TAttenuation:
+		case TReverbType:
+		case TPreDelay:
+		case TPatch:
+		case TAutoSens:
+			*type = SND_CTL_ELEM_TYPE_ENUMERATED;
+			*acc = SND_CTL_EXT_ACCESS_READWRITE;
+			break;
+		default:
+			SNDERR("Unknown type for addr 0x%x / %d", key, at);
+			*acc = 0;
+			return -EINVAL;
+	}
 	*count = 1;
 	return 0;
 }
 
-static int capmix_get_integer_info(snd_ctl_ext_t *ext,
-	snd_ctl_ext_key_t key, long *imin, long *imax, long *istep)
+static int                capmix_get_integer_info(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, long *imin, long *imax, long *istep)
 {
 	*istep = 1;
 	*imin = -70;
 	*imax = 12;
 	return 0;
 }
-static int capmix_read_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
-		long *value)
+
+static int                capmix_read_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, long *value)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	int i;
@@ -124,8 +158,7 @@ static int capmix_read_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
 	return sizeof(long);//*capmix->control_data->channels;
 }
 
-static int capmix_write_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
-		long *value)
+static int                capmix_write_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, long *value)
 {
 	snd_ctl_capmix_t *capmix = ext->private_data;
 	int i;
@@ -148,11 +181,76 @@ static int capmix_write_integer(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key,
 	*/
 
 }
-static int capmix_read_event(snd_ctl_ext_t *ext ATTRIBUTE_UNUSED,
-		snd_ctl_elem_id_t *id ATTRIBUTE_UNUSED,
-		unsigned int *event_mask ATTRIBUTE_UNUSED)
+
+static int                capmix_read_event(snd_ctl_ext_t *ext ATTRIBUTE_UNUSED, snd_ctl_elem_id_t *id ATTRIBUTE_UNUSED, unsigned int *event_mask ATTRIBUTE_UNUSED)
 {
 	return -EAGAIN;
+}
+
+static int                capmix_get_enumerated_info(snd_ctl_ext_t *ext ATTRIBUTE_UNUSED, snd_ctl_ext_key_t key, unsigned int *items)
+{
+	capmix_type_t type = capmix_addr_type(key);
+	if (0 >= type || type >= NTypes) {
+		SNDERR("Unknown type for addr 0x%x", key);
+		return -EINVAL;
+	}
+	if (capmix_type(type)->parent != TEnum) {
+		SNDERR("Not an enum: addr 0x%x", key);
+		return -EINVAL;
+	}
+
+	*items = capmix_type(type)->max.discrete + 1;
+	return 0;
+}
+
+static int                capmix_get_enumerated_name(snd_ctl_ext_t *ext ATTRIBUTE_UNUSED, snd_ctl_ext_key_t key, unsigned int item, char *name, size_t name_max_len)
+{
+	const char label[64];
+	capmix_type_t type = capmix_addr_type(key);
+
+	if (0 >= type || type >= NTypes) return -EINVAL;
+	if (capmix_type(type)->parent != TEnum) {
+		SNDERR("Not an enum: addr 0x%x", key);
+		return -EINVAL;
+	}
+
+	capmix_unpacked_t unpacked = capmix_UnpackedInt(item);
+	capmix_format_type(type, unpacked, label);
+
+	strncpy(name, label, name_max_len - 1);
+	name[name_max_len - 1] = '\0';
+	return 1;
+}
+
+static int                capmix_read_enumerated(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, unsigned int *item)
+{
+	snd_ctl_capmix_t *capmix = ext->private_data;
+
+	//capmix_addr_t addr = capmix_ctl_map[key];
+	//*item = capmix_get_enum(key);
+	*item = 0;
+	return 0;
+}
+
+static int                capmix_write_enumerated(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, unsigned int *item)
+{
+	snd_ctl_capmix_t *capmix = ext->private_data;
+
+	if (0) {
+		return -EINVAL;
+	}
+
+	// TODO set via libcapmix
+	capmix->value = *item;
+	return 1;
+	//return -1;
+}
+
+static int                capmix_tlv_rw(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, int op_flag, unsigned int numid, unsigned int *tlv, unsigned int tlv_size)
+{
+	//unsigned int *p;
+	//return snd_tlv_parse_dB_info(tlv, tlv_size, p);
+	return 0; // TODO
 }
 
 static snd_ctl_ext_callback_t capmix_ext_callback = {
@@ -162,22 +260,14 @@ static snd_ctl_ext_callback_t capmix_ext_callback = {
 	.find_elem           = capmix_find_elem,
 	.get_attribute       = capmix_get_attribute,
 	.get_integer_info    = capmix_get_integer_info,
-	//.get_enumerated_info = capmix_get_enumerated_info,
-	//.get_enumerated_name = capmix_get_enumerated_name,
+	.get_enumerated_info = capmix_get_enumerated_info,
+	.get_enumerated_name = capmix_get_enumerated_name,
 	.read_integer        = capmix_read_integer,
 	.write_integer       = capmix_write_integer,
-	//.write_enumerated    = capmix_write_enumerated,
+	.write_enumerated    = capmix_write_enumerated,
+	.read_enumerated     = capmix_read_enumerated,
 	.read_event          = capmix_read_event,
 };
-
-int capmix_tlv_rw(snd_ctl_ext_t *ext,
-    snd_ctl_ext_key_t key, int op_flag, unsigned int numid,
-    unsigned int *tlv, unsigned int tlv_size)
-{
-	//unsigned int *p;
-	//return snd_tlv_parse_dB_info(tlv, tlv_size, p);
-	return 0; // TODO
-}
 
 SND_CTL_PLUGIN_DEFINE_FUNC(capmix)
 {
@@ -195,6 +285,8 @@ SND_CTL_PLUGIN_DEFINE_FUNC(capmix)
 		SNDERR("Unknown field %s", id);
 		return -EINVAL;
 	}
+
+	capmix_set_model(MStudio);
 
 	capmix = calloc(1, sizeof(*capmix));
 	if (capmix == NULL) {

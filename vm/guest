@@ -11,6 +11,7 @@ qemu-system-x86_64 \
 	-net user,hostfwd=tcp::10022-:22 \
 	-net nic \
 	-device usb-ehci -device usb-host,vendorid=0x0582,productid=0x0160 \
+	-device usb-tablet \
 	"$@"
 
 	#-device VGA,vgamem_mb=64 \

@@ -13,7 +13,9 @@ LDFLAGS := -O2 -Wall -shared -lasound
 #SND_PCM_BIN = libasound_module_pcm_capmix.so
 
 SND_CTL_OBJECTS = ctl_capmix.o #ladspa_utils.o
-SND_CTL_LIBS =
+OBJ = lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o
+OBJDIR=../obj
+SND_CTL_LIBS = $(addprefix $(OBJDIR)/,$(OBJ))
 SND_CTL_BIN = libasound_module_ctl_capmix.so
 
 .PHONY: all clean dep load_default
