@@ -128,9 +128,39 @@ static int                capmix_get_attribute(snd_ctl_ext_t *ext, snd_ctl_ext_k
 
 static int                capmix_get_integer_info(snd_ctl_ext_t *ext, snd_ctl_ext_key_t key, long *imin, long *imax, long *istep)
 {
-	*istep = 1;
-	*imin = -70;
-	*imax = 12;
+	capmix_type_t type = capmix_addr_type(key);
+	if (0 >= type || type >= NTypes) {
+		SNDERR("Unknown type for addr 0x%x / %d", key, type);
+		return -EINVAL;
+	}
+	capmix_type_info_t *info = capmix_type(type);
+
+
+	switch( type )
+	{
+		case TByte:
+		case TClipMask:
+			*istep = info->step.discrete;
+			*imin = info->min.discrete;
+			*imax = info->max.discrete;
+			break;
+		case TVolume:
+		case TPan:
+		case TMeter:
+		case TScaled:
+		case TSens:
+		case TThreshold:
+		case TGain:
+		case TGate:
+		case TReverbTime:
+			*istep = 1;
+			*imin  = (int)(info->min.continuous / info->step.continuous);
+			*imax  = (int)(info->max.continuous / info->step.continuous);
+			break;
+		default:
+			SNDERR("Unknown integer type for addr 0x%x / %d", key, type);
+			return -EINVAL;
+	}
 	return 0;
 }
 
