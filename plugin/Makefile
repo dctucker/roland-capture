@@ -15,8 +15,8 @@ LDFLAGS := -O2 -Wall -shared -lasound
 SND_CTL_OBJECTS = ctl_capmix.o #ladspa_utils.o
 OBJ = lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o
 OBJDIR=../obj
-SND_CTL_LIBS = $(addprefix $(OBJDIR)/,$(OBJ))
-SND_CTL_BIN = libasound_module_ctl_capmix.so
+SND_CTL_LIBS = ../obj/lib/libcapmix.a #$(addprefix $(OBJDIR)/,$(OBJ))
+SND_CTL_BIN = ../obj/lib/alsa-lib/libasound_module_ctl_capmix.so
 
 .PHONY: all clean dep load_default
 
@@ -35,7 +35,7 @@ dep:
 
 $(SND_CTL_BIN): $(SND_CTL_OBJECTS)
 	@echo LD $@
-	$(Q)$(LD) $(LDFLAGS) $(SND_CTL_LIBS) $(SND_CTL_OBJECTS) -o $(SND_CTL_BIN)
+	$(Q)$(LD) $(LDFLAGS) $(SND_CTL_OBJECTS) $(SND_CTL_LIBS) -o $(SND_CTL_BIN)
 
 %.o: %.c
 	@echo GCC $<
