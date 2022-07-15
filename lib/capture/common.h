@@ -121,7 +121,7 @@ DEF_MEMAREA(direct_monitor_a) = {
 DEF_MEMAREA(direct_monitor) = {
 	{ .offset=0x0000, .name=capmix_str.left_right[1],  MEMAREA(master_params) },
 	{ .offset=0x0100, .name=capmix_str.left_right[0],  MEMAREA(master_params) },
-	{ .offset=0x000d, .name=capmix_str.link },
+	{ .offset=0x000d, .name=capmix_str.link, .type=TBoolean },
 	ENDA
 };
 DEF_MEMAREA(master_direct_monitors) = {
