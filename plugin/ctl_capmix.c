@@ -258,7 +258,7 @@ static int                capmix_read_enumerated(snd_ctl_ext_t *ext, snd_ctl_ext
 
 	//capmix_addr_t addr = capmix_ctl_map[key];
 	//*item = capmix_get_enum(key);
-	*item = 0;
+	*item = capmix->value;
 	return 0;
 }
 
