@@ -77,7 +77,7 @@ class App(object):
 	def setup_midi(self):
 		self.listener = Listener(self)
 		if self.port is None:
-			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE Control"
+			self.port = "STUDIO-CAPTURE:STUDIO-CAPTURE MIDI 2"
 
 		midi = MIDI(self.port)
 		midi.listener = self.listener

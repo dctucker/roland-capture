@@ -80,4 +80,4 @@ _API int                capmix_pack_type    (capmix_type_t, capmix_unpacked_t, u
 _API capmix_type_info_t *  capmix_type         (capmix_type_t type);
 _API const char *          capmix_type_name    (capmix_type_t);
 int                        capmix_type_size    (capmix_type_t);
-capmix_type_t              capmix_type_parent  (capmix_type_t type);
+//capmix_type_t              capmix_type_parent  (capmix_type_t type);

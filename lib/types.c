@@ -427,3 +427,12 @@ int                capmix_pack_type         (capmix_type_t type, capmix_unpacked
 	type_info->pack(&capmix_types[type], unpacked, buf);
 	return type_info->size;
 }
+
+/**
+ *
+capmix_type_t      capmix_type_parent(capmix_type_t type)
+{
+	if( 0 >= type || type >= NTypes ) return NULL;
+	return capmix_types[type].parent;
+}
+ */
