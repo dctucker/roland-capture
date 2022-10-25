@@ -18,7 +18,7 @@ all: $(BINARIES)
 tests: $(TESTS)
 
 %.o: %.c %.h
-	$(CC) -c -o $(OBJDIR)/$@ $< $(CFLAGS) -fPIC
+	$(CC) $(CFLAGS) -c -o $(OBJDIR)/$@ $< $(CFLAGS) -fPIC
 
 test/%.o: test/%.c test/%.h
 	$(CC) -c -o $(OBJDIR)/$@ $< $(CFLAGS)
@@ -49,13 +49,13 @@ lib/libcapmix.so: $(OBJ)
 bin/capmixer-dynamic: lib/libcapmix.so lib/mixer.o app/capmixer.c
 	$(CC) $(CFLAGS) -lmenu -lncurses -o $@ $(OBJDIR)/lib/mixer.o app/capmixer.c $(LCAPMIX)
 
-#libcapmix.a:
-#	#$(CC) $(CFLAGS) -c $^
-#	#$(CC) $(LIBS) $(CFLAGS) -c lib/capmix.c lib/comm.c lib/capture.c lib/roland.c lib/memory.c lib/types.c
-#	#strip --strip-unneeded $^
-#	ld -Ur -o $(OBJDIR)/lib/libcapmix.o  $(addprefix $(OBJDIR)/,lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o)
-#	objcopy --strip-all --keep-symbols api.txt -R .note -R .comment $(OBJDIR)/lib/libcapmix.o $(OBJDIR)/lib/libcapmix-s.o
-#	$(AR) rcs "$(LIBS)" $(OBJDIR)/lib/libcapmix.a $(OBJDIR)/lib/libcapmix-s.o
+libcapmix.a:
+	#$(CC) $(CFLAGS) -c $^
+	#$(CC) $(LIBS) $(CFLAGS) -c lib/capmix.c lib/comm.c lib/capture.c lib/roland.c lib/memory.c lib/types.c
+	#strip --strip-unneeded $^
+	$(LD) -Ur -o $(OBJDIR)/lib/libcapmix.o  $(addprefix $(OBJDIR)/,lib/capmix.o lib/comm.o lib/capture.o lib/roland.o lib/memory.o lib/types.o)
+	objcopy --strip-all --keep-symbols=api.txt -R .note -R .comment -R eh_frame $(OBJDIR)/lib/libcapmix.o $(OBJDIR)/lib/libcapmix-s.o
+	$(AR) rcs "$(LIBS)" $(OBJDIR)/lib/libcapmix.a $(OBJDIR)/lib/libcapmix-s.o
 
 bin/meters: $(OBJ) app/meters.c
 	$(CC) $(LIBS) $(CFLAGS) -o bin/meters $(addprefix $(OBJDIR)/,$(OBJ)) app/meters.c

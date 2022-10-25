@@ -1,0 +1,13 @@
+capmix_set_model
+capmix_connect
+capmix_listen
+capmix_get
+capmix_put
+capmix_disconnect
+
+capmix_format_addr
+capmix_parse_addr
+capmix_addr_type
+capmix_parse_type
+capmix_format_type
+capmix_type
