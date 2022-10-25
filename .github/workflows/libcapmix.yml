@@ -22,4 +22,4 @@ jobs:
       with:
         name: libcapmix.so
         path: |
-          libcapmix.so
+          lib/libcapmix.so
