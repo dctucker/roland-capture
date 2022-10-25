@@ -13,13 +13,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-          
+
     - name: Install dependencies
-      run: make -j4 libcapmix.so
+      run: sudo apt install -y libasound2-dev
+      
+    - name: Build libcapmix.so
+      run: make -j4 lib/libcapmix.so
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: libcapmix.so
         path: |
-          libcapmix.so
+          lib/libcapmix.so
