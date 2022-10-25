@@ -1,0 +1,25 @@
+name: libcapmix
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+          
+    - name: Install dependencies
+      run: make -j4 libcapmix.so
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: libcapmix.so
+        path: |
+          libcapmix.so
