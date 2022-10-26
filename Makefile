@@ -80,7 +80,19 @@ bin/capmixer-static: $(OBJ) lib/mixer.o app/capmixer.c
 
 bin/capmixer: bin/capmixer-static bin/capmixer-dynamic
 
-.PHONY: clean run test doc
+.PHONY: clean run test doc tarball
+
+tarball: bin/list-memory bin/capmixer-dynamic bin/main-dynamic lib/libcapmix.so
+	rm -rf capmix
+	mkdir -p capmix/{bin,lib}
+	cp    obj/bin/list-memory      capmix/bin
+	cp    obj/bin/capmixer-dynamic capmix/bin/capmixer
+	cp    obj/bin/main-dynamic     capmix/bin/rolcapmix
+	ln -s rolcapmix                capmix/bin/octa
+	ln -s rolcapmix                capmix/bin/studio
+	cp -P obj/lib/libcapmix.so*    capmix/lib
+	tar zcf capmix.tar.gz capmix
+
 doc:
 	doxygen doc/doxygen.cfg
 

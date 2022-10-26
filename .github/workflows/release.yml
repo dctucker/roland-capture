@@ -14,14 +14,16 @@ jobs:
     - name: Install dependencies
       run: sudo apt install -y libasound2 libasound2-dev
 
-    - name: Build libcapmix.so
-      run: make -j4 lib/libcapmix.so
+    - name: Build libcapmix and binaries
+      run: |
+        make -j4 lib/libcapmix.so
+        make bin/list-memory
+        make bin/main-dynamic
+        make bin/capmixer-dynamic
 
     - name: Make tarball
       run: |
-        mkdir -p dist/lib
-        cp -P obj/lib/libcapmix.so* dist/lib
-        tar zcf capmix.tar.gz -C dist lib
+        make tarball
 
     - name: github-action-publish-binaries
       uses: skx/github-action-publish-binaries@release-2.0
