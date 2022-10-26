@@ -19,9 +19,9 @@ jobs:
 
     - name: Make tarball
       run: |
-        cd obj
-        tar zcf capmix.tar.gz lib/libcapmix.so
-        mv capmix.tar.gz ..
+        mkdir -p dist/lib
+        cp -P obj/lib/libcapmix.so* dist/lib
+        tar zcf capmix.tar.gz dist
 
     - name: github-action-publish-binaries
       uses: skx/github-action-publish-binaries@release-2.0
