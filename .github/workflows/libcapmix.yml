@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Install dependencies
-      run: sudo apt install -y libasound2-dev
+      run: sudo apt install -y libasound2 libasound2-dev
       
     - name: Build libcapmix.so
       run: make -j4 lib/libcapmix.so
