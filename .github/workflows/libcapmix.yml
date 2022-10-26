@@ -16,7 +16,7 @@ jobs:
 
     - name: Install dependencies
       run: sudo apt install -y libasound2 libasound2-dev
-      
+
     - name: Build libcapmix.so
       run: make -j4 lib/libcapmix.so
 

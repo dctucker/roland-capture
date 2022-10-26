@@ -1,0 +1,31 @@
+name: Release binaries
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  generate:
+    name: Create release artifacts
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: sudo apt install -y libasound2 libasound2-dev
+
+    - name: Build libcapmix.so
+      run: make -j4 lib/libcapmix.so
+
+    - name: Make tarball
+      run: |
+        cd obj
+        tar zcf capmix.tar.gz lib/libcapmix.so
+        mv capmix.tar.gz ..
+
+    - name: github-action-publish-binaries
+      uses: skx/github-action-publish-binaries@release-2.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: 'capmix.tar.gz'
