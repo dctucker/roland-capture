@@ -21,7 +21,7 @@ jobs:
       run: |
         mkdir -p dist/lib
         cp -P obj/lib/libcapmix.so* dist/lib
-        tar zcf capmix.tar.gz dist
+        tar zcf capmix.tar.gz -C dist lib
 
     - name: github-action-publish-binaries
       uses: skx/github-action-publish-binaries@release-2.0
