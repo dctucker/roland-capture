@@ -1,6 +1,6 @@
 IDIR = .
 ODIR = obj
-CFLAGS=-I$(IDIR) -fvisibility=hidden -g -save-temps
+CFLAGS=-I$(IDIR) -fvisibility=hidden -g -save-temps -Wl,--no-as-needed
 LIBS=-lasound -lm
 STRIP=-s
 
@@ -39,7 +39,7 @@ bin/test_types: test/test.h $(OBJ) lib/types.o test/test_types.o
 	$(CC) $(CFLAGS) $(LIBS) -o $(OBJDIR)/$@ $(OBJDIR)/lib/types.o test/test_types.c
 
 lib/libcapmix.so: $(OBJ)
-	$(CC) $(LIBS) $(CFLAGS) -fPIC $(STRIP) -shared -Wl,-soname,libcapmix.so.1 -o $(OBJDIR)/lib/libcapmix.so.1.0.0 -lc $(addprefix $(OBJDIR)/,$(OBJ))
+	$(CC) $(CFLAGS) $(LIBS) -fPIC $(STRIP) -shared -Wl,-soname,libcapmix.so.1 -o $(OBJDIR)/lib/libcapmix.so.1.0.0 -lc $(addprefix $(OBJDIR)/,$(OBJ))
 	cd $(OBJDIR)/lib ; ln -sf libcapmix.so.1.0.0 libcapmix.so.1
 	cd $(OBJDIR)/lib ; ln -sf libcapmix.so.1.0.0 libcapmix.so
 
