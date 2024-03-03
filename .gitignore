@@ -8,3 +8,5 @@ obj
 doc/html
 doc/xml
 doc/_build
+site-packages
+pyvenv.cfg
