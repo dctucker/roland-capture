@@ -2,8 +2,13 @@
 
 import alsa_midi
 from bindings.capmix import capmix, EVENT
+import time
 
-from alsa_midi import SequencerClient, ControlChangeEvent
+from alsa_midi import SequencerClient, ControlChangeEvent, SysExEvent, alsa, ffi, PortUnsubscribedEvent
+
+#bcr_name = 'mioXL-16-BCR'
+bcr_name = 'BCR2000 MIDI 1'
+capmix_name = 'STUDIO-CAPTURE MIDI 2'
 
 monitors = ['a','b','c','d']
 mutes = { (ch+1): { mon: 0 for mon in monitors } for ch in range(0, 16) }
@@ -25,14 +30,15 @@ control_map = {
 }
 
 def print_monitor_mutes():
-	print("\0337\033[H\033[2K   ", end='')
+	print("\0337\033[H\033[2K    ", end='')
 	for ch in range(0, 16):
-		print("%4d  " % (ch+1), end='')
+		s = '/' if stereo[ch+1] else ' '
+		print("%3d  %s" % (ch+1, s), end='')
 	print()
 	print("\033[2K", end='')
 	for ch in range(0, 16, 2):
 		st = "STEREO" if stereo[ch+1] else ""
-		print("  %10s" % st, end='')
+		print("\033[36m  %10s\033[0m" % st, end='')
 	print()
 	for mon in monitors:
 		print("\033[2K", end='')
@@ -41,9 +47,11 @@ def print_monitor_mutes():
 			value = mutes[ch+1][mon]
 			if value == 0:
 				msg = "----"
+				color = "\033[1;33m"
 			else:
-				msg = "MUTE"
-			print("%5s " % (msg), end='')
+				msg = " M  "
+				color = "\033[7;2;31m"
+			print("%s%5s\033[0m " % (color,msg), end='')
 		print()
 	print("\033[2K")
 	print("\033[2K",end='')
@@ -55,8 +63,17 @@ def print_monitor_mutes():
 
 nrpn_msb = 0
 nrpn_lsb = 0
+bcr_ok = False
 def bcr_listener(event):
-	global nrpn_msb, nrpn_lsb
+	global nrpn_msb, nrpn_lsb, bcr_ok
+	if isinstance(event, PortUnsubscribedEvent):
+		bcr_ok = False
+		return
+	elif isinstance(event, SysExEvent):
+		bcr_ok = True
+		print(repr(event))
+		print_monitor_mutes()
+		return
 	if event.channel != 15:
 		return
 	if event.param == 99: # MSB
@@ -83,21 +100,37 @@ def handle_nrpn(msb, lsb, value):
 
 queue = []
 def main():
-	# setup MIDI I/O
-	client = SequencerClient("midipi")
-	port = client.create_port("io")
-	client_ports = client.list_ports()
-	# rtpmidi needed to access the BCR-2000
-	bcr_ports = list(filter(lambda x: x is not None, [ x if x.name == 'mioXL-16-BCR' else None for x in client_ports ]))
-	if len(bcr_ports) > 0:
-		bcr_port = bcr_ports[0]
-		port.connect_to(bcr_port)
-		port.connect_from(bcr_port)
-	else:
-		print("Unable to connect to BCR-2000")
-
 	# setup capmix
 	capmix.set_model(4)
+
+	# setup MIDI I/O
+	client = SequencerClient("midipi")
+	client.set_output_buffer_size(2048)
+	client.set_input_buffer_size(2048)
+	port = client.create_port("io")
+
+	def bcr_ping(client, port):
+		data = b'\xf0\x00\x20\x32\x7f\x15\x01\xf7'
+		event = SysExEvent(data)
+		client.event_output(event, port=port)
+		client.drain_output()
+
+	def bcr_connect(client, port):
+		client_ports = client.list_ports()
+		# rtpmidi needed to access the BCR-2000
+		bcr_ports = list(filter(lambda x: x is not None, [ x if x.name == bcr_name else None for x in client_ports ]))
+		if len(bcr_ports) > 0:
+			bcr_port = bcr_ports[0]
+			port.connect_to(bcr_port)
+			port.connect_from(bcr_port)
+		else:
+			print("Unable to connect to BCR-2000")
+			return False
+
+		print("BCR connected")
+		bcr_ping(client, port)
+		return True
+
 	def listener(event):
 		global queue
 		value = event.value()
@@ -122,40 +155,83 @@ def main():
 		if event:
 			bcr_listener(event)
 
+	def send_nrpn(client, port, ch, msb, lsb, val):
+		event1 = ControlChangeEvent(channel=15, param=99, value=msb)
+		event2 = ControlChangeEvent(channel=15, param=98, value=lsb)
+		event3 = ControlChangeEvent(channel=15, param=6, value=val)
+
+		client.event_output(event1, port=port)
+		client.event_output(event2, port=port)
+		client.event_output(event3, port=port)
+		print(repr(event1), repr(event2), repr(event3))
+
+		client.drain_output()
+
 	def bcr_sync(client):
 		global queue
 		for msg in queue:
-			event = ControlChangeEvent(channel=15, param=99, value=msg[0])
-			client.event_output(event, port=port)
-			#print(repr(event))
-
-			event = ControlChangeEvent(channel=15, param=98, value=msg[1])
-			client.event_output(event, port=port)
-			#print(repr(event))
-
-			event = ControlChangeEvent(channel=15, param=6, value=msg[2])
-			client.event_output(event, port=port)
-			#print(repr(event))
-		client.drain_output()
+			send_nrpn(client, port, 15, msg[0], msg[1], msg[2])
 
 		queue = []
 
-	ok = capmix.connect(listener)
-	if not ok:
-		print("Unable to connect to STUDIO-CAPTURE")
+	def get_mixer_data():
+		for ch in range(0,16,2):
+			capmix.get(capmix.parse_addr("input_monitor.a.channel.{}.stereo".format(ch+1)))
+		for ch in range(0,16):
+			for mon in monitors:
+				capmix.get(capmix.parse_addr("input_monitor.{}.channel.{}.mute".format(mon, ch+1)))
+
+	def capmix_connect():
+		capmix_ok = capmix.connect(listener)
+		if not capmix_ok:
+			print("Unable to connect to STUDIO-CAPTURE")
+			return False
+		get_mixer_data()
+		return True
+
+	def check_connections(client, port):
+		client_ports = client.list_ports()
+		bcr_ok = False
+		capmix_ok = False
+		for p in client_ports:
+			if p.name == bcr_name:
+				bcr_ok = True
+			if p.name == capmix_name:
+				capmix_ok = True
+		if not bcr_ok:
+			print("BCR disconnected")
+		if not capmix_ok:
+			print("STUDIO-CAPTURE disconnected")
+
+		bcr_ping(client, port)
+
+		return (bcr_ok, capmix_ok)
+
+	last_ok = 0
+	last_attempt = 0
+	capmix_ok = False
+	global bcr_ok
 
 	try:
-		if ok:
-			for ch in range(0,16,2):
-				capmix.get(capmix.parse_addr("input_monitor.a.channel.{}.stereo".format(ch+1)))
-			for ch in range(0,16):
-				for mon in monitors:
-					capmix.get(capmix.parse_addr("input_monitor.{}.channel.{}.mute".format(mon, ch+1)))
 		while True:
-			if ok:
+			now = time.time()
+			if not ( bcr_ok and capmix_ok ):
+				if now - last_attempt > 5:
+					if not bcr_ok:
+						bcr_ok = bcr_connect(client, port)
+					if not capmix_ok:
+						capmix_ok = capmix_connect()
+					last_attempt = now
+			if capmix_ok:
 				x = capmix.listen()
 				bcr_sync(client)
-			bcr_listen(client)
+			if bcr_ok:
+				bcr_listen(client)
+			if capmix_ok or bcr_ok:
+				if now - last_ok > 5:
+					bcr_ok, capmix_ok = check_connections(client, port)
+					last_ok = now
+
 	except KeyboardInterrupt:
 		pass
 	capmix.disconnect()
