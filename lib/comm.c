@@ -4,7 +4,7 @@
 #include "comm.h"
 
 #ifndef DOXYGEN_SKIP
-#define TRY_SEQ(X, MSG) if( (err = X) < 0 ){ warn( MSG ": %s\n", snd_strerror(err) ); return 0; }
+#define TRY_SEQ(X, MSG) if( (err = X) < 0 ){ warn( MSG ": %s\n", snd_strerror(err) ); snd_seq_close(seq); return 0; }
 #define MIDI_BYTES_PER_SEC (31250 / (1 + 8 + 2))
 #endif
 
@@ -73,7 +73,7 @@ int   capmix_setup_midi( capmix_listener_t *listener )
 	n_descriptors = snd_seq_poll_descriptors_count(seq, POLLIN);
 	descriptors = malloc(sizeof(*descriptors) * n_descriptors);
 
-    capmix_listener = listener;
+	capmix_listener = listener;
 	warn("Opened %s (%d,%d)\n", port_name, port_in, port_out);
 	return 1;
 }

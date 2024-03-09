@@ -110,3 +110,8 @@ class Value(object):
 	def __str__(self):
 		return str(capmix.format_type(self.type, self.unpacked))
 
+	@classmethod
+	def parse(cls, ty, str):
+		ret = Value(ty, capmix.parse_type(ty, str.encode()))
+		return ret
+

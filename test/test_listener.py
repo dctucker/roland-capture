@@ -3,6 +3,8 @@
 from bindings.capmix import capmix, EVENT
 
 def main():
+	capmix.set_model(4)
+
 	def listener(event):
 		#value = capmix.format_type(event.type(), event.unpacked)
 		value = event.value()

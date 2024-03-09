@@ -49,8 +49,10 @@ Arm: fader crossfades between A and C when armed, fader controls D volume when u
 
 """
 
+logged = False
 
 def print_monitor_mutes():
+	global logged
 	size = os.get_terminal_size()
 	print("\033[r",end='')
 
@@ -58,17 +60,17 @@ def print_monitor_mutes():
 	print("\033[H\033[2K   ", end='')
 	for ch in range(0, 16):
 		s = '/' if stereo[ch+1] else ' '
-		print("%2d %s" % (ch+1, s), end='')
+		print("%2d %s " % (ch+1, s), end='')
 	print()
 	print("\033[2K", end='')
 	for ch in range(0, 16, 2):
 		st = "LINK" if stereo[ch+1] else ""
-		print("\033[36m  %6s\033[0m" % st, end='')
+		print("\033[36m  %7s\033[0m" % st, end='')
 	print()
-	print('  ',end='')
+	print("\033[2K  ", end='')
 	for ch in range(0, 16):
 		pan = pans[ch+1]
-		print("\033[33m%4s" % str(pan), end='')
+		print("\033[33m%5s" % str(pan), end='')
 	print()
 
 	for mon in monitors:
@@ -77,26 +79,28 @@ def print_monitor_mutes():
 		for ch in range(0, 16):
 			value = mutes[ch+1][mon]
 			if value == 0:
-				msg = "---"
+				msg = "----"
 				color = "\033[1;33m"
 			else:
-				msg = "M "
+				msg = "MU "
 				color = "\033[4;7;2;31m"
 			print("%s%3s\033[0m " % (color,msg), end='')
 		print()
 	print("\033[2K")
 	print("\033[2K ",end='')
 	for label in labels:
-		print("  %6s" % label, end='')
+		print("  %7s " % label, end='')
 	print()
 	print("\033[2K")
 	#print("\0338", end='')
 
 	print("\033[10;%dr\033[%d;1f" % (size.lines, size.lines-1))
+	logged = False
 
 def log(*msg):
+	global logged
+	logged = True
 	print(*msg)
-	print_monitor_mutes()
 
 nrpn_msb = 0
 nrpn_lsb = 0
@@ -109,7 +113,6 @@ def control_listener(event):
 	elif isinstance(event, SysExEvent):
 		control_ok = True
 		log(repr(event))
-		print_monitor_mutes()
 		return
 	if event.channel != 15:
 		return
@@ -121,7 +124,6 @@ def control_listener(event):
 		handle_nrpn(nrpn_msb, nrpn_lsb, event.value)
 
 	log(repr(event))
-	print_monitor_mutes()
 
 def capmix_send(param, value):
 	capmix.put(capmix.parse_addr(param), value)
@@ -167,14 +169,17 @@ class ControlChannel(ControlSection):
 		self.knob = 0
 
 	def listener(self, event):
+		global logged
+		logged = True
 		k = super().listener(event)
 		if k == 'arm':
 			self.do_arm(event.value)
+			log(repr(self))
 		elif k == 'fader':
 			self.do_fader(event.value)
 		elif k == 'knob':
 			self.do_knob(event.value)
-		log(repr(self))
+		#log(repr(self))
 
 	def mixer_channel(self):
 		return 1 + (self.channel * 2)
@@ -296,7 +301,6 @@ class Control:
 		elif isinstance(event, SysExEvent):
 			control_ok = True
 			log(repr(event))
-			print_monitor_mutes()
 			return
 		if event.channel == 15:
 			self.transport.listener(event)
@@ -313,7 +317,6 @@ class Control:
 		self.client.event_output(event3, port=self.port)
 
 		log(repr(event1), repr(event2), repr(event3))
-		print_monitor_mutes()
 		self.client.drain_output()
 
 	def sync(self):
@@ -344,7 +347,6 @@ class Capture:
 				pans[ch] = value #capmix.format_type(TPan, value.unpacked) #.unpacked.discrete >> 24
 
 		log("addr=%x=%s type=%s v=%s" % (event.addr, addr, event.type_name(), value))
-		print_monitor_mutes()
 
 	def connect(self):
 		capmix_ok = capmix.connect(Capture.listener)
@@ -364,6 +366,8 @@ class Capture:
 				capmix.get(capmix.parse_addr("input_monitor.a.channel.{}.pan".format(ch+1)))
 
 def main():
+	global logged
+
 	capture = Capture()
 	control = Control()
 
@@ -418,6 +422,8 @@ def main():
 				if now - last_ok > 5:
 					control_ok, capmix_ok = check_connections(client, port)
 					last_ok = now
+			if logged:
+				print_monitor_mutes()
 
 	except KeyboardInterrupt:
 		pass

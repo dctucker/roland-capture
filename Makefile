@@ -18,7 +18,7 @@ all: $(BINARIES)
 tests: $(TESTS)
 
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -c -o $(OBJDIR)/$@ $< $(CFLAGS) -fPIC
+	$(CC) $(CFLAGS) $(LIBS) -c -o $(OBJDIR)/$@ $< $(CFLAGS) -fPIC
 
 test/%.o: test/%.c test/%.h
 	$(CC) -c -o $(OBJDIR)/$@ $< $(CFLAGS)
