@@ -279,6 +279,7 @@ class Control:
 
 		log("Control connected")
 		self.ping()
+		self.hello()
 		return True
 
 	def ping(self):
@@ -287,6 +288,20 @@ class Control:
 		event = SysExEvent(data)
 		self.client.event_output(event, port=self.port)
 		self.client.drain_output()
+
+	def hello(self):
+		for p in range(80,83):
+			for i in range(0,8):
+				event = ControlChangeEvent(channel=i, param=p, value=127)
+				self.client.event_output(event, port=self.port)
+				self.client.drain_output()
+				time.sleep(0.032)
+
+		for p in range(80,83):
+			for i in range(0,8):
+				self.client.event_output(ControlChangeEvent(channel=i, param=p, value=0))
+				self.client.drain_output()
+				time.sleep(0.032)
 
 	def listen(self):
 		event = self.client.event_input(timeout=0.01)
