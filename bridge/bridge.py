@@ -38,6 +38,7 @@ Concept:
 	<<	>>	[]	|>	()		R	+	R	+	R	+	R	+	R	+	R	+	R	+	R	+
 
 Ch:	16						1		2		3		4		5		6		7		8
+
 CC	85	86					80	10	80	10	80	10	80	10	80	10	80	10	80	10	80	10
 CC	87		88	89	90		81		81    	81		81		81		81		81		81
 CC	111	112	113	114	115		82	7	82	7 	82	7 	82	7 	82	7 	82	7 	82	7 	82	7
@@ -54,10 +55,9 @@ logged = False
 def print_monitor_mutes():
 	global logged
 	size = os.get_terminal_size()
-	print("\033[r",end='')
+	#print("\033[r",end='')
 
-	#print("\0337",end='')
-	print("\033[H\033[2K   ", end='')
+	print("\033[?25l\033[H\033[2K   ", end='')
 	for ch in range(0, 16):
 		s = '/' if stereo[ch+1] else ' '
 		print("%2d %s " % (ch+1, s), end='')
@@ -82,7 +82,7 @@ def print_monitor_mutes():
 				msg = "----"
 				color = "\033[1;33m"
 			else:
-				msg = "MU "
+				msg = "MUTE"
 				color = "\033[4;7;2;31m"
 			print("%s%3s\033[0m " % (color,msg), end='')
 		print()
@@ -94,7 +94,7 @@ def print_monitor_mutes():
 	print("\033[2K")
 	#print("\0338", end='')
 
-	print("\033[10;%dr\033[%d;1f" % (size.lines, size.lines-1))
+	print("\033[10;%dr\033[%d;1f\033[?25h" % (size.lines, size.lines-1))
 	logged = False
 
 def log(*msg):
@@ -127,6 +127,14 @@ def control_listener(event):
 
 def capmix_send(param, value):
 	capmix.put(capmix.parse_addr(param), value)
+
+cache = {}
+def capmix_value(param):
+	global cache
+	addr = capmix.parse_addr(param)
+	val = cache[addr]
+	ty = capmix.addr_type(addr)
+	return Value(ty, val.unpacked)
 
 def handle_nrpn(msb, lsb, value):
 	param = ""
@@ -174,7 +182,6 @@ class ControlChannel(ControlSection):
 		k = super().listener(event)
 		if k == 'arm':
 			self.do_arm(event.value)
-			log(repr(self))
 		elif k == 'fader':
 			self.do_fader(event.value)
 		elif k == 'knob':
@@ -184,15 +191,19 @@ class ControlChannel(ControlSection):
 	def mixer_channel(self):
 		return 1 + (self.channel * 2)
 
-	def do_arm(self, val):
+	def do_arm(self, down):
 		ch = self.mixer_channel()
-		if val == 0:
-			capmix_send('input_monitor.a.channel.%d.mute' % (ch), 1)
-			capmix_send('input_monitor.c.channel.%d.mute' % (ch), 1)
-			capmix_send('input_monitor.d.channel.%d.mute' % (ch), 0)
-		else:
-			self.do_fader(self.fader)
+		if down == 0:
+			return
+
+		val = capmix_value('input_monitor.d.channel.%d.mute' % (ch))
+		if val.unpacked.discrete == 0:
+			#self.do_fader(self.fader)
 			capmix_send('input_monitor.d.channel.%d.mute' % (ch), 1)
+		else:
+			#capmix_send('input_monitor.a.channel.%d.mute' % (ch), 1)
+			#capmix_send('input_monitor.c.channel.%d.mute' % (ch), 1)
+			capmix_send('input_monitor.d.channel.%d.mute' % (ch), 0)
 	
 	def do_fader(self, val):
 		ch = self.mixer_channel()
@@ -227,10 +238,10 @@ class ControlChannel(ControlSection):
 
 		capmix_send('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
 		capmix_send('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		#capmix_send('input_monitor.c.channel.%d.pan' % (ch)  , pan_l)
-		#capmix_send('input_monitor.c.channel.%d.pan' % (ch+1), pan_r)
-		#capmix_send('input_monitor.d.channel.%d.pan' % (ch)  , pan_l)
-		#capmix_send('input_monitor.d.channel.%d.pan' % (ch+1), pan_r)
+		capmix_send('input_monitor.c.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		capmix_send('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		capmix_send('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		capmix_send('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
 		pans[ch] = pan_l
 		pans[ch+1] = pan_r
 	
@@ -289,24 +300,34 @@ class Control:
 		self.client.event_output(event, port=self.port)
 		self.client.drain_output()
 
-	def hello(self):
-		for p in range(80,83):
-			for i in range(0,8):
-				event = ControlChangeEvent(channel=i, param=p, value=127)
-				self.client.event_output(event, port=self.port)
-				self.client.drain_output()
-				time.sleep(0.032)
+	def send_cc(self, ch, cc, val):
+		self.client.event_output(ControlChangeEvent(channel=ch, param=cc, value=val), port=self.port)
+		self.client.drain_output()
 
-		for p in range(80,83):
+	def hello(self, delay=0.016):
+		def blink(ch, cc, val):
+			self.send_cc(ch, cc, val)
+			time.sleep(delay)
+
+		def chase(val):
 			for i in range(0,8):
-				self.client.event_output(ControlChangeEvent(channel=i, param=p, value=0))
-				self.client.drain_output()
-				time.sleep(0.032)
+				blink(i, 80, val)
+			blink(15, 87, val)
+
+			for i in range(0,8):
+				blink(i, 81, val)
+
+			for p in [111, 112, 113, 114, 115]:
+				blink(15, p, val)
+			for i in range(0,8):
+				blink(i, 82, val)
+
+		chase(127)
+		chase(0)
 
 	def listen(self):
 		event = self.client.event_input(timeout=0.01)
 		if event:
-			#control_listener(event)
 			self.listener(event)
 
 	def listener(self, event):
@@ -336,15 +357,17 @@ class Control:
 
 	def sync(self):
 		global queue
-		#for msg in queue:
-		#	self.send_nrpn(15, msg[0], msg[1], msg[2])
+		for msg in queue:
+			self.send_cc(msg[0], msg[1], msg[2])
 		queue = []
 
 class Capture:
 	@classmethod
 	def listener(cls, event):
-		global queue
+		global queue, cache
 		value = event.value()
+		cache[event.addr] = value
+
 		addr = capmix.format_addr(event.addr)
 		if 'input_monitor.' in addr:
 			dirty = True
@@ -353,7 +376,9 @@ class Capture:
 				mon = monitors[(event.addr & 0xf000) >> 12]
 				mute = value.unpacked.discrete
 				mutes[ch][mon] = mute
-				queue += [[ord(mon) - ord('a'), ch, 0 if mute == 0 else 127]]
+				#queue += [[ord(mon) - ord('a'), ch, 0 if mute == 0 else 127]]
+				if mon == 'd':
+					queue += [[int((ch-1)/2), 82, 0 if mute == 0 else 127]]
 			elif '.stereo' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
 				stereo[ch] = value.unpacked.discrete

@@ -63,7 +63,6 @@ class Capmix(object):
 	@staticmethod
 	def setup_returns(lib):
 		lib.capmix_type.restype = POINTER(TYPE)
-		lib.capmix_addr_type    = TYPE
 		lib.capmix_get.restype  = EVENT
 		lib.capmix_put.restype  = EVENT
 		lib.capmix_memory_get_unpacked = UNPACKED
@@ -112,6 +111,6 @@ class Value(object):
 
 	@classmethod
 	def parse(cls, ty, str):
-		ret = Value(ty, capmix.parse_type(ty, str.encode()))
+		ret = Value(ty, capmix.parse_type(ty, str))
 		return ret
 
