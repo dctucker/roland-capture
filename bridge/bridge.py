@@ -83,11 +83,19 @@ def print_pan(ch):
 	print("\033[?25l\033[%d;%df" % (5, col), end='')
 	pan = pans[ch]
 	graphic = pan_graphic(pan)
-	print(" \033[33m%s" % graphic, end='')
+	if ch % 2 == 1 or str(pan) == 'C':
+		print(" ", end='')
+		#graphic = " " + graphic
+	print("\033[33m%s" % graphic, end='')
 
-size = os.get_terminal_size()
+size = lambda: None
+size.columns = 99
+size.lines = 27
+
+#size = os.get_terminal_size()
 def cursor_to_log():
-	print("\033[18;%dr\033[%d;1f\033[?25h" % (size.lines, size.lines-1))
+	height = 16
+	print("\033[%d;%dr\033[%d;1f\033[?25h" % (height, size.lines, size.lines-1))
 
 def print_monitor_mutes():
 	global logged
@@ -277,6 +285,8 @@ class ControlTransport(ControlSection):
 		'play': 114,
 		'rec':  115,
 		'cycle': 87,
+		'left' : 85,
+		'right': 86,
 	}
 	def __init__(self):
 		self.rec = 0
@@ -286,6 +296,8 @@ class ControlTransport(ControlSection):
 		self.ffw = 0
 		self.cycle = 0
 		self.track = 0
+		self.left = 0
+		self.right = 0
 		self.state = 'stop'
 		self.recording = False
 		self.looping = False
@@ -329,6 +341,12 @@ class ControlTransport(ControlSection):
 		else:
 			queue += [[15, cc, 0]]
 
+		if self.left > 0 and self.right > 0 and k == 'stop' and prev_state == 'stop':
+			if self.looping:
+				os.system('sudo systemctl reboot')
+			else:
+				os.system('sudo systemctl poweroff')
+			exit(0)
 		log(repr(self))
 
 class Control:
