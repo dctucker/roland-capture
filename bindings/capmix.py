@@ -1,4 +1,5 @@
 from ctypes import *
+from enum import IntEnum
 
 class UNPACKED(Union):
 	_fields_ = [
@@ -23,7 +24,6 @@ class TYPE(Structure):
 	]
 	def enum_names(self):
 		return [ x.decode() for x in self._enum_names[0:self.max.discrete+1] ]
-
 
 class EVENT(Structure):
 	_fields_ = [
@@ -57,7 +57,6 @@ class Capmix(object):
 		self.memory_set_unpacked = lib.capmix_memory_set_unpacked
 		self.addr_type           = lib.capmix_addr_type
 		self.unpack_type         = lib.capmix_unpack_type
-		self.parse_type          = lib.capmix_parse_type
 		self.lib                 = lib
 
 	@staticmethod
@@ -100,17 +99,27 @@ class Capmix(object):
 	def addr_suffix(self, addr):
 		return self.lib.capmix_addr_suffix(addr).decode()
 
+	def parse_type(self, ty, str):
+		s = create_string_buffer(str.encode(), 8)
+		return self.lib.capmix_parse_type(int(ty), s)
+
 capmix = Capmix()
+Type = IntEnum("Type", [capmix.type(x).name.decode() for x in range(0, 26)], start=0)
 
 class Value(object):
 	def __init__(self, ty, unp):
 		self.type = ty
-		self.unpacked = unp
+		if type(unp) == int:
+			self.unpacked = UNPACKED(unp)
+		else:
+			self.unpacked = unp
 	def __str__(self):
 		return str(capmix.format_type(self.type, self.unpacked))
 
 	@classmethod
 	def parse(cls, ty, str):
+		if type(ty) == 'Type':
+			ty = ty.value
 		ret = Value(ty, capmix.parse_type(ty, str))
 		return ret
 

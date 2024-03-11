@@ -2,12 +2,10 @@
 
 import os
 import alsa_midi
-from bindings.capmix import capmix, EVENT, Value
+from bindings.capmix import capmix, EVENT, Value, Type, UNPACKED
 import time
 
 from alsa_midi import SequencerClient, ControlChangeEvent, SysExEvent, alsa, ffi, PortUnsubscribedEvent
-
-TPan = 4
 
 #control_name = 'mioXL-16-BCR'
 #control_name = 'BCR2000 MIDI 1'
@@ -17,7 +15,7 @@ capmix_name = 'STUDIO-CAPTURE MIDI 2'
 monitors = ['a','b','c','d']
 mutes = { (ch+1): { mon: 0 for mon in monitors } for ch in range(0, 16) }
 stereo = { (ch+1): 0 for ch in range(0,16) }
-pans = { (ch+1): 0 for ch in range(0, 16) }
+pans = { (ch+1): Value.parse(Type.Pan, "C") for ch in range(0, 16) }
 
 labels = [
 	'  Mic ',
@@ -27,7 +25,7 @@ labels = [
 	'Phatty',
 	' SM10 ',
 	'Circuit',
-	' JUNO  ',
+	' JUNO ',
 ]
 
 """
@@ -52,102 +50,127 @@ Arm: fader crossfades between A and C when armed, fader controls D volume when u
 
 logged = False
 
+eighths = {
+	0: " ",
+	1: "\u258f",
+	2: "\u258e",
+	3: "\u258d",
+	4: "\u258c",
+	5: "\u258b",
+	6: "\u258a",
+	7: "\u2589",
+	8: "\u2588",
+}
+
+def pan_graphic(pan, width=4):
+	p = int(str(pan).replace('R','').replace('L','-').replace('C','0'))
+	x = p * (width / 2) / 100.0
+	i = int(abs(x))
+	f = int(abs(x * 8)) % 8
+	w2 = int(width / 2)
+	if p < 0:
+		if p == -100:
+			return '\u2588\u2588▌ '
+		return (' ' * max(0, (w2 - i) - 1)) + "\033[7m" + eighths[8-f] + "\033[27m" + ("\u2588" * i) + '▌' + (' ' * (w2-1))
+	elif p > 0:
+		if p == 100:
+			return '   \033[7m▌\033[27m\u2588\u2588'
+		return '   \033[7m▌\033[27m' + ("\u2588" * i) + eighths[f] + (' ' * max(0, (w2 - i) - 1))
+	return '  |  '
+
+def print_pan(ch):
+	col = 6 * (ch-1) + 3
+	print("\033[?25l\033[%d;%df" % (5, col), end='')
+	pan = pans[ch]
+	graphic = pan_graphic(pan)
+	print(" \033[33m%s" % graphic, end='')
+
+size = os.get_terminal_size()
+def cursor_to_log():
+	print("\033[18;%dr\033[%d;1f\033[?25h" % (size.lines, size.lines-1))
+
 def print_monitor_mutes():
 	global logged
-	size = os.get_terminal_size()
 	#print("\033[r",end='')
 
-	print("\033[?25l\033[H\033[2K   ", end='')
+	print("\033[?25l\033[H\033[2K    ", end='')
 	for ch in range(0, 16):
-		s = '/' if stereo[ch+1] else ' '
-		print("%2d %s " % (ch+1, s), end='')
+		s = ' /' if stereo[ch+1] else '  '
+		if ch % 2 == 0:
+			k = str(ch + 1).rjust(2) + ' '
+		else:
+			k = ' ' + str(ch + 1).ljust(2)
+		print("%s%s" % (k, s), end='')
+		if ch < 15:
+			print(" ", end='')
 	print()
-	print("\033[2K", end='')
+	print("\033[2K")
+	print("\033[2K ", end='')
 	for ch in range(0, 16, 2):
-		st = "LINK" if stereo[ch+1] else ""
-		print("\033[36m  %7s\033[0m" % st, end='')
+		if stereo[ch+1]:
+			st = "STEREO"
+			sc = "\033[7;36m"
+		else:
+			st = ""
+			sc = "\033[7;1;30m"
+		print("   %s%7s  \033[0m" % (sc, st), end='')
 	print()
+	print("\033[2K")
 	print("\033[2K  ", end='')
 	for ch in range(0, 16):
 		pan = pans[ch+1]
-		print("\033[33m%5s" % str(pan), end='')
+		graphic = pan_graphic(pan)
+		print(" \033[33m%s" % graphic, end='')
 	print()
 
 	for mon in monitors:
+		print("\033[2K")
 		print("\033[2K", end='')
 		print("%2s " % (mon.upper()), end='')
 		for ch in range(0, 16):
 			value = mutes[ch+1][mon]
 			if value == 0:
-				msg = "----"
-				color = "\033[1;33m"
+				msg = "     "
+				color = "\033[7;2;30m"
 			else:
-				msg = "MUTE"
-				color = "\033[4;7;2;31m"
-			print("%s%3s\033[0m " % (color,msg), end='')
+				msg = "  M  "
+				color = "\033[7;2;31m"
+			print("%s%5s\033[0m " % (color,msg), end='')
 		print()
 	print("\033[2K")
 	print("\033[2K ",end='')
 	for label in labels:
-		print("  %7s " % label, end='')
+		print("  %8s  " % label, end='')
 	print()
 	print("\033[2K")
 	#print("\0338", end='')
 
-	print("\033[10;%dr\033[%d;1f\033[?25h" % (size.lines, size.lines-1))
+	cursor_to_log()
 	logged = False
 
 def log(*msg):
 	global logged
 	logged = True
-	print(*msg)
-
-nrpn_msb = 0
-nrpn_lsb = 0
-control_ok = False
-def control_listener(event):
-	global nrpn_msb, nrpn_lsb, control_ok
-	if isinstance(event, PortUnsubscribedEvent):
-		control_ok = False
-		return
-	elif isinstance(event, SysExEvent):
-		control_ok = True
-		log(repr(event))
-		return
-	if event.channel != 15:
-		return
-	if event.param == 99: # MSB
-		nrpn_msb = event.value
-	if event.param == 98: # LSB
-		nrpn_lsb = event.value
-	if event.param == 6: # data
-		handle_nrpn(nrpn_msb, nrpn_lsb, event.value)
-
-	log(repr(event))
+	print("\033[1;30m", end='')
+	print(*msg, end='')
+	print("\033[0m")
 
 def capmix_send(param, value):
 	capmix.put(capmix.parse_addr(param), value)
 
 cache = {}
+def get_cache(k):
+	if k in cache:
+		return cache[k]
+
 def capmix_value(param):
 	global cache
 	addr = capmix.parse_addr(param)
-	val = cache[addr]
+	val = get_cache(addr)
+	if val is None:
+		val = Value(Type.Value, 0)
 	ty = capmix.addr_type(addr)
 	return Value(ty, val.unpacked)
-
-def handle_nrpn(msb, lsb, value):
-	param = ""
-	if msb >= 0 and msb <= 3:
-		mon = monitors[msb]
-		param = "input_monitor." + mon
-	if lsb >= 1 and lsb <= 16:
-		ch = lsb
-		param += ".channel." + str(ch) + ".mute"
-		value = 1 if value > 0 else 0
-	addr = capmix.parse_addr(param)
-	capmix.put(addr, value)
-
 
 queue = []
 
@@ -186,6 +209,7 @@ class ControlChannel(ControlSection):
 			self.do_fader(event.value)
 		elif k == 'knob':
 			self.do_knob(event.value)
+			logged = False
 		#log(repr(self))
 
 	def mixer_channel(self):
@@ -228,13 +252,8 @@ class ControlChannel(ControlSection):
 			pan_l = 'L%d' % width
 			pan_r = 'R%d' % width
 
-		#print(repr(capmix.type(TPan).name))
-
-		pan_l = Value.parse(TPan, pan_l)
-		pan_r = Value.parse(TPan, pan_r)
-
-		#print(repr(pan_l))
-		#print(repr(pan_r))
+		pan_l = Value.parse(Type.Pan, pan_l)
+		pan_r = Value.parse(Type.Pan, pan_r)
 
 		capmix_send('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
 		capmix_send('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
@@ -242,8 +261,12 @@ class ControlChannel(ControlSection):
 		capmix_send('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
 		capmix_send('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
 		capmix_send('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		pans[ch] = pan_l
+		pans[ch]   = pan_l
 		pans[ch+1] = pan_r
+
+		print_pan(ch)
+		print_pan(ch+1)
+		cursor_to_log()
 	
 
 class ControlTransport(ControlSection):
@@ -263,13 +286,54 @@ class ControlTransport(ControlSection):
 		self.ffw = 0
 		self.cycle = 0
 		self.track = 0
+		self.state = 'stop'
+		self.recording = False
+		self.looping = False
+		global queue
+		queue += [[15, self.cc_map[self.state], self.__dict__[self.state]]]
 
 	def listener(self, event):
-		super().listener(event)
+		global queue
+		k = super().listener(event)
+		if k is None: return
+		prev_state = self.state
+		if k in ['play','stop','rew','ffw']:
+			if event.value == 0: return
+			self.state = k
+
+		if k == 'rec':
+			if event.value == 0: return
+			self.recording = not self.recording
+
+		if k == 'cycle':
+			if event.value == 0: return
+			self.looping = not self.looping
+
+		if k == 'stop' and prev_state == 'play':
+			self.recording = False
+
+		for name in ['ffw','rew','play','stop']:
+			cc = self.cc_map[name]
+			v = 127 if self.state == name else 0
+			queue += [[15, cc, v]]
+		
+		cc = self.cc_map['rec']
+		if self.recording:
+			queue += [[15, cc, 127]]
+		else:
+			queue += [[15, cc, 0]]
+
+		cc = self.cc_map['cycle']
+		if self.looping:
+			queue += [[15, cc, 127]]
+		else:
+			queue += [[15, cc, 0]]
+
 		log(repr(self))
 
 class Control:
 	def __init__(self):
+		self.ok = False
 		self.channels = [ControlChannel(i) for i in range(0,8)]
 		self.transport = ControlTransport()
 
@@ -304,7 +368,7 @@ class Control:
 		self.client.event_output(ControlChangeEvent(channel=ch, param=cc, value=val), port=self.port)
 		self.client.drain_output()
 
-	def hello(self, delay=0.016):
+	def hello(self, delay=0.01):
 		def blink(ch, cc, val):
 			self.send_cc(ch, cc, val)
 			time.sleep(delay)
@@ -332,10 +396,10 @@ class Control:
 
 	def listener(self, event):
 		if isinstance(event, PortUnsubscribedEvent):
-			control_ok = False
+			self.ok = False
 			return
 		elif isinstance(event, SysExEvent):
-			control_ok = True
+			self.ok = True
 			log(repr(event))
 			return
 		if event.channel == 15:
@@ -362,6 +426,10 @@ class Control:
 		queue = []
 
 class Capture:
+
+	def __init__(self):
+		self.ok = False
+
 	@classmethod
 	def listener(cls, event):
 		global queue, cache
@@ -384,13 +452,13 @@ class Capture:
 				stereo[ch] = value.unpacked.discrete
 			elif '.pan' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
-				pans[ch] = value #capmix.format_type(TPan, value.unpacked) #.unpacked.discrete >> 24
+				pans[ch] = value #capmix.format_type(Type.Pan, value.unpacked) #.unpacked.discrete >> 24
 
-		log("addr=%x=%s type=%s v=%s" % (event.addr, addr, event.type_name(), value))
+		#log("addr=%x=%s type=%s v=%s" % (event.addr, addr, event.type_name(), value))
 
 	def connect(self):
-		capmix_ok = capmix.connect(Capture.listener)
-		if not capmix_ok:
+		self.ok = capmix.connect(Capture.listener)
+		if not self.ok:
 			log("Unable to connect to STUDIO-CAPTURE")
 			return False
 		time.sleep(0.3)
@@ -422,45 +490,44 @@ def main():
 
 	def check_connections(client, port):
 		client_ports = client.list_ports()
-		control_ok = False
-		capmix_ok = False
+		control.ok = False
+		capture.ok = False
 		for p in client_ports:
 			if p.name == control_name:
-				control_ok = True
+				control.ok = True
 			if p.name == capmix_name:
-				capmix_ok = True
-		if not control_ok:
+				capture.ok = True
+		if not control.ok:
 			log("Control disconnected")
-		if not capmix_ok:
+		if not capture.ok:
 			log("STUDIO-CAPTURE disconnected")
 
 		control.ping()
 
-		return (control_ok, capmix_ok)
+		return (control.ok, capture.ok)
 
 	last_ok = 0
 	last_attempt = 0
-	capmix_ok = False
-	global control_ok
+	capture.ok = False
 
 	try:
 		while True:
 			now = time.time()
-			if not ( control_ok and capmix_ok ):
+			if not ( control.ok and capture.ok ):
 				if now - last_attempt > 5:
-					if not control_ok:
-						control_ok = control.connect(client, port)
-					if not capmix_ok:
-						capmix_ok = capture.connect()
+					if not control.ok:
+						control.ok = control.connect(client, port)
+					if not capture.ok:
+						capture.ok = capture.connect()
 					last_attempt = now
-			if capmix_ok:
+			if capture.ok:
 				x = capmix.listen()
+			if control.ok:
 				control.sync()
-			if control_ok:
 				control.listen()
-			if capmix_ok or control_ok:
+			if capture.ok or control.ok:
 				if now - last_ok > 5:
-					control_ok, capmix_ok = check_connections(client, port)
+					control.ok, capture.ok = check_connections(client, port)
 					last_ok = now
 			if logged:
 				print_monitor_mutes()
