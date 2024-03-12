@@ -1,0 +1,17 @@
+Concept:
+
+	<	>					S	o	S	o	S	o	S	o	S	o	S	o	S	o	S	o
+	Cycle		Set	<	>	M	|	M	|	M	|	M	|	M	|	M	|	M	|	M	|
+	<<	>>	[]	|>	()		R	+	R	+	R	+	R	+	R	+	R	+	R	+	R	+
+
+Ch:	16						1		2		3		4		5		6		7		8
+
+CC	85	86					80	10	80	10	80	10	80	10	80	10	80	10	80	10	80	10
+CC	87		88	89	90		81		81    	81		81		81		81		81		81
+CC	111	112	113	114	115		82	7	82	7 	82	7 	82	7 	82	7 	82	7 	82	7 	82	7
+
+Knob: Stereo width; channel N pan = -knob, channel N+1 pan = +knob
+Solo: toggle ABCD solo
+Mute: toggle ABCD mute
+Arm: fader crossfades between A and C when armed, fader controls D volume when unarmed
+
