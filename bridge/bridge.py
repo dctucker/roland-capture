@@ -182,19 +182,31 @@ def capmix_value(param):
 
 queue = []
 enable_dimming = False
+dimmed = False
+brightness = 48
 
-def dim(dark=True):
-	global enable_dimming
-	global queue
-	if enable_dimming:
+def backlight(value):
+	global brightness
+	if value > 15:
+		brightness = value
+	with open('/sys/class/backlight/10-0045/brightness','w') as f:
+		f.write(str(value) + '\n')
+		log('backlight: %d' % value)
+
+def dim(dark=True, force=False):
+	global enable_dimming, dimmed, queue
+	if enable_dimming or force:
 		if dark:
-			os.system('backlight 0 &')
+			if not dimmed:
+				backlight(0)
 			queue += [[15, 113, 0]]
 			queue += [[0, 82, 0]]
 			reset_model()
 		else:
-			os.system('backlight 48 &')
+			if dimmed:
+				backlight(brightness)
 			queue += [[15, 113, 127]]
+		dimmed = dark
 
 
 class ControlSection:
@@ -291,7 +303,12 @@ class ControlChannel(ControlSection):
 			capmix_send('input_monitor.%s.channel.%d.solo' % ('d', ch), v)
 	
 	def do_knob(self, val):
+		if self.stop_held:
+			if self.channel == 0:
+				backlight(val)
+			return
 		global pans
+
 		ch = self.mixer_channel()
 		width = int(100 * val / 127.0)
 		if width == 0:
@@ -325,9 +342,12 @@ class ControlTransport(ControlSection):
 		'stop': 113,
 		'play': 114,
 		'rec':  115,
-		'cycle': 87,
 		'left' : 85,
 		'right': 86,
+		'cycle': 87,
+		'set':   88,
+		'prev':  89,
+		'next':  90,
 	}
 	def __init__(self):
 		self.rec = 0
@@ -335,10 +355,13 @@ class ControlTransport(ControlSection):
 		self.stop = 0
 		self.rew = 0
 		self.ffw = 0
-		self.cycle = 0
 		self.track = 0
 		self.left = 0
 		self.right = 0
+		self.cycle = 0
+		self.set = 0
+		self.prev = 0
+		self.next = 0
 		self.state = 'stop'
 		self.recording = False
 		self.looping = False
@@ -392,20 +415,22 @@ class ControlTransport(ControlSection):
 				os.system('sudo systemctl poweroff')
 			exit(0)
 
+		dim(False, force=True)
 		if event.value == 0 and self.stop > 0:
 			if k == 'left':
 				os.system('tmux previous-window')
 
 			if k == 'right':
 				os.system('tmux next-window')
+
+			if k == 'set':
+				dim(True, force=True)
 		log(repr(self))
 
 class Control:
-	def __init__(self):
+	def __init__(self, name='nanoKONTROL2 nanoKONTROL2 _ CTR'):
 		self.ok = False
-		#self.name = 'mioXL-16-BCR'
-		#self.name = 'BCR2000 MIDI 1'
-		self.name = 'nanoKONTROL2 nanoKONTROL2 _ CTR'
+		self.name = name
 		self.channels = [ControlChannel(i) for i in range(0,8)]
 		self.transport = ControlTransport()
 
@@ -430,8 +455,7 @@ class Control:
 		return True
 
 	def ping(self):
-		# data = b'\xf0\x00\x20\x32\x7f\x15\x01\xf7' # BCR
-		data = b'\xf0\x7e\x7f\x06\x01\xf7' # nanoKONTROL2
+		data = b'\xf0\x7e\x7f\x06\x01\xf7' # MIDI Device ID request
 		event = SysExEvent(data)
 		self.client.event_output(event, port=self.port)
 		self.client.drain_output()
@@ -478,6 +502,7 @@ class Control:
 		if event.channel == 15:
 			self.transport.listener(event)
 		elif event.channel < 8:
+			self.channels[event.channel].stop_held = self.transport.stop > 0
 			self.channels[event.channel].listener(event)
 
 	def send_nrpn(self, ch, msb, lsb, val):
@@ -523,8 +548,8 @@ class Control:
 
 class Capture:
 
-	def __init__(self):
-		self.name = 'STUDIO-CAPTURE MIDI 2'
+	def __init__(self, name='STUDIO-CAPTURE MIDI 2'):
+		self.name = name
 		self.ok = False
 
 	@classmethod
