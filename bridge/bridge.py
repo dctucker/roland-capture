@@ -3,7 +3,7 @@
 import os
 import sys
 
-from queue import Queue
+from queue import Queue, Empty
 from threading import Thread
 import alsa_midi
 from bindings.capmix import capmix, EVENT, Value, Type, UNPACKED
@@ -11,203 +11,216 @@ import time
 
 from alsa_midi import SequencerClient, ControlChangeEvent, SysExEvent, alsa, ffi, PortUnsubscribedEvent
 
-monitors = ['a','b','c','d']
-mutes  = { (ch+1): { mon: 0 for mon in monitors } for ch in range(0, 16) }
-solos  = { (ch+1): { mon: 0 for mon in monitors } for ch in range(0, 16) }
-stereo = { (ch+1): 0 for ch in range(0,16) }
-pans = { (ch+1): Value.parse(Type.Pan, "C") for ch in range(0, 16) }
+class Model:
+	def __init__(self):
+		self.num_channels = 16
+		self.monitors = ['a','b','c','d']
+		self.mutes  = { (ch+1): { mon: 0 for mon in self.monitors } for ch in range(0, self.num_channels) }
+		self.solos  = { (ch+1): { mon: 0 for mon in self.monitors } for ch in range(0, self.num_channels) }
+		self.stereo = { (ch+1): 0 for ch in range(0,16) }
+		self.pans   = { (ch+1): Value.parse(Type.Pan, "C") for ch in range(0, 16) }
+		self.capture_hash = {}
+		self.cache = {}
 
-def reset_model():
-	global mutes, solos, stereo, monitors
-	for c in range(0, 16):
-		for m in monitors:
-			mutes[c+1][m] = 0
-			solos[c+1][m] = 0
-			stereo[c+1] = 0
+	def reset(self):
+		for c in range(0, self.num_channels):
+			for m in self.monitors:
+				self.mutes[c+1][m] = 0
+				self.solos[c+1][m] = 0
+				self.stereo[c+1] = 0
 
+	def send(self, param, value):
+		self.capture_hash[capmix.parse_addr(param)] = value
 
-labels = [
-	'  Mic ',
-	'Guitar',
-	'Deluge',
-	'Opsix',
-	'Phatty',
-	' SM10 ',
-	'Circuit',
-	' JUNO ',
-]
+	def flush(self):
+		for k,v in self.capture_hash.items():
+			capmix.put(k, v)
+		self.capture_hash = {}
+
+	def get_cache(self, k):
+		if k in self.cache:
+			return self.cache[k]
+
+	def value(self, param):
+		addr = capmix.parse_addr(param)
+		val = self.get_cache(addr)
+		if val is None:
+			val = Value(Type.Value, 0)
+		ty = capmix.addr_type(addr)
+		return Value(ty, val.unpacked)
+
+model = Model()
+
+queue = Queue()
 
 logged = False
 
-eighths = {
-	0: " ",
-	1: "\u258f",
-	2: "\u258e",
-	3: "\u258d",
-	4: "\u258c",
-	5: "\u258b",
-	6: "\u258a",
-	7: "\u2589",
-	8: "\u2588",
-}
+class View:
+	labels = [
+		'  Mic ',
+		'Guitar',
+		'Deluge',
+		'Opsix',
+		'Phatty',
+		' SM10 ',
+		'Circuit',
+		' JUNO ',
+	]
 
-def pan_graphic(pan, width=4):
-	p = int(str(pan).replace('R','').replace('L','-').replace('C','0'))
-	x = p * (width / 2) / 100.0
-	i = int(abs(x))
-	f = int(abs(x * 8)) % 8
-	w2 = int(width / 2)
-	if p < 0:
-		if p == -100:
-			return '\u2588\u2588%s ' % (eighths[4])
-		return (' ' * max(0, (w2 - i) - 1)) + "\033[7m" + eighths[8-f] + "\033[27m" + ("\u2588" * i) + eighths[4] + (' ' * (w2-1))
-	elif p > 0:
-		if p == 100:
-			return '   \033[7m' + eighths[4] + '\033[27m' + (eighths[8] * 2)
-		return '   \033[7m' + eighths[4] + '\033[27m' + (eighths[8] * i) + eighths[f] + (' ' * max(0, (w2 - i) - 1))
-	return '  \u2503  '
+	eighths = {
+		0: " ",
+		1: "\u258f",
+		2: "\u258e",
+		3: "\u258d",
+		4: "\u258c",
+		5: "\u258b",
+		6: "\u258a",
+		7: "\u2589",
+		8: "\u2588",
+	}
 
-def print_pan(ch):
-	col = 6 * (ch-1) + 3
-	print("\033[?25l\033[%d;%df" % (5, col), end='')
-	pan = pans[ch]
-	graphic = pan_graphic(pan)
-	if ch % 2 == 1 or str(pan) == 'C':
-		print(" ", end='')
-		#graphic = " " + graphic
-	print("\033[33m%s" % graphic, end='')
+	enable_dimming = False
 
-size = lambda: None
-size.columns = 99
-size.lines = 27
+	def __init__(self, model):
+		self.model = model
+		size = lambda: None
+		size.columns = 99
+		size.lines = 27
+		self.size = size
 
-#size = os.get_terminal_size()
-def cursor_to_log():
-	height = 16
-	print("\033[%d;%dr\033[%d;1f\033[?25h" % (height, size.lines, size.lines-1))
+		self.dimmed = False
+		self.brightness = 48
 
-def print_monitor_mutes():
-	global logged
-	#print("\033[r",end='')
+	def backlight(self, value):
+		if value > 15:
+			self.brightness = value
+		with open('/sys/class/backlight/10-0045/brightness','w') as f:
+			f.write(str(value) + '\n')
+			log('backlight: %d' % value)
 
-	print("\033[?25l\033[H\033[2K    ", end='')
-	for ch in range(0, 16):
-		s = ' /' if stereo[ch+1] else '  '
-		if ch % 2 == 0:
-			k = str(ch + 1).rjust(2) + ' '
-		else:
-			k = ' ' + str(ch + 1).ljust(2)
-		print("%s%s" % (k, s), end='')
-		if ch < 15:
-			print(" ", end='')
-	print()
-	print("\033[2K")
-	print("\033[2K ", end='')
-	for ch in range(0, 16, 2):
-		if stereo[ch+1]:
-			st = "STEREO"
-			sc = "\033[7;36m"
-		else:
-			st = ""
-			sc = "\033[7;1;30m"
-		print("   %s%7s  \033[0m" % (sc, st), end='')
-	print()
-	print("\033[2K")
-	print("\033[2K  ", end='')
-	for ch in range(0, 16):
-		pan = pans[ch+1]
-		graphic = pan_graphic(pan)
-		print(" \033[33m%s" % graphic, end='')
-	print()
-
-	for mon in monitors:
-		print("\033[2K")
-		print("\033[2K", end='')
-		print("%2s " % (mon.upper()), end='')
-		for ch in range(0, 16):
-			value = mutes[ch+1][mon]
-			if value == 0:
-				msg = "     "
-				color = "\033[7;2;30m"
+	def dim(self, dark=True, force=False):
+		global queue
+		if self.enable_dimming or force:
+			if dark:
+				if not self.dimmed:
+					self.backlight(0)
+				queue.put([15, 113, 0])
+				queue.put([0, 82, 0])
+				queue.put([0, 87, 0])
+				model.reset()
 			else:
-				msg = "  M  "
-				color = "\033[7;2;31m"
-			print("%s%5s\033[0m " % (color,msg), end='')
+				if self.dimmed:
+					self.backlight(self.brightness)
+					queue.put([15, 113, 127])
+			self.dimmed = dark
+
+	def pan_graphic(self, pan, width=4):
+		eighths = self.eighths
+		p = int(str(pan).replace('R','').replace('L','-').replace('C','0'))
+		x = p * (width / 2) / 100.0
+		i = int(abs(x))
+		f = int(abs(x * 8)) % 8
+		w2 = int(width / 2)
+		if p < 0:
+			if p == -100:
+				return '\u2588\u2588%s ' % (eighths[4])
+			return (' ' * max(0, (w2 - i) - 1)) + "\033[7m" + eighths[8-f] + "\033[27m" + ("\u2588" * i) + eighths[4] + (' ' * (w2-1))
+		elif p > 0:
+			if p == 100:
+				return '   \033[7m' + eighths[4] + '\033[27m' + (eighths[8] * 2)
+			return '   \033[7m' + eighths[4] + '\033[27m' + (eighths[8] * i) + eighths[f] + (' ' * max(0, (w2 - i) - 1))
+		return '  \u2503  '
+
+	def print_pan(self, ch):
+		col = 6 * (ch-1) + 3
+		print("\033[?25l\033[%d;%df" % (5, col), end='')
+		pan = self.model.pans[ch]
+		graphic = self.pan_graphic(pan)
+		if ch % 2 == 1 or str(pan) == 'C':
+			print(" ", end='')
+			#graphic = " " + graphic
+		print("\033[33m%s" % graphic, end='')
+
+	#size = os.get_terminal_size()
+	def cursor_to_log(self):
+		height = 16
+		print("\033[%d;%dr\033[%d;1f\033[?25h" % (height, self.size.lines, self.size.lines-1))
+
+	def print_monitor_mutes(self):
+		global logged
+		#print("\033[r",end='')
+		stereo = self.model.stereo
+		mutes = self.model.mutes
+		solos = self.model.solos
+		pans = self.model.pans
+
+		print("\033[?25l\033[H\033[2K    ", end='')
+		for ch in range(0, 16):
+			s = ' /' if stereo[ch+1] else '  '
+			if ch % 2 == 0:
+				k = str(ch + 1).rjust(2) + ' '
+			else:
+				k = ' ' + str(ch + 1).ljust(2)
+			print("%s%s" % (k, s), end='')
+			if ch < 15:
+				print(" ", end='')
 		print()
-	print("\033[2K")
-	print("\033[2K ",end='')
-	for label in labels:
-		print("  %8s  " % label, end='')
-	print()
-	print("\033[2K")
-	#print("\0338", end='')
+		print("\033[2K")
+		print("\033[2K ", end='')
+		for ch in range(0, 16, 2):
+			if stereo[ch+1]:
+				st = "STEREO"
+				sc = "\033[7;36m"
+			else:
+				st = ""
+				sc = "\033[7;1;30m"
+			print("   %s%7s  \033[0m" % (sc, st), end='')
+		print()
+		print("\033[2K")
+		print("\033[2K  ", end='')
+		for ch in range(0, 16):
+			pan = pans[ch+1]
+			graphic = self.pan_graphic(pan)
+			print(" \033[33m%s" % graphic, end='')
+		print()
 
-	cursor_to_log()
-	logged = False
+		for mon in model.monitors:
+			print("\033[2K")
+			print("\033[2K", end='')
+			print("%2s " % (mon.upper()), end='')
+			for ch in range(0, 16):
+				value = mutes[ch+1][mon]
+				if value == 0:
+					msg = "     "
+					color = "\033[7;2;30m"
+				else:
+					msg = "  M  "
+					color = "\033[7;2;31m"
+				print("%s%5s\033[0m " % (color,msg), end='')
+			print()
+		print("\033[2K")
+		print("\033[2K ",end='')
+		for label in self.labels:
+			print("  %8s  " % label, end='')
+		print()
+		print("\033[2K")
+		#print("\0338", end='')
 
+		view.cursor_to_log()
+		logged = False
+
+	def log(self, *msg):
+		global logged
+		now = time.strftime("%H:%M:%S")
+		logged = True
+		print("\033[1;30m", end='')
+		print(now, end=' ')
+		print(*msg, end='')
+		print("\033[0m")
+
+view = View(model)
 def log(*msg):
-	global logged
-	now = time.strftime("%H:%M:%S")
-	logged = True
-	print("\033[1;30m", end='')
-	print(now, end=' ')
-	print(*msg, end='')
-	print("\033[0m")
-
-capture_hash = {}
-def capmix_send(param, value):
-	global capture_hash
-	capture_hash[capmix.parse_addr(param)] = value
-
-def capmix_flush():
-	global capture_hash
-	for k,v in capture_hash.items():
-		capmix.put(k, v)
-	capture_hash = {}
-
-cache = {}
-def get_cache(k):
-	if k in cache:
-		return cache[k]
-
-def capmix_value(param):
-	global cache
-	addr = capmix.parse_addr(param)
-	val = get_cache(addr)
-	if val is None:
-		val = Value(Type.Value, 0)
-	ty = capmix.addr_type(addr)
-	return Value(ty, val.unpacked)
-
-
-queue = []
-enable_dimming = False
-dimmed = False
-brightness = 48
-
-def backlight(value):
-	global brightness
-	if value > 15:
-		brightness = value
-	with open('/sys/class/backlight/10-0045/brightness','w') as f:
-		f.write(str(value) + '\n')
-		log('backlight: %d' % value)
-
-def dim(dark=True, force=False):
-	global enable_dimming, dimmed, queue
-	if enable_dimming or force:
-		if dark:
-			if not dimmed:
-				backlight(0)
-			queue += [[15, 113, 0]]
-			queue += [[0, 82, 0]]
-			reset_model()
-		else:
-			if dimmed:
-				backlight(brightness)
-			queue += [[15, 113, 127]]
-		dimmed = dark
-
+	view.log(*msg)
 
 class ControlSection:
 	def listener(self, event):
@@ -261,25 +274,25 @@ class ControlChannel(ControlSection):
 		if down == 0:
 			return
 
-		val = capmix_value('input_monitor.d.channel.%d.mute' % (ch))
+		val = model.value('input_monitor.d.channel.%d.mute' % (ch))
 		if val.unpacked.discrete == 0:
-			capmix_send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 0)
-			capmix_send('input_monitor.%s.channel.%d.mute' % ('d', ch), 1)
+			model.send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 0)
+			model.send('input_monitor.%s.channel.%d.mute' % ('d', ch), 1)
 			self.armed = True
 		else:
-			capmix_send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 1)
-			capmix_send('input_monitor.%s.channel.%d.mute' % ('d', ch), 0)
+			model.send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 1)
+			model.send('input_monitor.%s.channel.%d.mute' % ('d', ch), 0)
 			self.armed = False
 	
 	def do_fader(self, val):
 		ch = self.mixer_channel()
 		if val == 127:
-			capmix_send('input_monitor.a.channel.%d.mute' % (ch), 0)
-			capmix_send('input_monitor.c.channel.%d.mute' % (ch), 1)
+			model.send('input_monitor.a.channel.%d.mute' % (ch), 0)
+			model.send('input_monitor.c.channel.%d.mute' % (ch), 1)
 			self.last_monitor = 'a'
 		elif val == 0:
-			capmix_send('input_monitor.a.channel.%d.mute' % (ch), 1)
-			capmix_send('input_monitor.c.channel.%d.mute' % (ch), 0)
+			model.send('input_monitor.a.channel.%d.mute' % (ch), 1)
+			model.send('input_monitor.c.channel.%d.mute' % (ch), 0)
 			self.last_monitor = 'c'
 		else:
 			# TODO
@@ -289,23 +302,23 @@ class ControlChannel(ControlSection):
 		ch = self.mixer_channel()
 		v = 0 if val == 0 else 1
 		if self.armed:
-			capmix_send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), v)
+			model.send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), v)
 		else:
-			capmix_send('input_monitor.%s.channel.%d.mute' % ('d', ch), v)
+			model.send('input_monitor.%s.channel.%d.mute' % ('d', ch), v)
 		self.muted = v == 1
 
 	def do_solo(self, val):
 		ch = self.mixer_channel()
 		v = 0 if val == 0 else 1
 		if self.armed:
-			capmix_send('input_monitor.%s.channel.%d.solo' % (self.last_monitor, ch), v)
+			model.send('input_monitor.%s.channel.%d.solo' % (self.last_monitor, ch), v)
 		else:
-			capmix_send('input_monitor.%s.channel.%d.solo' % ('d', ch), v)
+			model.send('input_monitor.%s.channel.%d.solo' % ('d', ch), v)
 	
 	def do_knob(self, val):
 		if self.stop_held:
 			if self.channel == 0:
-				backlight(val)
+				view.backlight(val)
 			return
 		global pans
 
@@ -321,18 +334,19 @@ class ControlChannel(ControlSection):
 		pan_l = Value.parse(Type.Pan, pan_l)
 		pan_r = Value.parse(Type.Pan, pan_r)
 
-		capmix_send('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		capmix_send('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		capmix_send('input_monitor.c.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		capmix_send('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		capmix_send('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		capmix_send('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		pans[ch]   = pan_l
-		pans[ch+1] = pan_r
+		model.send('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		model.send('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		model.send('input_monitor.c.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		model.send('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		model.send('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		model.send('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
 
-		print_pan(ch)
-		print_pan(ch+1)
-		cursor_to_log()
+		model.pans[ch]   = pan_l
+		model.pans[ch+1] = pan_r
+
+		view.print_pan(ch)
+		view.print_pan(ch+1)
+		view.cursor_to_log()
 	
 
 class ControlTransport(ControlSection):
@@ -366,7 +380,7 @@ class ControlTransport(ControlSection):
 		self.recording = False
 		self.looping = False
 		global queue
-		queue += [[15, self.cc_map[self.state], 127]]
+		queue.put([15, self.cc_map[self.state], 127])
 
 	def listener(self, event):
 		global queue
@@ -376,6 +390,13 @@ class ControlTransport(ControlSection):
 		if k in ['play','stop','rew','ffw']:
 			if event.value == 0: return
 			self.state = k
+			log(self.state)
+
+			for state in ['ffw','rew','play','stop']:
+				cc = self.cc_map[state]
+				v = 127 if self.state == state else 0
+				queue.put([15, cc, v])
+		
 
 		if k == 'rec':
 			if event.value == 0: return
@@ -388,22 +409,17 @@ class ControlTransport(ControlSection):
 		if k == 'stop' and prev_state == 'play':
 			self.recording = False
 
-		for name in ['ffw','rew','play','stop']:
-			cc = self.cc_map[name]
-			v = 127 if self.state == name else 0
-			queue += [[15, cc, v]]
-		
 		cc = self.cc_map['rec']
 		if self.recording:
-			queue += [[15, cc, 127]]
+			queue.put([15, cc, 127])
 		else:
-			queue += [[15, cc, 0]]
+			queue.put([15, cc, 0])
 
 		cc = self.cc_map['cycle']
 		if self.looping:
-			queue += [[15, cc, 127]]
+			queue.put([15, cc, 127])
 		else:
-			queue += [[15, cc, 0]]
+			queue.put([15, cc, 0])
 
 		if self.left > 0 and self.right > 0 and k == 'stop' and prev_state == 'stop':
 			print("\033[H")
@@ -415,7 +431,7 @@ class ControlTransport(ControlSection):
 				os.system('sudo systemctl poweroff')
 			exit(0)
 
-		dim(False, force=True)
+		view.dim(False, force=True)
 		if event.value == 0 and self.stop > 0:
 			if k == 'left':
 				os.system('tmux previous-window')
@@ -424,7 +440,7 @@ class ControlTransport(ControlSection):
 				os.system('tmux next-window')
 
 			if k == 'set':
-				dim(True, force=True)
+				view.dim(True, force=True)
 		log(repr(self))
 
 class Control:
@@ -502,7 +518,7 @@ class Control:
 		if event.channel == 15:
 			self.transport.listener(event)
 		elif event.channel < 8:
-			self.channels[event.channel].stop_held = self.transport.stop > 0
+			self.channels[event.channel].stop_held = (self.transport.stop > 0)
 			self.channels[event.channel].listener(event)
 
 	def send_nrpn(self, ch, msb, lsb, val):
@@ -526,25 +542,31 @@ class Control:
 			m = chan.muted
 			r = chan.armed
 
+			solos = self.model.solos
+			mutes = self.model.mutes
 			chan.soloed = solos[ch]['a'] + solos[ch]['c'] + solos[ch]['d'] == 1
 			chan.muted  = mutes[ch]['a'] + mutes[ch]['c'] + mutes[ch]['d'] == 3
 			if not chan.muted:
 				chan.armed = mutes[ch]['d']
 
 			if s != chan.soloed:
-				queue += [[i, chan.cc_map['solo'], 127 if chan.soloed else 0]]
+				queue.put([i, chan.cc_map['solo'], 127 if chan.soloed else 0])
 			if m != chan.muted:
-				queue += [[i, chan.cc_map['mute'], 127 if chan.muted else 0]]
+				queue.put([i, chan.cc_map['mute'], 127 if chan.muted else 0])
 			if r != chan.armed:
-				queue += [[i, chan.cc_map['arm'], 127 if chan.armed else 0]]
+				queue.put([i, chan.cc_map['arm'], 127 if chan.armed else 0])
 
 	def sync(self):
 		self.sync_mutes()
 
 		global queue
-		for msg in queue:
-			self.send_cc(msg[0], msg[1], msg[2])
-		queue = []
+		while True:
+
+			try:
+				msg = queue.get(block=False)
+				self.send_cc(msg[0], msg[1], msg[2])
+			except Empty:
+				break
 
 class Capture:
 
@@ -563,12 +585,12 @@ class Capture:
 			dirty = True
 			if '.mute' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
-				mon = monitors[(event.addr & 0xf000) >> 12]
+				mon = model.monitors[(event.addr & 0xf000) >> 12]
 				mute = value.unpacked.discrete
 				mutes[ch][mon] = mute
-				#queue += [[ord(mon) - ord('a'), ch, 0 if mute == 0 else 127]]
+				#queue.put([ord(mon) - ord('a'), ch, 0 if mute == 0 else 127])
 				if mon == 'd':
-					queue += [[int((ch-1)/2), 82, 0 if mute == 0 else 127]]
+					queue.put([int((ch-1)/2), 82, 0 if mute == 0 else 127])
 			elif '.stereo' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
 				stereo[ch] = value.unpacked.discrete
@@ -583,7 +605,7 @@ class Capture:
 		if not self.ok:
 			log("Unable to connect to STUDIO-CAPTURE")
 			return False
-		dim(False)
+		view.dim(False)
 		time.sleep(1)
 		self.get_mixer_data()
 		self.ok = True
@@ -593,7 +615,7 @@ class Capture:
 		for ch in range(0,16,2):
 			capmix.get(capmix.parse_addr("input_monitor.a.channel.{}.stereo".format(ch+1)))
 		for ch in range(0,16):
-			for mon in monitors:
+			for mon in model.monitors:
 				capmix.get(capmix.parse_addr("input_monitor.{}.channel.{}.mute".format(mon, ch+1)))
 				capmix.get(capmix.parse_addr("input_monitor.a.channel.{}.pan".format(ch+1)))
 
@@ -601,9 +623,13 @@ first_attempt = True
 def main():
 	global first_attempt
 	global logged
+	global model
 
 	capture = Capture()
+	capture.model = model
+
 	control = Control()
+	control.model = model
 
 	# setup capmix
 	capmix.set_model(4)
@@ -634,13 +660,13 @@ def main():
 		if not capture_found:
 			if capture.ok or first_attempt:
 				capture.ok = False
-				dim(True)
+				view.dim(True)
 			log("STUDIO-CAPTURE disconnected")
 
 		if capture_found and not capture.ok:
 			log("STUDIO-CAPTURE connected")
 			capture.ok = capture.connect()
-			dim(False)
+			view.dim(False)
 
 		control.ping()
 		first_attempt = False
@@ -676,10 +702,10 @@ def main():
 					control.ok, capture.ok = check_connections(client, port)
 					last_ok = now
 
-			capmix_flush()
+			model.flush()
 
 			if logged:
-				print_monitor_mutes()
+				view.print_monitor_mutes()
 
 	except KeyboardInterrupt:
 		pass
