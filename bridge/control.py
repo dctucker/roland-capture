@@ -14,6 +14,10 @@ class ControlSection:
 	def __repr__(self):
 		return repr(self.__dict__)
 
+	def send(self, name, val):
+		cc = self.cc_map[name]
+		self.model.queue.put([self.channel, cc, val])
+
 class ControlChannel(ControlSection):
 	cc_map = {
 		'fader': 7,
@@ -132,6 +136,7 @@ class ControlChannel(ControlSection):
 	
 
 class ControlTransport(ControlSection):
+	channel = 15
 	cc_map = {
 		'rew':  111,
 		'ffw':  112,
@@ -163,7 +168,7 @@ class ControlTransport(ControlSection):
 		self.looping = False
 
 	def ready(self):
-		self.model.queue.put([15, self.cc_map[self.state], 127])
+		self.send(self.state, 127)
 
 	def listener(self, event):
 		k = super().listener(event)
@@ -175,10 +180,7 @@ class ControlTransport(ControlSection):
 			log(self.state)
 
 			for state in ['ffw','rew','play','stop']:
-				cc = self.cc_map[state]
-				v = 127 if self.state == state else 0
-				self.model.queue.put([15, cc, v])
-		
+				self.send(state, 127 if self.state == state else 0)
 
 		if k == 'rec':
 			if event.value == 0: return
@@ -191,17 +193,8 @@ class ControlTransport(ControlSection):
 		if k == 'stop' and prev_state == 'play':
 			self.recording = False
 
-		cc = self.cc_map['rec']
-		if self.recording:
-			self.model.queue.put([15, cc, 127])
-		else:
-			self.model.queue.put([15, cc, 0])
-
-		cc = self.cc_map['cycle']
-		if self.looping:
-			self.model.queue.put([15, cc, 127])
-		else:
-			self.model.queue.put([15, cc, 0])
+		self.send('rec'  , 127 if self.recording else 0)
+		self.send('cycle', 127 if self.looping   else 0)
 
 		if self.left > 0 and self.right > 0 and k == 'stop' and prev_state == 'stop':
 			os.system("reset")
@@ -224,6 +217,7 @@ class ControlTransport(ControlSection):
 				os.system('tmux next-window')
 
 			if k == 'set':
+				self.dim()
 				self.view.dim(True, force=True)
 		log(repr(self))
 
@@ -244,6 +238,7 @@ class Control:
 			c.model = model
 		self.transport.model = model
 		self._model = model
+		self.transport.dim = self.dim
 
 	@property
 	def view(self):
@@ -286,6 +281,15 @@ class Control:
 	def send_cc(self, ch, cc, val):
 		self.client.event_output(ControlChangeEvent(channel=ch, param=cc, value=val), port=self.port)
 		self.client.drain_output()
+
+	def send(self, name, val):
+		if name in self.transport.cc_map:
+			self.transport.send(name, val)
+
+	def dim(self):
+		self.send('stop', 0)
+		self.send('cycle', 0)
+		self.channels[0].send('mute', 0)
 
 	def hello(self, delay=0.01):
 		def blink(ch, cc, val):
@@ -330,18 +334,6 @@ class Control:
 			self.channels[event.channel].stop_held = (self.transport.stop > 0)
 			self.channels[event.channel].listener(event)
 
-	def send_nrpn(self, ch, msb, lsb, val):
-		event1 = ControlChangeEvent(channel=15, param=99, value=msb)
-		event2 = ControlChangeEvent(channel=15, param=98, value=lsb)
-		event3 = ControlChangeEvent(channel=15, param=6, value=val)
-
-		self.client.event_output(event1, port=self.port)
-		self.client.event_output(event2, port=self.port)
-		self.client.event_output(event3, port=self.port)
-
-		log(repr(event1), repr(event2), repr(event3))
-		self.client.drain_output()
-
 	def sync_mutes(self):
 		for i, chan in enumerate(self.channels):
 			ch = 2 * i + 1
@@ -358,11 +350,11 @@ class Control:
 				chan.armed = mutes[ch]['d']
 
 			if s != chan.soloed:
-				self.model.queue.put([i, chan.cc_map['solo'], 127 if chan.soloed else 0])
+				chan.send('solo', 127 if chan.soloed else 0)
 			if m != chan.muted:
-				self.model.queue.put([i, chan.cc_map['mute'], 127 if chan.muted else 0])
+				chan.send('mute', 127 if chan.muted  else 0)
 			if r != chan.armed:
-				self.model.queue.put([i, chan.cc_map['arm'], 127 if chan.armed else 0])
+				chan.send('arm' , 127 if chan.armed  else 0)
 
 	def sync(self):
 		self.sync_mutes()

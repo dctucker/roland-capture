@@ -22,6 +22,7 @@ class Capture:
 				mutes[ch][mon] = mute
 				#self.model.queue.put([ord(mon) - ord('a'), ch, 0 if mute == 0 else 127])
 				if mon == 'd':
+					# TODO may not be needed
 					self.model.queue.put([int((ch-1)/2), 82, 0 if mute == 0 else 127])
 			elif '.stereo' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1

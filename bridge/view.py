@@ -75,14 +75,10 @@ class View:
 			if dark:
 				if not self.dimmed:
 					self.backlight(0)
-				self.model.queue.put([15, 113, 0])
-				self.model.queue.put([0, 82, 0])
-				self.model.queue.put([0, 87, 0])
 				self.model.reset()
 			else:
 				if self.dimmed:
 					self.backlight()
-					self.model.queue.put([15, 113, 127])
 			self.dimmed = dark
 
 	def pan_graphic(self, pan, width=4):

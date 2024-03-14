@@ -63,6 +63,7 @@ def main():
 			log("STUDIO-CAPTURE connected")
 			capture.ok = capture.connect()
 			view.dim(False)
+			control.hello()
 
 		control.ping()
 		first_attempt = False
