@@ -108,7 +108,7 @@ def main():
 		pass
 
 	capture.disconnect()
-	log("Done.")
+	view.cursor_release()
 
 if __name__ == '__main__':
 	main()

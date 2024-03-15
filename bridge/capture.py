@@ -1,3 +1,4 @@
+from time import sleep
 from view import log
 from bindings.capmix import capmix, Type
 
@@ -7,8 +8,7 @@ class Capture:
 		self.name = name
 		self.ok = False
 
-	@classmethod
-	def listener(cls, event):
+	def listener(self, event):
 		value = event.value()
 		self.model.set_cache(event.addr, value)
 
@@ -19,27 +19,27 @@ class Capture:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
 				mon = self.model.monitors[(event.addr & 0xf000) >> 12]
 				mute = value.unpacked.discrete
-				mutes[ch][mon] = mute
+				self.model.mutes[ch][mon] = mute
 				#self.model.queue.put([ord(mon) - ord('a'), ch, 0 if mute == 0 else 127])
 				if mon == 'd':
 					# TODO may not be needed
 					self.model.queue.put([int((ch-1)/2), 82, 0 if mute == 0 else 127])
 			elif '.stereo' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
-				stereo[ch] = value.unpacked.discrete
+				self.model.stereo[ch] = value.unpacked.discrete
 			elif '.pan' in addr:
 				ch  = ((event.addr & 0x0f00) >> 8) + 1
-				pans[ch] = value #capmix.format_type(Type.Pan, value.unpacked) #.unpacked.discrete >> 24
+				self.model.pans[ch] = value #capmix.format_type(Type.Pan, value.unpacked) #.unpacked.discrete >> 24
 
 		#log("addr=%x=%s type=%s v=%s" % (event.addr, addr, event.type_name(), value))
 
 	def connect(self):
-		self.ok = capmix.connect(Capture.listener)
+		self.ok = capmix.connect(self.listener)
 		if not self.ok:
 			log("Unable to connect to STUDIO-CAPTURE")
 			return False
 		self.view.dim(False)
-		time.sleep(1)
+		sleep(1)
 		self.get_mixer_data()
 		self.ok = True
 		return True

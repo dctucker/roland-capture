@@ -111,8 +111,11 @@ class View:
 
 	#size = os.get_terminal_size()
 	def cursor_to_log(self):
-		height = 17 if not self.compact else 9
+		height = 17 if not self.compact else 10
 		print("\033[%d;%dr\033[%d;1f\033[?25h" % (height, self.size.lines, self.size.lines-1))
+
+	def cursor_release(self):
+		print("\n\033[r\033[%d;1f\033[?25h" % (self.size.lines), end='')
 
 	def print_monitor_mutes(self):
 		compact = self.compact
