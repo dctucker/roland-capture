@@ -39,7 +39,7 @@ class View:
 	enable_dimming = False
 
 	def __init__(self, model):
-		self.compact = True
+		self.compact = False
 		self.model = model
 		size = lambda: None
 		size.columns = 99

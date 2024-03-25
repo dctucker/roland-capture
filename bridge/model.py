@@ -20,7 +20,7 @@ class Model:
 				self.solos[c+1][m] = 0
 				self.stereo[c+1] = 0
 
-	def send(self, param, value):
+	def mix(self, param, value):
 		self.capture_hash[capmix.parse_addr(param)] = value
 
 	def flush(self):

@@ -45,6 +45,9 @@ class ControlChannel(ControlSection):
 			self.do_arm(event.value)
 		elif k == 'mute':
 			self.do_mute(event.value)
+		elif k == 'solo':
+			self.do_solo(event.value)
+			self.view.logged = True
 		elif k == 'fader':
 			self.do_fader(event.value)
 		elif k == 'knob':
@@ -57,50 +60,55 @@ class ControlChannel(ControlSection):
 
 	def do_arm(self, down):
 		ch = self.mixer_channel()
-		if down == 0:
-			return
+		if down == 0: return
 
 		val = self.model.value('input_monitor.d.channel.%d.mute' % (ch))
 		if val.unpacked.discrete == 0:
-			self.model.send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 0)
-			self.model.send('input_monitor.%s.channel.%d.mute' % ('d', ch), 1)
+			self.model.mix('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 0)
+			self.model.mix('input_monitor.%s.channel.%d.mute' % ('d', ch), 1)
 			self.armed = True
 		else:
-			self.model.send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 1)
-			self.model.send('input_monitor.%s.channel.%d.mute' % ('d', ch), 0)
+			self.model.mix('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), 1)
+			self.model.mix('input_monitor.%s.channel.%d.mute' % ('d', ch), 0)
 			self.armed = False
+
+	def do_solo(self, down):
+		ch = self.mixer_channel()
+		if down == 0: return
+
+		val = self.model.value('input_monitor.a.channel.%d.solo' % (ch))
+		v = 0 if val.unpacked.discrete == 1 else 1
+		if self.armed:
+			self.model.mix('input_monitor.%s.channel.%d.solo' % (self.last_monitor, ch), v)
+		else:
+			self.model.mix('input_monitor.%s.channel.%d.solo' % ('d', ch), v)
+		self.soloed = (v == 1)
 	
 	def do_fader(self, val):
 		ch = self.mixer_channel()
 		if val == 127:
-			self.model.send('input_monitor.a.channel.%d.mute' % (ch), 0)
-			self.model.send('input_monitor.c.channel.%d.mute' % (ch), 1)
+			self.model.mix('input_monitor.a.channel.%d.mute' % (ch), 0)
+			self.model.mix('input_monitor.c.channel.%d.mute' % (ch), 1)
 			self.last_monitor = 'a'
 		elif val == 0:
-			self.model.send('input_monitor.a.channel.%d.mute' % (ch), 1)
-			self.model.send('input_monitor.c.channel.%d.mute' % (ch), 0)
+			self.model.mix('input_monitor.a.channel.%d.mute' % (ch), 1)
+			self.model.mix('input_monitor.c.channel.%d.mute' % (ch), 0)
 			self.last_monitor = 'c'
 		else:
 			# TODO
 			pass
 	
 	def do_mute(self, val):
-		ch = self.mixer_channel()
-		v = 0 if val == 0 else 1
-		if self.armed:
-			self.model.send('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), v)
-		else:
-			self.model.send('input_monitor.%s.channel.%d.mute' % ('d', ch), v)
-		self.muted = v == 1
+		if val == 0: return
 
-	def do_solo(self, val):
 		ch = self.mixer_channel()
 		v = 0 if val == 0 else 1
 		if self.armed:
-			self.model.send('input_monitor.%s.channel.%d.solo' % (self.last_monitor, ch), v)
+			self.model.mix('input_monitor.%s.channel.%d.mute' % (self.last_monitor, ch), v)
 		else:
-			self.model.send('input_monitor.%s.channel.%d.solo' % ('d', ch), v)
-	
+			self.model.mix('input_monitor.%s.channel.%d.mute' % ('d', ch), v)
+		self.muted = (v == 1)
+
 	def do_knob(self, val):
 		if self.stop_held:
 			if self.channel == 0:
@@ -120,12 +128,12 @@ class ControlChannel(ControlSection):
 		pan_l = Value.parse(Type.Pan, pan_l)
 		pan_r = Value.parse(Type.Pan, pan_r)
 
-		self.model.send('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		self.model.send('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		self.model.send('input_monitor.c.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		self.model.send('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		self.model.send('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		self.model.send('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		self.model.mix('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		self.model.mix('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		self.model.mix('input_monitor.c.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		self.model.mix('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		self.model.mix('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
+		self.model.mix('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
 
 		self.model.pans[ch]   = pan_l
 		self.model.pans[ch+1] = pan_r
@@ -197,13 +205,14 @@ class ControlTransport(ControlSection):
 		self.send('cycle', 127 if self.looping   else 0)
 
 		if self.left > 0 and self.right > 0 and k == 'stop' and prev_state == 'stop':
-			os.system("reset")
+			os.system('tmux select-window -t 1')
 			if self.looping:
-				print("Rebooting")
+				os.system('wall Rebooting')
+				print("\033[2J\nRebooting")
 				sleep(2)
 				os.system('sudo systemctl reboot')
 			else:
-				print("Shutting down")
+				print("\033[2J\nShutting down")
 				sleep(2)
 				os.system('sudo systemctl poweroff')
 			exit(0)
@@ -286,10 +295,57 @@ class Control:
 		if name in self.transport.cc_map:
 			self.transport.send(name, val)
 
-	def dim(self):
-		self.send('stop', 0)
-		self.send('cycle', 0)
-		self.channels[0].send('mute', 0)
+	def listen(self):
+		event = self.client.event_input(timeout=0.01)
+		while event:
+			self.listener(event)
+			event = self.client.event_input(timeout=0.01)
+
+	def listener(self, event):
+		if isinstance(event, PortUnsubscribedEvent):
+			self.ok = False
+			return
+		elif isinstance(event, SysExEvent):
+			self.ok = True
+			#log(repr(event))
+			return
+		if event.channel == 15:
+			self.transport.listener(event)
+		elif event.channel < 8:
+			self.channels[event.channel].stop_held = (self.transport.stop > 0)
+			self.channels[event.channel].listener(event)
+
+	def sync_mutes(self):
+		for i, chan in enumerate(self.channels):
+			ch = 2 * i + 1
+
+			s = chan.soloed
+			m = chan.muted
+			r = chan.armed
+
+			solos = self.model.solos
+			mutes = self.model.mutes
+			chan.soloed = solos[ch]['a'] #+ solos[ch]['c'] + solos[ch]['d'] >= 1
+			chan.muted  = mutes[ch]['a'] + mutes[ch]['c'] + mutes[ch]['d'] == 3
+			if not chan.muted:
+				chan.armed = mutes[ch]['d']
+
+			if s != chan.soloed:
+				chan.send('solo', 127 if chan.soloed else 0)
+			if m != chan.muted:
+				chan.send('mute', 127 if chan.muted  else 0)
+			if r != chan.armed:
+				chan.send('arm' , 127 if chan.armed  else 0)
+
+	def sync(self):
+		self.sync_mutes()
+
+		while True:
+			try:
+				msg = self.model.queue.get(block=False)
+				self.send_cc(msg[0], msg[1], msg[2])
+			except Empty:
+				break
 
 	def hello(self, delay=0.01):
 		def blink(ch, cc, val):
@@ -314,55 +370,8 @@ class Control:
 
 		self.transport.ready()
 
-	def listen(self):
-		event = self.client.event_input(timeout=0.01)
-		while event:
-			self.listener(event)
-			event = self.client.event_input(timeout=0.01)
-
-	def listener(self, event):
-		if isinstance(event, PortUnsubscribedEvent):
-			self.ok = False
-			return
-		elif isinstance(event, SysExEvent):
-			self.ok = True
-			log(repr(event))
-			return
-		if event.channel == 15:
-			self.transport.listener(event)
-		elif event.channel < 8:
-			self.channels[event.channel].stop_held = (self.transport.stop > 0)
-			self.channels[event.channel].listener(event)
-
-	def sync_mutes(self):
-		for i, chan in enumerate(self.channels):
-			ch = 2 * i + 1
-
-			s = chan.soloed
-			m = chan.muted
-			r = chan.armed
-
-			solos = self.model.solos
-			mutes = self.model.mutes
-			chan.soloed = solos[ch]['a'] + solos[ch]['c'] + solos[ch]['d'] == 1
-			chan.muted  = mutes[ch]['a'] + mutes[ch]['c'] + mutes[ch]['d'] == 3
-			if not chan.muted:
-				chan.armed = mutes[ch]['d']
-
-			if s != chan.soloed:
-				chan.send('solo', 127 if chan.soloed else 0)
-			if m != chan.muted:
-				chan.send('mute', 127 if chan.muted  else 0)
-			if r != chan.armed:
-				chan.send('arm' , 127 if chan.armed  else 0)
-
-	def sync(self):
-		self.sync_mutes()
-
-		while True:
-			try:
-				msg = self.model.queue.get(block=False)
-				self.send_cc(msg[0], msg[1], msg[2])
-			except Empty:
-				break
+	def dim(self):
+		self.send('stop', 0)
+		self.send('cycle', 0)
+		self.channels[0].send('arm', 0)
 

@@ -90,8 +90,8 @@ def main():
 				x = capture.listen()
 
 			if control.ok:
-				control.sync()
 				control.listen()
+				control.sync()
 
 			# check for disconnect
 			if capture.ok or control.ok:
