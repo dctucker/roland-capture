@@ -128,15 +128,14 @@ class ControlChannel(ControlSection):
 		pan_l = Value.parse(Type.Pan, pan_l)
 		pan_r = Value.parse(Type.Pan, pan_r)
 
-		self.model.mix('input_monitor.a.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		self.model.mix('input_monitor.a.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		self.model.mix('input_monitor.c.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		self.model.mix('input_monitor.c.channel.%d.pan' % (ch+1), pan_r.unpacked)
-		self.model.mix('input_monitor.d.channel.%d.pan' % (ch)  , pan_l.unpacked)
-		self.model.mix('input_monitor.d.channel.%d.pan' % (ch+1), pan_r.unpacked)
+		model_l = self.model.pan_to_int(pan_l)
+		model_r = self.model.pan_to_int(pan_r)
 
-		self.model.pans[ch]   = pan_l
-		self.model.pans[ch+1] = pan_r
+		for m in ['a','c','d']:
+			self.model.mix('input_monitor.%s.channel.%d.pan' % (m, ch)  , pan_l.unpacked)
+			self.model.mix('input_monitor.%s.channel.%d.pan' % (m, ch+1), pan_r.unpacked)
+			self.model.pans[ch+0][m] = model_l
+			self.model.pans[ch+1][m] = model_r
 
 		self.view.print_pan(ch)
 		self.view.print_pan(ch+1)

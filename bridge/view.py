@@ -1,9 +1,9 @@
-import os
-from time import strftime
-
-logged = False
-
-def log(*msg):
+import os 
+from time import strftime 
+ 
+logged = False 
+ 
+def log(*msg): 
 	global logged
 	now = strftime("%H:%M:%S")
 	logged = True
@@ -83,7 +83,7 @@ class View:
 
 	def pan_graphic(self, pan, width=4):
 		eighths = self.eighths
-		p = int(str(pan).replace('R','').replace('L','-').replace('C','0'))
+		p = pan
 		x = p * (width / 2) / 100.0
 		i = int(abs(x))
 		f = int(abs(x * 8)) % 8
@@ -102,9 +102,9 @@ class View:
 		row = 5 if not self.compact else 3
 		col = 6 * (ch-1) + 3
 		print("\033[?25l\033[%d;%df" % (row, col), end='')
-		pan = self.model.pans[ch]
+		pan = self.model.pans[ch]['a']
 		graphic = self.pan_graphic(pan)
-		if ch % 2 == 1 or str(pan) == 'C':
+		if ch % 2 == 1 or pan == 0:
 			print(" ", end='')
 			#graphic = " " + graphic
 		print("\033[33m%s" % graphic, end='')
@@ -150,7 +150,7 @@ class View:
 		if not compact: print("\033[2K")
 		print("\033[2K  ", end='')
 		for ch in range(0, 16):
-			pan = pans[ch+1]
+			pan = pans[ch+1]['a']
 			graphic = self.pan_graphic(pan)
 			print(" \033[33m%s" % graphic, end='')
 		print("\033[0m")

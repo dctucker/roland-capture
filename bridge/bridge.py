@@ -109,6 +109,9 @@ def main():
 
 	capture.disconnect()
 	view.cursor_release()
+	print("\033[2JClosing")
+	model.close()
+	print("\033[2JClosed")
 
 if __name__ == '__main__':
 	main()
