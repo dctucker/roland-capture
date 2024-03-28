@@ -3,11 +3,22 @@
 from model import Model
 
 import sys
+import math
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 model = Model(create=False)
+labels = [
+	'  Mic ',
+	'Guitar',
+	'Deluge',
+	'Opsix',
+	'Phatty',
+	' SM10 ',
+	'Circuit',
+	' JUNO ',
+]
 
 class GLWidget(QOpenGLWidget):
 	def __init__(self, parent=None):
@@ -41,6 +52,11 @@ class GLWidget(QOpenGLWidget):
 			left = ch * col_width
 			top = row_height
 
+			painter.setPen(QPen(QColor(192,192,192)))
+			rect = QRect(left, top, col_width * 2, 20)
+			painter.drawText(rect, Qt.AlignHCenter, labels[ch//2])
+			top += row_height
+
 			if model.stereo[ch+1] > 0:
 				color = self.stereo_on
 				rect = QRect(left+2*col_spacing, top, col_width * 2 - 2*col_spacing, 20)
@@ -61,11 +77,17 @@ class GLWidget(QOpenGLWidget):
 
 		for ch in range(0, 16):
 			left = ch * col_width
-			center = left + col_width // 2
+			center = col_spacing // 2 + left + col_width // 2
 			top = 3 * row_height
 			p = int((col_width - col_spacing) * model.pans[ch+1]['a'] / 200.0)
-			painter.fillRect(QRect(center-1, top, 3, 20), self.pan_brush)
-			painter.fillRect(QRect(center, top, p, 20), self.pan_brush)
+			painter.fillRect(QRect(left+col_spacing, top, col_width-col_spacing, 20), self.button_off)
+			#painter.fillRect(QRect(center-1, top, 3, 20), self.pan_brush)
+			pan_top = int(top+20-7 - abs(p / math.tan(math.radians(60))))
+			poly = QPolygon((QPoint(center, top+20), QPoint(center+p, top+20), QPoint(center+p, pan_top)))
+			painter.setBrush(self.pan_brush)
+			painter.setPen(QPen(self.pan_brush.color()))
+			painter.drawPolygon(poly)
+			#painter.fillRect(QRect(center, top, p, 20), self.pan_brush)
 
 			for i, m in enumerate(model.monitors):
 				top = 5 * row_height + i * row_height

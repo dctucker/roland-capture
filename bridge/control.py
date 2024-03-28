@@ -76,12 +76,15 @@ class ControlChannel(ControlSection):
 		ch = self.mixer_channel()
 		if down == 0: return
 
-		val = self.model.value('input_monitor.a.channel.%d.solo' % (ch))
-		v = 0 if val.unpacked.discrete == 1 else 1
 		if self.armed:
-			self.model.mix('input_monitor.%s.channel.%d.solo' % (self.last_monitor, ch), v)
+			mon = self.last_monitor
 		else:
-			self.model.mix('input_monitor.%s.channel.%d.solo' % ('d', ch), v)
+			mon = 'd'
+
+		val = self.model.value('input_monitor.%s.channel.%d.solo' % (mon, ch))
+		v = 0 if val.unpacked.discrete == 1 else 1
+
+		self.model.mix('input_monitor.%s.channel.%d.solo' % (mon, ch), v)
 		self.soloed = (v == 1)
 	
 	def do_fader(self, val):

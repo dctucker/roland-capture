@@ -1,9 +1,9 @@
-import os 
-from time import strftime 
- 
-logged = False 
- 
-def log(*msg): 
+import os
+from time import strftime
+
+logged = False
+
+def log(*msg):
 	global logged
 	now = strftime("%H:%M:%S")
 	logged = True

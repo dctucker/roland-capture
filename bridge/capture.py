@@ -27,8 +27,7 @@ class Capture:
 				mute = value.unpacked.discrete
 				self.model.mutes[ch][mon] = mute
 				#self.model.queue.put([ord(mon) - ord('a'), ch, 0 if mute == 0 else 127])
-				if mon == 'd':
-					# TODO may not be needed
+				if mon == 'd': # TODO may not be needed
 					self.model.queue.put([int((ch-1)/2), 82, 0 if mute == 0 else 127])
 			elif '.solo' in addr:
 				ch  = addr_channel(event.addr)
@@ -64,6 +63,7 @@ class Capture:
 
 	def query(self, name):
 		capmix.get(capmix.parse_addr(name))
+		self.listen()
 
 	def get_mixer_data(self):
 		for ch in range(0,16,2):
@@ -72,6 +72,6 @@ class Capture:
 			for mon in self.model.monitors:
 				self.query("input_monitor.{}.channel.{}.mute".format(mon, ch+1))
 				self.query("input_monitor.{}.channel.{}.solo".format(mon, ch+1))
-				self.query("input_monitor.{}.channel.{}.volume".format(mon, ch+1))
 				self.query("input_monitor.a.channel.{}.pan".format(ch+1))
+				self.query("input_monitor.{}.channel.{}.volume".format(mon, ch+1))
 

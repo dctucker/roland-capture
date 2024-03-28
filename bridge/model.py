@@ -88,7 +88,10 @@ class Model:
 
 	def flush(self):
 		for k,v in self.capture_hash.items():
-			capmix.put(k, v)
+			if v is None:
+				capmix.query(k)
+			else:
+				capmix.put(k, v)
 		self.capture_hash = {}
 
 	def get_cache(self, k):
