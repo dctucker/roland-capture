@@ -46,20 +46,26 @@ class Model:
 		#self.solos  = { (ch+1): { mon: 0 for mon in self.monitors } for ch in range(0, self.num_channels) }
 		#self.pans   = { (ch+1): Value.parse(Type.Pan, "C") for ch in range(0, 16) }
 
+		span = len(self.monitors) * self.num_channels
+		n_controls = 6
+		size = n_controls * span
+
 		shm_path = 'pimix'
 		if create:
 			create = not exists('/dev/shm/' + shm_path)
 		if create:
-			shm = shared_memory.SharedMemory(shm_path, create=True, size=16*self.num_channels)
+			shm = shared_memory.SharedMemory(shm_path, create=True, size=size)
 		else:
 			shm = shared_memory.SharedMemory(shm_path, create=False)
 		unregister(shm._name, 'shared_memory')
 
-		self.data = np.ndarray(shape=(16,4,4), dtype=np.int8, buffer=shm.buf)
-		self.stereo = ShmStereoLink( np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[0:]) )
-		self.mutes  = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[64:]) )
-		self.solos  = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[128:]) )
-		self.pans   = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[192:]) )
+		self.data = np.ndarray(shape=(self.num_channels,len(self.monitors),n_controls), dtype=np.int8, buffer=shm.buf)
+		self.stereo = ShmStereoLink( np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[0*span:]) )
+		self.mutes  = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[1*span:]) )
+		self.solos  = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[2*span:]) )
+		self.pans   = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[3*span:]) )
+		self.volume = ShmChannels(   np.ndarray(shape=(16,4), dtype=np.int8, buffer=shm.buf[4*span:]) )
+		self.meters = np.ndarray(shape=(16,), dtype=np.float32, buffer=shm.buf[5*span:])
 		self.shm = shm
 
 		self.capture_hash = {}

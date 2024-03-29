@@ -88,6 +88,7 @@ def main():
 					last_attempt = now
 			if capture.ok:
 				x = capture.listen()
+				capture.sync()
 
 			if control.ok:
 				control.listen()
